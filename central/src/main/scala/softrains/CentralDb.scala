@@ -27,8 +27,15 @@ case class HomePresence(
   active : Boolean
 )
 
+case class ExceptionReport(
+  tryTime : DateTime,
+  catchTime : DateTime,
+  message : String
+)
+
 class CentralDb(settings : CentralSettings) extends Instance (
   entities = Set(
+    Entity[ExceptionReport](),
     Entity[HomeResident](unique = Set() + Seq("name")),
     Entity[HomePresence](),
     Entity[LanDevice](unique = Set() + Seq("name")),

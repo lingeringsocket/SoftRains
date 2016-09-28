@@ -4,7 +4,8 @@ import com.typesafe.config._
 
 import org.joda.time._
 
-import io.Source
+import java.io._
+
 import xml._
 import xml.parsing.NoBindingFactoryAdapter
 
@@ -92,14 +93,42 @@ class Central
 
   def scanLan()
   {
-    val devicesHtml = fetchDevices
-    scanDevices(devicesHtml)
+    val scanTime = readClockTime
+    try {
+      val devicesHtml = fetchDevices
+      scanDevices(devicesHtml, scanTime)
+    } catch {
+      case ex : Exception => {
+        handleException(scanTime, ex)
+      }
+    }
   }
 
-  def scanLanSource(src : Source)
+  def scanLanString(devicesHtml : String)
   {
-    val devicesHtml = src.getLines.mkString("\n")
-    scanDevices(devicesHtml)
+    val scanTime = readClockTime
+    try {
+      scanDevices(devicesHtml, readClockTime)
+    } catch {
+      case ex : Exception => {
+        handleException(scanTime, ex)
+      }
+    }
+  }
+
+  def readClockTime = new DateTime(DateTimeZone.UTC)
+
+  private def handleException(tryTime : DateTime, ex : Exception)
+  {
+    if (!settings.Test.active) {
+      ex.printStackTrace
+    }
+    val catchTime = readClockTime
+    val sw = new StringWriter
+    val pw = new PrintWriter(sw)
+    ex.printStackTrace(pw)
+    pw.close
+    db.save(ExceptionReport(tryTime, catchTime, sw.toString))
   }
 
   private def fetchDevices() =
@@ -110,11 +139,15 @@ class Central
     result()
   }
 
-  private def scanDevices(html : String)
+  private def scanDevices(html : String, scanTime : DateTime)
   {
-    val scanTime = new DateTime(DateTimeZone.UTC)
     val parser = new HTML5Parser
     val xml = parser.loadString(html)
+    val validationDivs = (xml \\ "div").filter(
+      div => (div \ "@class").text.trim == "cnt-device-main")
+    if (validationDivs.isEmpty) {
+      throw new RuntimeException("Unexpected device HTML")
+    }
     val forms = (xml \\ "form").filter(
       form => getSpanText(form).contains("Host Name:"))
     for (form <- forms) {

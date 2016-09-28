@@ -4,7 +4,17 @@ import io.Source
 
 import org.specs2.mutable._
 
-class CentralSpec extends Specification
+import org.joda.time._
+
+trait DateTimeOrderingImplicit
+{
+  implicit object DateTimeOrdering extends Ordering[DateTime]
+  {
+    def compare(d1: DateTime, d2: DateTime) = d1.compareTo(d2)
+  }
+}
+
+class CentralSpec extends Specification with DateTimeOrderingImplicit
 {
   // database state is shared, so we need isolation
   sequential
@@ -24,7 +34,11 @@ class CentralSpec extends Specification
     central.db.query[HomePresence].whereEqual("active", true).fetch.size
 
   private def readResource(resource : String) =
-    Source.fromFile(getClass.getResource(resource).getPath)
+    Source.fromFile(getClass.getResource(resource).getPath).
+      getLines.mkString("\n")
+
+  private def getExceptionCount =
+    central.db.query[ExceptionReport].fetch.size
 
   "Central" should
   {
@@ -34,6 +48,7 @@ class CentralSpec extends Specification
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2
       getResidentCount must be equalTo 2
+      getExceptionCount must be equalTo 0
     }
 
     "scan devices" in
@@ -41,18 +56,32 @@ class CentralSpec extends Specification
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2
       getHomeActiveCount must be equalTo 0
-      central.scanLanSource(readResource("/devices1.html"))
+      central.scanLanString(readResource("/devices1.html"))
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
-      central.scanLanSource(readResource("/devices2.html"))
+      central.scanLanString(readResource("/devices2.html"))
       getLanActiveCount must be equalTo 4
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 2
-      central.scanLanSource(readResource("/devices1.html"))
+      central.scanLanString(readResource("/devices1.html"))
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
+    }
+
+    "handle scan failure" in
+    {
+      getExceptionCount must be equalTo 0
+      val startTime = central.readClockTime
+      central.scanLanString("<blah>")
+      val endTime = central.readClockTime
+      getExceptionCount must be equalTo 1
+      val report = central.db.query[ExceptionReport].fetchOne.get
+      report.message must contain("Unexpected device HTML")
+      report.tryTime must beBetween(startTime, endTime)
+      report.catchTime must beBetween(startTime, endTime)
+      report.catchTime must beGreaterThanOrEqualTo(report.tryTime)
     }
   }
 }
