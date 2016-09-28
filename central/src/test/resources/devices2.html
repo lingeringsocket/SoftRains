@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <body>
+    <div id="container">
+      <div id="main-content">
+        <div id="content" class="cnt-device-main">
+	  <h1>Connected Devices > Devices</h1>
+	  <div  class="module data">
+            <h2 id='online-table-cap'>Online Devices-Private Network</h2>
+	    <table   class="data"  summary="This table displays Online Devices connected to priviate network">
+	      <tr>
+		<th id="host-name" >Host Name</th>
+		<th id="dhcp-or-reserved" >DHCP/Reserved IP</th>
+		<th id="rssi-level" >RSSI Level</th>
+		<th id="connection-type" >Connection</th>
+
+		<th id="edit-button">&nbsp;</th>
+		<th id="disconnect-button">&nbsp;</th>
+	      </tr>
+
+	      <tr >
+		<td headers='host-name'><a href='javascript:void(0)' tabindex='0' class="label device-name"><u>deviceA</u></a>
+
+		  <div class="device-info">
+		    <dl><dd><br/></dd>
+		      <dd><b>IPV4 Address</b><br/>10.0.0.240</dd><dd><b>MAC Address</b><br/>macA</dd>
+		      <dd><b>Comments</b><br/></dd>
+		    </dl>
+		  </div>
+                </td>
+
+		<td headers='dhcp-or-reserved'>DHCP</td>
+		<td headers='rssi-level'>-89</td>
+		<td headers='connection-type'>Wi-Fi 5G</td>
+	      </tr>    
+	      
+	      <tr  class='odd'>
+		<td headers='host-name'><a href='javascript:void(0)' tabindex='0' class="label device-name"><u>deviceB</u></a>
+
+		  <div class="device-info">
+		    <dl><dd><br/></dd>
+		      <dd><b>IPV4 Address</b><br/>10.0.0.28</dd><dd><b>MAC Address</b><br/>macB</dd>
+		      <dd><b>Comments</b><br/></dd>
+		    </dl>
+		  </div>
+                </td>
+
+		<td headers='dhcp-or-reserved'>DHCP</td>
+		<td headers='rssi-level'>-64</td>
+		<td headers='connection-type'>Wi-Fi 2.4G</td>
+
+	      </tr>    
+	      
+	      <tr >
+		<td headers='host-name'><a href='javascript:void(0)' tabindex='0' class="label device-name"><u>deviceC</u></a>
+
+		  <div class="device-info">
+		    <dl><dd><br/></dd>
+		      <dd><b>IPV4 Address</b><br/>10.0.0.73</dd><dd><b>MAC Address</b><br/>macC</dd>
+		      <dd><b>Comments</b><br/></dd>
+		    </dl>
+		  </div>
+                </td>
+
+		<td headers='dhcp-or-reserved'>DHCP</td>
+		<td headers='rssi-level'>-85</td>
+		<td headers='connection-type'>Wi-Fi 5G</td>
+
+	      </tr>    
+	      
+	      <tr  class='odd'>
+		<td headers='host-name'><a href='javascript:void(0)' tabindex='0' class="label device-name"><u>deviceD</u></a>
+
+		  <div class="device-info">
+		    <dl><dd><br/></dd>
+		      <dd><b>IPV4 Address</b><br/>10.0.0.59</dd><dd><b>MAC Address</b><br/>macD</dd>
+		      <dd><b>Comments</b><br/></dd>
+		    </dl>
+		  </div>
+                </td>
+
+		<td headers='dhcp-or-reserved'>DHCP</td>
+		<td headers='rssi-level'>-60</td>
+		<td headers='connection-type'>Wi-Fi 2.4G</td>
+	      </tr>    
+	      
+     	      <tfoot>
+		<tr class="acs-hide">
+		  <td headers="host-name">null</td>
+		  <td headers="dhcp-or-reserved">null</td>
+		  <td headers="rssi-level">null</td>
+		  <td headers="connection-type">null</td>
+		  <td headers="edit-button">null</td>
+		  <td headers="disconnect-button">null</td>
+		</tr>
+	      </tfoot>
+
+	    </table>
+	  </div> <!-- end .module -->
+        </div><!-- end #content -->
+
+        <div id="edit-device-2"  class="edit-device content " style='display:none'>
+	  <div  class="module forms" id="computers-edit-2" >
+            <form id="pageForm-2"   class="pageForm">
+
+	      <div  class="form-row">
+        	<span  class="readonlyLabel" >Host Name:</span>
+        	<span  class="value">deviceA</span>
+	      </div>
+	      <div  class="form-row odd">
+		<span  class="readonlyLabel">Connection:</span>
+        	<span  class="value">Wi-Fi 5G</span>
+	      </div>
+	      <div  class="form-row">
+		<label for="ip">Configuration:</label>
+		<input type="radio" name="ip" value="DHCP" checked='checked' class="ip_dchp" id="ip_dhcp-2" />
+		<label  class="radio" for="ip_dhcp-2">DHCP</label>
+		<br/>
+
+		<input  class="trigger ip_static" type="radio" name="ip" value="static" id="ip_static-2" />
+		<label  class="radio" for="ip_static-2">Reserved IP</label>
+	      </div>
+	      <div id="dhcp-macA"  class="dhcp-mac form-row odd">
+		<span  class="readonlyLabel">MAC Address:</span>
+        	<span  class="value">macA</span>
+	      </div>
+	      <div id="static-macA"  class="static-mac form-row odd">
+		<label for="mac_address-2">MAC Address:</label>
+		<input type="text" name="mac_address" id="mac_address-2" value="macA" />
+	      </div>
+
+      	      <div id="static-ip2"  class="static-ip form-row odd" >
+		<label for="staticIPAddress-2">Reserved IP Address:</label>
+		<input type="text" value="10.0.0.240" id="staticIPAddress-2" name="staticIPAddress"  class="target" />
+	      </div>
+	      <div  class="form-row">
+		<label for="comment-2" >Comments:</label>
+		<textarea id="comment-2" name="comments" ros="6" cols="18" maxlength="63"></textarea>
+	      </div>
+
+	      <div  class="form-row form-btn">
+		<input type="button" id="submit_editDevice-2"  class="btn" value="Save"/>
+		<input type="reset" id="btn-cancel-2" class="btn-cancel btn alt reset" value="Cancel"/>
+	      </div>
+	    </form>
+
+	  </div> <!-- end .module -->
+        </div><!-- end #content -->
+
+        
+        <div id="edit-device-3"  class="edit-device content " style='display:none'>
+	  <div  class="module forms" id="computers-edit-3" >
+	    <h2>Edit Device</h2> 
+            <form id="pageForm-3"   class="pageForm">
+
+	      <div  class="form-row">
+        	<span  class="readonlyLabel" >Host Name:</span>
+        	<span  class="value">deviceB</span>
+	      </div>
+	      <div  class="form-row odd">
+		<span  class="readonlyLabel">Connection:</span>
+        	<span  class="value">Wi-Fi 2.4G</span>
+	      </div>
+	      <div  class="form-row">
+		<label for="ip">Configuration:</label>
+		<input type="radio" name="ip" value="DHCP" checked='checked' class="ip_dchp" id="ip_dhcp-3" />
+		<label  class="radio" for="ip_dhcp-3">DHCP</label>
+		<br/>
+
+		<input  class="trigger ip_static" type="radio" name="ip" value="static" id="ip_static-3" />
+		<label  class="radio" for="ip_static-3">Reserved IP</label>
+	      </div>
+	      <div id="dhcp-macC"  class="dhcp-mac form-row odd">
+		<span  class="readonlyLabel">MAC Address:</span>
+        	<span  class="value">macB</span>
+	      </div>
+	      <div id="static-macC"  class="static-mac form-row odd">
+		<label for="mac_address-3">MAC Address:</label>
+		<input type="text" name="mac_address" id="mac_address-3" value="macB" />
+	      </div>
+
+      	      <div id="static-ip3"  class="static-ip form-row odd" >
+		<label for="staticIPAddress-3">Reserved IP Address:</label>
+		<input type="text" value="10.0.0.28" id="staticIPAddress-3" name="staticIPAddress"  class="target" />
+	      </div>
+	      <div  class="form-row">
+		<label for="comment-3" >Comments:</label>
+		<textarea id="comment-3" name="comments" ros="6" cols="18" maxlength="63"></textarea>
+	      </div>
+
+	      <div  class="form-row form-btn">
+		<input type="button" id="submit_editDevice-3"  class="btn" value="Save"/>
+		<input type="reset" id="btn-cancel-3" class="btn-cancel btn alt reset" value="Cancel"/>
+	      </div>
+	    </form>
+
+	  </div> <!-- end .module -->
+        </div><!-- end #content -->
+
+        
+        <div id="edit-device-4"  class="edit-device content " style='display:none'>
+	  <div  class="module forms" id="computers-edit-4" >
+	    <h2>Edit Device</h2> 
+            <form id="pageForm-4"   class="pageForm">
+
+	      <div  class="form-row">
+        	<span  class="readonlyLabel" >Host Name:</span>
+        	<span  class="value">deviceC</span>
+	      </div>
+	      <div  class="form-row odd">
+		<span  class="readonlyLabel">Connection:</span>
+        	<span  class="value">Wi-Fi 5G</span>
+	      </div>
+	      <div  class="form-row">
+		<label for="ip">Configuration:</label>
+		<input type="radio" name="ip" value="DHCP" checked='checked' class="ip_dchp" id="ip_dhcp-4" />
+		<label  class="radio" for="ip_dhcp-4">DHCP</label>
+		<br/>
+
+		<input  class="trigger ip_static" type="radio" name="ip" value="static" id="ip_static-4" />
+		<label  class="radio" for="ip_static-4">Reserved IP</label>
+	      </div>
+	      <div id="dhcp-macD"  class="dhcp-mac form-row odd">
+		<span  class="readonlyLabel">MAC Address:</span>
+        	<span  class="value">macC</span>
+	      </div>
+	      <div id="static-macD"  class="static-mac form-row odd">
+		<label for="mac_address-4">MAC Address:</label>
+		<input type="text" name="mac_address" id="mac_address-4" value="macC" />
+	      </div>
+
+      	      <div id="static-ip4"  class="static-ip form-row odd" >
+		<label for="staticIPAddress-4">Reserved IP Address:</label>
+		<input type="text" value="10.0.0.73" id="staticIPAddress-4" name="staticIPAddress"  class="target" />
+	      </div>
+	      <div  class="form-row">
+		<label for="comment-4" >Comments:</label>
+		<textarea id="comment-4" name="comments" ros="6" cols="18" maxlength="63"></textarea>
+	      </div>
+
+	      <div  class="form-row form-btn">
+		<input type="button" id="submit_editDevice-4"  class="btn" value="Save"/>
+		<input type="reset" id="btn-cancel-4" class="btn-cancel btn alt reset" value="Cancel"/>
+	      </div>
+	    </form>
+
+	  </div> <!-- end .module -->
+        </div><!-- end #content -->
+
+        
+        <div id="edit-device-6"  class="edit-device content " style='display:none'>
+	  <h1>Connected Devices > Devices > Edit Device</h1>
+	  <div  class="module forms" id="computers-edit-6" >
+	    <h2>Edit Device</h2> 
+            <form id="pageForm-6"   class="pageForm">
+
+	      <div  class="form-row">
+        	<span  class="readonlyLabel" >Host Name:</span>
+        	<span  class="value">deviceD</span>
+	      </div>
+	      <div  class="form-row odd">
+		<span  class="readonlyLabel">Connection:</span>
+        	<span  class="value">Wi-Fi 2.4G</span>
+	      </div>
+	      <div  class="form-row">
+		<label for="ip">Configuration:</label>
+		<input type="radio" name="ip" value="DHCP" checked='checked' class="ip_dchp" id="ip_dhcp-6" />
+		<label  class="radio" for="ip_dhcp-6">DHCP</label>
+		<br/>
+
+		<input  class="trigger ip_static" type="radio" name="ip" value="static" id="ip_static-6" />
+		<label  class="radio" for="ip_static-6">Reserved IP</label>
+	      </div>
+	      <div id="dhcp-mac6"  class="dhcp-mac form-row odd">
+		<span  class="readonlyLabel">MAC Address:</span>
+        	<span  class="value">macD</span>
+	      </div>
+	      <div id="static-mac6"  class="static-mac form-row odd">
+		<label for="mac_address-6">MAC Address:</label>
+		<input type="text" name="mac_address" id="mac_address-6" value="macD" />
+	      </div>
+
+      	      <div id="static-ip6"  class="static-ip form-row odd" >
+		<label for="staticIPAddress-6">Reserved IP Address:</label>
+		<input type="text" value="10.0.0.59" id="staticIPAddress-6" name="staticIPAddress"  class="target" />
+	      </div>
+	      <div  class="form-row">
+		<label for="comment-6" >Comments:</label>
+		<textarea id="comment-6" name="comments" ros="6" cols="18" maxlength="63"></textarea>
+	      </div>
+
+	      <div  class="form-row form-btn">
+		<input type="button" id="submit_editDevice-6"  class="btn" value="Save"/>
+		<input type="reset" id="btn-cancel-6" class="btn-cancel btn alt reset" value="Cancel"/>
+	      </div>
+	    </form>
+
+	  </div> <!-- end .module -->
+        </div><!-- end #content -->
+      </div> <!-- end #main-content-->
+    </div> <!-- end #container -->
+  </body>
+</html>
