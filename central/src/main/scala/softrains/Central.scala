@@ -71,8 +71,11 @@ class Central
     }
   }
 
-  def login()
+  private def loginIfNeeded()
   {
+    if (!cookies.isEmpty) {
+      return
+    }
     val request = (url(settings.Router.url) / "check.php") << Map(
       "username" -> settings.Router.user,
       "password" -> settings.Router.password)
@@ -80,14 +83,26 @@ class Central
     cookies = result().getHeader("Set-Cookie")
   }
 
+  def requestLogin()
+  {
+    cookies = ""
+  }
+
   def runLan()
   {
+    val tenHours = 600
+    var nRequests = 0
     while (true) {
+      loginIfNeeded
       scanLan
       println(
         "ACTIVE = " +
           db.query[LanPresence].whereEqual("active", true).fetch.size)
       Thread.sleep(60000)
+      nRequests += 1
+      if ((nRequests % tenHours) == 0) {
+        requestLogin
+      }
     }
   }
 
@@ -129,6 +144,7 @@ class Central
     ex.printStackTrace(pw)
     pw.close
     db.save(ExceptionReport(tryTime, catchTime, sw.toString))
+    requestLogin
   }
 
   private def fetchDevices() =
@@ -244,6 +260,5 @@ class Central
 object CentralApp extends App
 {
   val central = new Central
-  central.login
   central.runLan
 }
