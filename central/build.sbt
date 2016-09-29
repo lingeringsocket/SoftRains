@@ -5,6 +5,7 @@ scalacOptions := Seq(
   "-deprecation", "-Xfatal-warnings")
 
 libraryDependencies ++= Seq(
+  "javax.mail" % "mail" % "1.4",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
   "nu.validator" % "htmlparser" % "1.4.4",
   "org.sorm-framework" % "sorm" % "0.3.20",

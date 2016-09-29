@@ -23,6 +23,13 @@ class CentralSettings(rootConf : Config)
     val password = subConf.getString("password")
   }
 
+  object Mail
+  {
+    val subConf = conf.getConfig("mail")
+    val user = subConf.getString("user")
+    val password = subConf.getString("password")
+  }
+
   object Test
   {
     val subConf = conf.getConfig("test")
@@ -32,12 +39,15 @@ class CentralSettings(rootConf : Config)
   object Residents
   {
     val subConf = conf.getConfig("residents")
-    val deviceMap : Map[String, String] =
-    {
-      val list = subConf.getObjectList("devices").asScala
-      Map(list.flatMap(_.entrySet.asScala).toSeq.map(entry => (
-        entry.getKey, entry.getValue.unwrapped.toString)):_*)
-    }
+    val deviceMap = readMap(subConf, "devices")
+    val emailMap = readMap(subConf, "email")
+  }
+
+  private def readMap(conf : Config, key : String) : Map[String, String] =
+  {
+    val list = conf.getObjectList(key).asScala
+    Map(list.flatMap(_.entrySet.asScala).toSeq.map(entry => (
+      entry.getKey, entry.getValue.unwrapped.toString)):_*)
   }
 }
 

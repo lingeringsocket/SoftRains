@@ -92,26 +92,33 @@ class Central
   {
     val tenHours = 600
     var nRequests = 0
+    var suppressEmail = true
     while (true) {
       loginIfNeeded
-      scanLan
-      println(
-        "ACTIVE = " +
+      scanLan(suppressEmail)
+      logEvent(
+        "Active device count: " +
           db.query[LanPresence].whereEqual("active", true).fetch.size)
       Thread.sleep(60000)
       nRequests += 1
       if ((nRequests % tenHours) == 0) {
         requestLogin
       }
+      suppressEmail = false
     }
   }
 
-  def scanLan()
+  def logEvent(msg : String)
+  {
+    println(msg)
+  }
+
+  def scanLan(suppressEmail : Boolean)
   {
     val scanTime = readClockTime
     try {
       val devicesHtml = fetchDevices
-      scanDevices(devicesHtml, scanTime)
+      scanDevices(devicesHtml, scanTime, suppressEmail)
     } catch {
       case ex : Exception => {
         handleException(scanTime, ex)
@@ -123,7 +130,7 @@ class Central
   {
     val scanTime = readClockTime
     try {
-      scanDevices(devicesHtml, readClockTime)
+      scanDevices(devicesHtml, readClockTime, true)
     } catch {
       case ex : Exception => {
         handleException(scanTime, ex)
@@ -155,7 +162,8 @@ class Central
     result()
   }
 
-  private def scanDevices(html : String, scanTime : DateTime)
+  private def scanDevices(
+    html : String, scanTime : DateTime, suppressEmail : Boolean)
   {
     val parser = new HTML5Parser
     val xml = parser.loadString(html)
@@ -175,10 +183,10 @@ class Central
       val macAddress = getInputValue(inputs, "mac_address")
       updatePresence(
         name + " " + macAddress, name, connectionType, ipAddress,
-        macAddress, scanTime)
+        macAddress, scanTime, suppressEmail)
     }
     markInactiveDevices(scanTime)
-    markInactiveResidents(scanTime)
+    markInactiveResidents(scanTime, suppressEmail)
   }
 
   private def markInactiveDevices(scanTime : DateTime)
@@ -192,14 +200,59 @@ class Central
     }
   }
 
-  private def markInactiveResidents(scanTime : DateTime)
+  private def markInactiveResidents(scanTime : DateTime, suppressEmail : Boolean)
   {
     val presences = db.query[HomePresence].
       whereEqual("active", true).
       whereSmaller("endTime", scanTime).
       fetch
     for (presence <- presences) {
+      val resident = presence.resident
       db.save(presence.copy(active = false))
+      logEvent("Resident departed:  " + resident.name)
+      if (!suppressEmail) {
+        sendMail(
+          resident,
+          "See ya later, " + resident.name + "!",
+          "Have a nice day :)")
+      }
+    }
+  }
+
+  def sendMail(resident : HomeResident, subject : String, body : String)
+  {
+    import javax.mail._
+    import javax.mail.internet._
+    import java.util.Properties
+
+    val properties = new Properties
+    properties.put("mail.smtp.auth", "true")
+    properties.put("mail.smtp.host", "smtp.gmail.com")
+    properties.put("mail.smtp.socketFactory.port", "465")
+    properties.put(
+      "mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+    properties.put("mail.smtp.port", "465")
+    val authenticator = new Authenticator {
+      override protected def getPasswordAuthentication =
+      {
+        new PasswordAuthentication(
+          settings.Mail.user,
+          settings.Mail.password)
+      }
+    }
+    val session = Session.getDefaultInstance(properties, authenticator)
+    val message = new MimeMessage(session)
+    message.setFrom(new InternetAddress(settings.Mail.user))
+    settings.Residents.emailMap.get(resident.name) match {
+      case Some(recipient) => {
+        message.setRecipients(
+          Message.RecipientType.TO,
+          recipient)
+        message.setSubject(subject)
+        message.setText(body)
+        Transport.send(message)
+      }
+      case _ =>
     }
   }
 
@@ -209,7 +262,8 @@ class Central
     connectionType : String,
     ipAddress : String,
     macAddress : String,
-    scanTime : DateTime)
+    scanTime : DateTime,
+    suppressEmail : Boolean)
   {
     val deviceOpt = db.query[LanDevice].whereEqual("name", name).fetchOne
     val device = deviceOpt match {
@@ -249,6 +303,13 @@ class Central
           case _ => {
             db.save(HomePresence(
               owner, scanTime, scanTime, true))
+            logEvent("Resident arrived:  " + owner.name)
+            if (!suppressEmail) {
+              sendMail(
+                owner,
+                "Welcome Home, " + owner.name + "!",
+                "Glad to see you back :)")
+            }
           }
         }
       }
