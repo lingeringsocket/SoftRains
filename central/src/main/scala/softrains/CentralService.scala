@@ -6,53 +6,10 @@ import org.joda.time._
 
 import java.io._
 
-import xml._
-import xml.parsing.NoBindingFactoryAdapter
-
-import dispatch._, Defaults._
-
-class HTML5Parser extends NoBindingFactoryAdapter
+class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
 {
-  override def loadXML(source : InputSource, _p: SAXParser) =
-  {
-    loadXML(source)
-  }
-
-  def loadXML(source : InputSource) =
-  {
-    import nu.validator.htmlparser.{sax,common}
-    import sax.HtmlParser
-    import common.XmlViolationPolicy
-
-    val reader = new HtmlParser
-    reader.setXmlPolicy(XmlViolationPolicy.ALLOW)
-    reader.setContentHandler(this)
-    reader.parse(source)
-    rootElem
-  }
-}
-
-class Central
-{
-  private var cookies = ""
-
-  val settings = CentralSettings(ConfigFactory.load)
-
   val db = new CentralDb(settings)
   seedDb
-
-  private def getTdText(tbl : NodeSeq) : Seq[String] =
-    (tbl \\ "td").map(_.text.trim)
-
-  private def getSpanText(nodeSeq : NodeSeq) : Seq[String] =
-    (nodeSeq \\ "span").map(_.text.trim)
-
-  private def getInputValue(inputs : NodeSeq, name : String) : String =
-  {
-    val input = inputs.filter(input =>
-      (input \ "@name").text.trim == name)
-    (input \ "@value").text.trim
-  }
 
   def seedDb()
   {
@@ -71,30 +28,13 @@ class Central
     }
   }
 
-  private def loginIfNeeded()
-  {
-    if (!cookies.isEmpty) {
-      return
-    }
-    val request = (url(settings.Router.url) / "check.php") << Map(
-      "username" -> settings.Router.user,
-      "password" -> settings.Router.password)
-    val result = Http(request)
-    cookies = result().getHeader("Set-Cookie")
-  }
-
-  def requestLogin()
-  {
-    cookies = ""
-  }
-
   def runLan()
   {
     val tenHours = 600
     var nRequests = 0
     var suppressEmail = true
     while (true) {
-      loginIfNeeded
+      deviceMonitor.loginIfNeeded
       scanLan(suppressEmail)
       logEvent(
         "Active device count: " +
@@ -102,7 +42,7 @@ class Central
       Thread.sleep(60000)
       nRequests += 1
       if ((nRequests % tenHours) == 0) {
-        requestLogin
+        deviceMonitor.requestLogin
       }
       suppressEmail = false
     }
@@ -117,20 +57,7 @@ class Central
   {
     val scanTime = readClockTime
     try {
-      val devicesHtml = fetchDevices
-      scanDevices(devicesHtml, scanTime, suppressEmail)
-    } catch {
-      case ex : Exception => {
-        handleException(scanTime, ex)
-      }
-    }
-  }
-
-  def scanLanString(devicesHtml : String)
-  {
-    val scanTime = readClockTime
-    try {
-      scanDevices(devicesHtml, readClockTime, true)
+      scanDevices(scanTime, suppressEmail)
     } catch {
       case ex : Exception => {
         handleException(scanTime, ex)
@@ -151,40 +78,14 @@ class Central
     ex.printStackTrace(pw)
     pw.close
     db.save(ExceptionReport(tryTime, catchTime, sw.toString))
-    requestLogin
-  }
-
-  private def fetchDevices() =
-  {
-    val request = (url(settings.Router.url) / "connected_devices_computers.php").
-      addHeader("Cookie", cookies)
-    val result = Http(request OK as.String)
-    result()
+    deviceMonitor.requestLogin
   }
 
   private def scanDevices(
-    html : String, scanTime : DateTime, suppressEmail : Boolean)
+    scanTime : DateTime, suppressEmail : Boolean)
   {
-    val parser = new HTML5Parser
-    val xml = parser.loadString(html)
-    val validationDivs = (xml \\ "div").filter(
-      div => (div \ "@class").text.trim == "cnt-device-main")
-    if (validationDivs.isEmpty) {
-      throw new RuntimeException("Unexpected device HTML")
-    }
-    val forms = (xml \\ "form").filter(
-      form => getSpanText(form).contains("Host Name:"))
-    for (form <- forms) {
-      val spanText = getSpanText(form)
-      val name = spanText(1)
-      val connectionType = spanText(3)
-      val inputs = form \\ "input"
-      val ipAddress = getInputValue(inputs, "staticIPAddress")
-      val macAddress = getInputValue(inputs, "mac_address")
-      updatePresence(
-        name + " " + macAddress, name, connectionType, ipAddress,
-        macAddress, scanTime, suppressEmail)
-    }
+    deviceMonitor.scanDevices.foreach(device =>
+      updatePresence(device, scanTime, suppressEmail))
     markInactiveDevices(scanTime)
     markInactiveResidents(scanTime, suppressEmail)
   }
@@ -257,19 +158,16 @@ class Central
   }
 
   private def updatePresence(
-    name : String,
-    displayName : String,
-    connectionType : String,
-    ipAddress : String,
-    macAddress : String,
+    deviceState : DeviceState,
     scanTime : DateTime,
     suppressEmail : Boolean)
   {
-    val deviceOpt = db.query[LanDevice].whereEqual("name", name).fetchOne
+    val deviceOpt = db.query[LanDevice].
+      whereEqual("name", deviceState.name).fetchOne
     val device = deviceOpt match {
       case Some(existingDevice) => existingDevice
       case _ => {
-        db.save(LanDevice(name, displayName))
+        db.save(LanDevice(deviceState.name, deviceState.displayName))
       }
     }
     val lanPresenceOpt = db.query[LanPresence].
@@ -285,8 +183,8 @@ class Central
       case _ => {
         db.save(LanPresence(
           device, scanTime, scanTime, true,
-          connectionType, ipAddress,
-          macAddress))
+          deviceState.connectionType, deviceState.ipAddress,
+          deviceState.macAddress))
       }
     }
     device.owner match {
@@ -320,6 +218,7 @@ class Central
 
 object CentralApp extends App
 {
-  val central = new Central
+  val settings = CentralSettings(ConfigFactory.load)
+  val central = new CentralService(settings, new CableRouterMonitor(settings))
   central.runLan
 }

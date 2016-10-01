@@ -1,5 +1,7 @@
 package softrains
 
+import com.typesafe.config._
+
 import io.Source
 
 import org.specs2.mutable._
@@ -14,12 +16,35 @@ trait DateTimeOrderingImplicit
   }
 }
 
+class MockCableRouterMonitor
+    extends AbstractCableRouterMonitor
+{
+  private var deviceHtml = ""
+
+  def setHtml(html : String)
+  {
+    deviceHtml = html
+  }
+
+  override protected def fetchDevices() = deviceHtml
+
+  override def loginIfNeeded()
+  {
+  }
+
+  override def requestLogin()
+  {
+  }
+}
+
 class CentralSpec extends Specification with DateTimeOrderingImplicit
 {
   // database state is shared, so we need isolation
   sequential
 
-  private val central = new Central
+  private val deviceMonitor = new MockCableRouterMonitor
+  private val settings = CentralSettings(ConfigFactory.load)
+  private val central = new CentralService(settings, deviceMonitor)
 
   private def getDeviceCount =
     central.db.query[LanDevice].fetch.size
@@ -56,15 +81,18 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2
       getHomeActiveCount must be equalTo 0
-      central.scanLanString(readResource("/devices1.html"))
+      deviceMonitor.setHtml(readResource("/devices1.html"))
+      central.scanLan(true)
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
-      central.scanLanString(readResource("/devices2.html"))
+      deviceMonitor.setHtml(readResource("/devices2.html"))
+      central.scanLan(true)
       getLanActiveCount must be equalTo 4
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 2
-      central.scanLanString(readResource("/devices1.html"))
+      deviceMonitor.setHtml(readResource("/devices1.html"))
+      central.scanLan(true)
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
@@ -74,7 +102,8 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
     {
       getExceptionCount must be equalTo 0
       val startTime = central.readClockTime
-      central.scanLanString("<blah>")
+      deviceMonitor.setHtml("<blah>")
+      central.scanLan(true)
       val endTime = central.readClockTime
       getExceptionCount must be equalTo 1
       val report = central.db.query[ExceptionReport].fetchOne.get
