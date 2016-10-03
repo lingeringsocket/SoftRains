@@ -57,6 +57,12 @@ class CentralSettings(rootConf : Config)
     val emailMap = readMap(subConf, "email")
   }
 
+  object Cameras
+  {
+    val subConf = conf.getConfig("cameras")
+    val urlMap = readMap(subConf, "urls")
+  }
+
   private def readMap(conf : Config, key : String) : Map[String, String] =
   {
     val list = conf.getObjectList(key).asScala

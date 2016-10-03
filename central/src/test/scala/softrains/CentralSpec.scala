@@ -60,6 +60,9 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
   private val settings = CentralSettings(ConfigFactory.load)
   private val central = new CentralService(settings, deviceMonitor)
 
+  private def getCameraCount =
+    central.db.query[CameraFeed].fetch.size
+
   private def getDeviceCount =
     central.db.query[LanDevice].fetch.size
 
@@ -83,6 +86,7 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
   {
     "seed DB" in
     {
+      getCameraCount must be equalTo 1
       getHomeActiveCount must be equalTo 0
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2

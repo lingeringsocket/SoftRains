@@ -1,0 +1,58 @@
+img.house {
+    position: absolute;
+    content: url(house.png);
+    margin-left: 20px;
+    margin-top: 20px;
+    width: 500px;
+    height: 400px;
+    top: 0;
+}
+
+img#John {
+    position: absolute;
+}
+
+img#Sujin {
+    position: absolute;
+}
+
+img.John-inside {
+    top: 200px;
+    left: 100px;
+    width: 150px;
+    height: 142px;
+    content: url(john-inside.png);
+}
+
+img.John-outside {
+    top: 400px;
+    left: 600px;
+    width: 300px;
+    height: 202px;
+    content: url(john-outside.png);
+}
+
+img.Sujin-inside {
+    top: 150px;
+    left: 300px;
+    width: 81px;
+    height: 150px;
+    content: url(sujin-inside.png);
+}
+
+img.Sujin-outside {
+    top: 100px;
+    left: 600px;
+    width: 250px;
+    height: 300px;
+    content: url(sujin-outside.png);
+}
+
+img.cctv {
+    position: absolute;
+    content: url(cctv.png);
+    top: 450px;
+    left: 200px;
+    width: 100px;
+    height: 100px;
+}

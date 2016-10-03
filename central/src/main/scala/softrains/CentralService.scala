@@ -40,6 +40,17 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
         }
       }
     }
+    val cameraMap = settings.Cameras.urlMap
+    if (!cameraMap.isEmpty) {
+      val cameraCount = db.query[CameraFeed].fetch.size
+      if (cameraCount == 0) {
+        cameraMap.foreach {
+          case (cameraName, url) => {
+            db.save(CameraFeed(cameraName, url))
+          }
+        }
+      }
+    }
   }
 
   def runLan()
@@ -187,7 +198,6 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     val lanPresenceOpt = db.query[LanPresence].
       whereEqual("device.id", device.id).
       whereEqual("active", true).
-      limit(1).
       fetchOne
     lanPresenceOpt match {
       case Some(presence) => {
@@ -206,7 +216,6 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
         val homePresenceOpt = db.query[HomePresence].
           whereEqual("resident", owner).
           whereEqual("active", true).
-          limit(1).
           fetchOne
         homePresenceOpt match {
           case Some(presence) => {
@@ -230,9 +239,13 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
   }
 }
 
-object CentralApp extends App
+object CentralSingleton
 {
   val settings = CentralSettings(ConfigFactory.load)
-  val central = new CentralService(settings, new CableRouterMonitor(settings))
-  central.runLan
+  val service = new CentralService(settings, new CableRouterMonitor(settings))
+}
+
+object CentralApp extends App
+{
+  CentralSingleton.service.runLan
 }

@@ -41,6 +41,11 @@ case class HomePresence(
   active : Boolean
 )
 
+case class CameraFeed(
+  name : String,
+  url : String
+)
+
 case class ExceptionReport(
   tryTime : DateTime,
   catchTime : DateTime,
@@ -50,6 +55,7 @@ case class ExceptionReport(
 class CentralDb(settings : CentralSettings) extends Instance (
   entities = Set(
     Entity[ExceptionReport](),
+    Entity[CameraFeed](unique = Set() + Seq("name")),
     Entity[HomeResident](unique = Set() + Seq("name")),
     Entity[HomePresence](),
     Entity[LanDevice](unique = Set() + Seq("name")),
