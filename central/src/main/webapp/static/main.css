@@ -1,4 +1,4 @@
-img.house {
+img.house, img.house::after {
     content: url(house.png);
     position: absolute;
     margin-left: 20px;
@@ -6,10 +6,6 @@ img.house {
     width: 500px;
     height: 400px;
     top: 0;
-}
-
-img.house::after {
-    content: url(house.png);
 }
 
 img#John {
@@ -20,7 +16,7 @@ img#Sujin {
     position: absolute;
 }
 
-img.John-inside {
+img.John-inside, img.John-inside::after {
     top: 200px;
     left: 100px;
     width: 150px;
@@ -28,11 +24,7 @@ img.John-inside {
     content: url(john-inside.png);
 }
 
-img.John-inside::after {
-    content: url(john-inside.png);
-}
-
-img.John-outside {
+img.John-outside, img.John-outside::after {
     top: 400px;
     left: 600px;
     width: 300px;
@@ -40,11 +32,7 @@ img.John-outside {
     content: url(john-outside.png);
 }
 
-img.John-outside::after {
-    content: url(john-outside.png);
-}
-
-img.Sujin-inside {
+img.Sujin-inside, img.Sujin-inside::after {
     top: 150px;
     left: 300px;
     width: 81px;
@@ -52,11 +40,7 @@ img.Sujin-inside {
     content: url(sujin-inside.png);
 }
 
-img.Sujin-inside::after {
-    content: url(sujin-inside.png);
-}
-
-img.Sujin-outside {
+img.Sujin-outside, img.Sujin-outside::after {
     top: 100px;
     left: 600px;
     width: 250px;
@@ -64,19 +48,11 @@ img.Sujin-outside {
     content: url(sujin-outside.png);
 }
 
-img.Sujin-outside::after {
-    content: url(sujin-outside.png);
-}
-
-img.cctv {
+img.cctv, img.cctv::after {
     position: absolute;
     content: url(cctv.png);
     top: 450px;
     left: 200px;
     width: 100px;
     height: 100px;
-}
-
-img.cctv::after {
-    content: url(cctv.png);
 }
