@@ -3,8 +3,8 @@ img.house, img.house::after {
     position: absolute;
     margin-left: 20px;
     margin-top: 20px;
-    width: 500px;
-    height: 400px;
+    max-width: 500px;
+    max-height: 400px;
     top: 0;
 }
 
@@ -19,32 +19,32 @@ img#Sujin {
 img.John-inside, img.John-inside::after {
     top: 200px;
     left: 100px;
-    width: 150px;
-    height: 142px;
+    max-width: 150px;
+    max-height: 142px;
     content: url(john-inside.png);
 }
 
 img.John-outside, img.John-outside::after {
     top: 400px;
     left: 600px;
-    width: 300px;
-    height: 202px;
+    max-width: 300px;
+    max-height: 202px;
     content: url(john-outside.png);
 }
 
 img.Sujin-inside, img.Sujin-inside::after {
     top: 150px;
     left: 300px;
-    width: 81px;
-    height: 150px;
+    max-width: 81px;
+    max-height: 150px;
     content: url(sujin-inside.png);
 }
 
 img.Sujin-outside, img.Sujin-outside::after {
     top: 100px;
     left: 600px;
-    width: 250px;
-    height: 300px;
+    max-width: 250px;
+    max-height: 300px;
     content: url(sujin-outside.png);
 }
 
@@ -53,6 +53,6 @@ img.cctv, img.cctv::after {
     content: url(cctv.png);
     top: 450px;
     left: 200px;
-    width: 100px;
-    height: 100px;
+    max-width: 100px;
+    max-height: 100px;
 }
