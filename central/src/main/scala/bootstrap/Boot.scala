@@ -16,6 +16,7 @@ package bootstrap.liftweb
 
 import net.liftweb.http.{Html5Properties, LiftRules, Req}
 import net.liftweb.sitemap.{Menu, SiteMap}
+import net.liftmodules.JQueryModule
 
 class Boot
 {
@@ -35,5 +36,8 @@ class Boot
 
     LiftRules.htmlProperties.default.set((r: Req) =>
       new Html5Properties(r.userAgent))
+
+    JQueryModule.InitParam.JQuery=JQueryModule.JQuery111Z
+    JQueryModule.init
   }
 }
