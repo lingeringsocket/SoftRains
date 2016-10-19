@@ -8,6 +8,20 @@ seq(webSettings :_*)
 
 val liftVersion = "3.0-RC3"
 
+val opencvVersion = "3.1.0"
+
+val javacppVersion = "1.2"
+
+val javacppPointVersion = "1.2.1"
+
+val ffmpegVersion = "3.0.2"
+
+val platform = org.bytedeco.javacpp.Loader.getPlatform
+
+autoCompilerPlugins := true
+
+classpathTypes += "maven-plugin"
+
 libraryDependencies ++= Seq(
   "net.liftweb" %% "lift-webkit" % liftVersion % "compile",
   "net.liftmodules" %% "lift-jquery-module_3.0" % "2.10",
@@ -18,6 +32,17 @@ libraryDependencies ++= Seq(
   "javax.mail" % "mail" % "1.4",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
   "nu.validator" % "htmlparser" % "1.4.4",
+  "org.bytedeco" % "javacv" % javacppVersion,
+  "org.bytedeco" % "javacpp" % javacppPointVersion,
+  "org.bytedeco.javacpp-presets" % "opencv" %
+    (opencvVersion + "-" + javacppVersion) % "compile" classifier "",
+  "org.bytedeco.javacpp-presets" % "opencv" %
+    (opencvVersion + "-" + javacppVersion) % "compile" classifier platform,
+  "org.bytedeco.javacpp-presets" % "ffmpeg" %
+    (ffmpegVersion + "-" + javacppVersion) % "compile" classifier "",
+  "org.bytedeco.javacpp-presets" % "ffmpeg" %
+    (ffmpegVersion + "-" + javacppVersion) % "compile" classifier platform,
+  "com.jsuereth" %% "scala-arm" % "1.4",
   "org.sorm-framework" % "sorm" % "0.3.20",
   "com.h2database" % "h2" % "1.3.168",
   "org.postgresql" % "postgresql" % "9.4.1210",

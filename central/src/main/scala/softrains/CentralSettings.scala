@@ -15,7 +15,10 @@
 package softrains
 
 import com.typesafe.config._
+
 import scala.collection.JavaConverters._
+
+import java.io._
 
 class CentralSettings(rootConf : Config)
 {
@@ -42,6 +45,12 @@ class CentralSettings(rootConf : Config)
     val subConf = conf.getConfig("mail")
     val user = subConf.getString("user")
     val password = subConf.getString("password")
+  }
+
+  object Files
+  {
+    val subConf = conf.getConfig("files")
+    val videoPath = new File(subConf.getString("video-path"))
   }
 
   object Test

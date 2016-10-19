@@ -53,6 +53,18 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     }
   }
 
+  def runCamera()
+  {
+    db.query[CameraFeed].fetchOne.foreach(feed => {
+      val view = new CameraDesktopView(feed)
+      val input = new CameraFeedInput(feed)
+      val sentinel = new CameraSentinel(input, view)
+      sentinel.enableFaceDetection
+      sentinel.enableMotionRecording(settings.Files.videoPath)
+      sentinel.run
+    })
+  }
+
   def runLan()
   {
     val tenHours = 600
@@ -247,5 +259,5 @@ object CentralSingleton
 
 object CentralApp extends App
 {
-  CentralSingleton.service.runLan
+  CentralSingleton.service.runCamera
 }

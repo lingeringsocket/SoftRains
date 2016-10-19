@@ -10,3 +10,4 @@ lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
+data/haarcascade_frontalface_alt.xml

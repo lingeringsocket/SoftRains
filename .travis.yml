@@ -1,0 +1,21 @@
+language: scala
+
+scala:
+  - 2.11.8
+
+jdk:
+  - oraclejdk8
+
+sudo: required
+
+dist: trusty
+
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get -qq update
+
+install:
+  - sudo apt-get install -qq libopencv-dev libstdc++6
+  - wget -O central/data/haarcascade_frontalface_alt.xml https://raw.githubusercontent.com/opencv/opencv/2.4.9.1/data/haarcascades/haarcascade_frontalface_alt.xml
+
+script: cd central && sbt ++$TRAVIS_SCALA_VERSION clean test
