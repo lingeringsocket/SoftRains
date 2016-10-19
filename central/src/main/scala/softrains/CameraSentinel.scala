@@ -289,9 +289,6 @@ class CameraSentinel(input : CameraInput, view : CameraView)
                 CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH,
                 cvSize(0, 0), cvSize(0, 0))
               if (faces != null) {
-                if (faces.total > 0) {
-                  println("DETECT")
-                }
                 faceFrameCount += faces.total
                   (0 until faces.total).foreach(
                     i => {
@@ -367,7 +364,6 @@ class VideoRecorder(filterString : String = "")
 
   def storeFaceDetected()
   {
-    println("STORE")
     faceDetectedFile.foreach(_.createNewFile)
   }
 
