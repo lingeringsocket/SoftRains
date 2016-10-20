@@ -27,8 +27,10 @@ class CameraSentinelSpec extends Specification
       Fragment.foreach(
         Seq(
           ("data/johnLeaving.mkv", 0),
-          ("data/johnArriving.mkv", 5),
-          ("data/slowCar.mkv", 0)))
+          ("data/rhiannonArriving.mkv", 1),
+          ("data/johnArriving.mkv", 13),
+          ("data/muniLeft.mkv", 0),
+          ("data/nightCar.mkv", 0)))
       {
         case (fileName, expectedCount) =>
           "in file " + fileName >> {

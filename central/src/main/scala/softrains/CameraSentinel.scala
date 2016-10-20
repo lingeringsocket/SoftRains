@@ -211,9 +211,8 @@ class CameraSentinel(input : CameraInput, view : CameraView)
     recorder.quit
   }
 
-  private def loadClassifier() =
+  private def loadClassifier(classifierName : String) =
   {
-    val classifierName = "haarcascade_frontalface_alt.xml"
     val classifierFile = new File("data", classifierName)
     if ((classifierFile == null) || (classifierFile.length <= 0)) {
       throw new IOException(
@@ -239,10 +238,29 @@ class CameraSentinel(input : CameraInput, view : CameraView)
     newFrameConverter.convert(frame)
   }
 
+  private def applyClassifier(
+    classifier : CvHaarClassifierCascade,
+    storage : CvMemStorage,
+    gray : IplImage) : Seq[CvRect] =
+  {
+    cvClearMemStorage(storage)
+    val seq = cvHaarDetectObjects(
+      gray, classifier, storage, 1.1, 10,
+      CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH,
+      cvSize(0, 0), cvSize(0, 0))
+    if (seq == null) {
+      Seq.empty
+    } else {
+      (0 until seq.total).map(
+        i => new CvRect(cvGetSeqElem(seq, i)))
+    }
+  }
+
   def run()
   {
     input.startGrabber
-    val classifier = loadClassifier
+    val frontClassifier = loadClassifier("haarcascade_frontalface_alt.xml")
+    val profileClassifier = loadClassifier("haarcascade_profileface.xml")
     val storage = AbstractCvMemStorage.create
     var diffOpt : Option[IplImage] = None
     var grayOpt : Option[IplImage] = None
@@ -283,25 +301,24 @@ class CameraSentinel(input : CameraInput, view : CameraView)
               recorder.store(frame)
             }
             if (detectFaces) {
-              cvClearMemStorage(storage)
-              val faces = cvHaarDetectObjects(
-                gray, classifier, storage, 1.5, 3,
-                CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH,
-                cvSize(0, 0), cvSize(0, 0))
-              if (faces != null) {
-                faceFrameCount += faces.total
-                  (0 until faces.total).foreach(
-                    i => {
-                      val rect = new CvRect(cvGetSeqElem(faces, i))
-                      cvRectangle(
-                        img,
-                        cvPoint(rect.x, rect.y),
-                        cvPoint(rect.x+rect.width, rect.y+rect.height),
-                        cvScalar(0, 0, 255, 0),
-                        2, 8, 0)
-                    }
-                  )
+              val frontFaces = applyClassifier(
+                frontClassifier, storage, gray)
+              val profileFaces = applyClassifier(
+                profileClassifier, storage, gray)
+              val faces = frontFaces ++ profileFaces
+              if (!faces.isEmpty) {
+                faceFrameCount += 1
               }
+              faces.foreach(
+                rect => {
+                  cvRectangle(
+                    img,
+                    cvPoint(rect.x, rect.y),
+                    cvPoint(rect.x+rect.width, rect.y+rect.height),
+                    cvScalar(0, 0, 255, 0),
+                    2, 8, 0)
+                }
+              )
             }
             view.display(frame)
             img.release
