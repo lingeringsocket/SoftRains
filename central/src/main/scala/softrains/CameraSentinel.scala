@@ -25,6 +25,7 @@ import java.awt.event._
 import javax.swing._
 
 import org.bytedeco.javacpp.opencv_imgproc._
+import org.bytedeco.javacpp.opencv_imgcodecs._
 import org.bytedeco.javacpp.helper.opencv_core._
 import org.bytedeco.javacpp.opencv_video._
 import org.bytedeco.javacpp.opencv_core._
@@ -178,11 +179,19 @@ class CameraSentinel(input : CameraInput, view : CameraView)
 
   private val bgSubtractor = createBackgroundSubtractorMOG2(200, 130, false)
 
-  private var detectFaces = false
+  private var saveFaces = false
+
+  private var detectVisitors = false
 
   private var recordingDirOpt : Option[File] = None
 
+  private var visitorFrameCount = 0
+
   private var faceFrameCount = 0
+
+  private var nextFaceNumber = 0
+
+  def getVisitorFrameCount = visitorFrameCount
 
   def getFaceFrameCount = faceFrameCount
 
@@ -199,9 +208,10 @@ class CameraSentinel(input : CameraInput, view : CameraView)
     recordingDirOpt = Some(recordingDir)
   }
 
-  def enableFaceDetection()
+  def enableVisitorDetection(save : Boolean)
   {
-    detectFaces = true
+    detectVisitors = true
+    saveFaces = save
   }
 
   private def quit()
@@ -259,9 +269,10 @@ class CameraSentinel(input : CameraInput, view : CameraView)
   def run()
   {
     input.startGrabber
-    val frontClassifier = loadClassifier("haarcascade_frontalface_alt.xml")
-    val profileClassifier = loadClassifier("haarcascade_profileface.xml")
-    val storage = AbstractCvMemStorage.create
+    val visitorClassifier = loadClassifier("haarcascade_upperbody.xml")
+    val faceClassifier = loadClassifier("haarcascade_frontalface_alt.xml")
+    val visitorStorage = AbstractCvMemStorage.create
+    val faceStorage = AbstractCvMemStorage.create
     var diffOpt : Option[IplImage] = None
     var grayOpt : Option[IplImage] = None
     try {
@@ -290,35 +301,54 @@ class CameraSentinel(input : CameraInput, view : CameraView)
                 if (nonZeroCount > 10) {
                   recorder.enableRecording(recordingDirOpt)
                 } else {
+                  if (visitorFrameCount > 0) {
+                    recorder.storeVisitorDetected()
+                  }
                   if (faceFrameCount > 0) {
                     recorder.storeFaceDetected()
                   }
                   recorder.enableRecording(None)
                   recorder.quit
                   faceFrameCount = 0
+                  visitorFrameCount = 0
                 }
               }
               recorder.store(frame)
             }
-            if (detectFaces) {
-              val frontFaces = applyClassifier(
-                frontClassifier, storage, gray)
-              val profileFaces = applyClassifier(
-                profileClassifier, storage, gray)
-              val faces = frontFaces ++ profileFaces
-              if (!faces.isEmpty) {
-                faceFrameCount += 1
+            if (detectVisitors) {
+              val visitors = applyClassifier(
+                visitorClassifier, visitorStorage, gray)
+              if (!visitors.isEmpty) {
+                visitorFrameCount += 1
               }
-              faces.foreach(
-                rect => {
-                  cvRectangle(
-                    img,
-                    cvPoint(rect.x, rect.y),
-                    cvPoint(rect.x+rect.width, rect.y+rect.height),
-                    cvScalar(0, 0, 255, 0),
-                    2, 8, 0)
+              visitors.foreach(visitor => {
+                cvSetImageROI(gray, visitor)
+                val faces = applyClassifier(
+                  faceClassifier, faceStorage, gray)
+                cvResetImageROI(gray)
+                if (!faces.isEmpty) {
+                  faceFrameCount += 1
                 }
-              )
+                if (saveFaces) {
+                  faces.foreach(
+                    face => {
+                      cvSetImageROI(img, nestRect(visitor, face))
+                      val outFileName = "/tmp/face" + nextFaceNumber + ".jpg"
+                      nextFaceNumber += 1
+                      cvSaveImage(outFileName, img)
+                      cvResetImageROI(img)
+                    }
+                  )
+                }
+                cvSetImageROI(img, visitor)
+                faces.foreach(
+                  face => highlightRectangle(img, face)
+                )
+                cvResetImageROI(img)
+                if (faces.isEmpty) {
+                  highlightRectangle(img, visitor)
+                }
+              })
             }
             view.display(frame)
             img.release
@@ -327,11 +357,29 @@ class CameraSentinel(input : CameraInput, view : CameraView)
         }
       }
     } finally {
-      storage.release
+      visitorStorage.release
+      faceStorage.release
       diffOpt.foreach(_.release)
       grayOpt.foreach(_.release)
       quit
     }
+  }
+
+  private def nestRect(outerRect : CvRect, innerRect : CvRect) : CvRect =
+    new CvRect(
+      outerRect.x + innerRect.x,
+      outerRect.y + innerRect.y,
+      innerRect.width,
+      innerRect.height)
+
+  private def highlightRectangle(img : IplImage, rect : CvRect)
+  {
+    cvRectangle(
+      img,
+      cvPoint(rect.x, rect.y),
+      cvPoint(rect.x+rect.width, rect.y+rect.height),
+      cvScalar(0, 0, 255, 0),
+      2, 8, 0)
   }
 }
 
@@ -343,6 +391,8 @@ class VideoRecorder(filterString : String = "")
 
   private var recordingDirOpt : Option[File] = None
 
+  private var visitorDetectedFile : Option[File] = None
+
   private var faceDetectedFile : Option[File] = None
 
   private def isEnabled = !recordingDirOpt.isEmpty
@@ -353,6 +403,7 @@ class VideoRecorder(filterString : String = "")
   {
     recordingDirOpt = dirOpt
     if (!isEnabled) {
+      visitorDetectedFile = None
       faceDetectedFile = None
     }
   }
@@ -370,6 +421,7 @@ class VideoRecorder(filterString : String = "")
     val timestamp = sdfFilename.format(Calendar.getInstance.getTime)
     val recordingDir = recordingDirOpt.get
     val file = new File(recordingDir, "r" + timestamp + "." + suffix)
+    visitorDetectedFile = Some(new File(recordingDir, "v" + timestamp + ".txt"))
     faceDetectedFile = Some(new File(recordingDir, "f" + timestamp + ".txt"))
     val r = new FFmpegFrameRecorder(file, width, height)
     r.setFormat(suffix)
@@ -382,6 +434,11 @@ class VideoRecorder(filterString : String = "")
   def storeFaceDetected()
   {
     faceDetectedFile.foreach(_.createNewFile)
+  }
+
+  def storeVisitorDetected()
+  {
+    visitorDetectedFile.foreach(_.createNewFile)
   }
 
   def store(frame : CvFrame)

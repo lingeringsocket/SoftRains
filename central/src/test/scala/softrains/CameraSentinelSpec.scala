@@ -26,20 +26,21 @@ class CameraSentinelSpec extends Specification
     "detect faces" >> {
       Fragment.foreach(
         Seq(
-          ("data/johnLeaving.mkv", 0),
-          ("data/rhiannonArriving.mkv", 1),
-          ("data/johnArriving.mkv", 13),
-          ("data/muniLeft.mkv", 0),
-          ("data/nightCar.mkv", 0)))
+          ("data/johnLeaving.mkv", 0, 2),
+          ("data/rhiannonArriving.mkv", 0, 3),
+          ("data/johnArriving.mkv", 4, 8),
+          ("data/muniLeft.mkv", 0, 0),
+          ("data/nightCar.mkv", 0, 0)))
       {
-        case (fileName, expectedCount) =>
+        case (fileName, faceCount, visitorCount) =>
           "in file " + fileName >> {
             {
               val input = new CameraFileInput(new File(fileName))
               val sentinel = new CameraSentinel(input, CameraNullView)
-              sentinel.enableFaceDetection
+              sentinel.enableVisitorDetection(true)
               sentinel.run
-              sentinel.getFaceFrameCount must be equalTo expectedCount
+              sentinel.getFaceFrameCount must be equalTo faceCount
+              sentinel.getVisitorFrameCount must be equalTo visitorCount
             }
           }
       }
