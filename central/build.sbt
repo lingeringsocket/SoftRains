@@ -54,3 +54,5 @@ libraryDependencies ++= Seq(
 scalaVersion := "2.11.8"
 
 parallelExecution in Test := false
+
+scalastyleFailOnError := true

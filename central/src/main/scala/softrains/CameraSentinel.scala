@@ -160,7 +160,7 @@ class CameraDesktopView(feed : CameraFeed) extends CameraView
   }
 
   override def isClosed() = closed
-  
+
   override def display(frame : CvFrame)
   {
     canvasFrame.showImage(frame)
@@ -377,7 +377,7 @@ class CameraSentinel(input : CameraInput, view : CameraView)
     cvRectangle(
       img,
       cvPoint(rect.x, rect.y),
-      cvPoint(rect.x+rect.width, rect.y+rect.height),
+      cvPoint(rect.x + rect.width, rect.y + rect.height),
       cvScalar(0, 0, 255, 0),
       2, 8, 0)
   }

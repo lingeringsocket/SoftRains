@@ -138,7 +138,8 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     }
   }
 
-  private def markInactiveResidents(scanTime : DateTime, suppressEmail : Boolean)
+  private def markInactiveResidents(
+    scanTime : DateTime, suppressEmail : Boolean)
   {
     val presences = db.query[HomePresence].
       whereEqual("active", true).

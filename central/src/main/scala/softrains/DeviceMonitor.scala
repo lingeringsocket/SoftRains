@@ -70,8 +70,9 @@ class CableRouterMonitor(settings : CentralSettings)
 
   override protected def fetchDevices() =
   {
-    val request = (url(settings.Router.url) / "connected_devices_computers.php").
-      addHeader("Cookie", cookies)
+    val request =
+      (url(settings.Router.url) / "connected_devices_computers.php").
+        addHeader("Cookie", cookies)
     val result = Http(request OK as.String)
     result()
   }
