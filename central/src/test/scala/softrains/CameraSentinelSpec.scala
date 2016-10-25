@@ -37,7 +37,7 @@ class CameraSentinelSpec extends Specification
             {
               val input = new CameraFileInput(new File(fileName))
               val sentinel = new CameraSentinel(input, CameraNullView)
-              sentinel.enableVisitorDetection(true)
+              sentinel.enableVisitorDetection(false)
               sentinel.run
               sentinel.getFaceFrameCount must be equalTo faceCount
               sentinel.getVisitorFrameCount must be equalTo visitorCount
