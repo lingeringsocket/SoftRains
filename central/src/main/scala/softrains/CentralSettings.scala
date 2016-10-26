@@ -53,6 +53,12 @@ class CentralSettings(rootConf : Config)
     val videoPath = new File(subConf.getString("video-path"))
   }
 
+  object Visitors
+  {
+    val subConf = conf.getConfig("visitors")
+    val minSize = subConf.getInt("min-size")
+  }
+
   object Test
   {
     val subConf = conf.getConfig("test")

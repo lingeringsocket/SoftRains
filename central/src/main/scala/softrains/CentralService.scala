@@ -58,9 +58,9 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     db.query[CameraFeed].fetchOne.foreach(feed => {
       val view = new CameraDesktopView(feed)
       val input = new CameraFeedInput(feed)
-      val sentinel = new CameraSentinel(input, view)
+      val sentinel = new CameraSentinel(input, view, settings)
       sentinel.enableVisitorDetection(false)
-      sentinel.enableMotionRecording(settings.Files.videoPath)
+      sentinel.enableMotionRecording
       sentinel.run
     })
   }

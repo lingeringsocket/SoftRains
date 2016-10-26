@@ -173,11 +173,14 @@ class CameraDesktopView(feed : CameraFeed) extends CameraView
   }
 }
 
-class CameraSentinel(input : CameraInput, view : CameraView)
+class CameraSentinel(
+  input : CameraInput, view : CameraView, settings : CentralSettings)
 {
   private val recorder = new VideoRecorder
 
   private val bgSubtractor = createBackgroundSubtractorMOG2(200, 130, false)
+
+  private val minVisitorSize = settings.Visitors.minSize
 
   private var saveFaces = false
 
@@ -197,8 +200,9 @@ class CameraSentinel(input : CameraInput, view : CameraView)
 
   private def recordMotion = !recordingDirOpt.isEmpty
 
-  def enableMotionRecording(recordingDir : File)
+  def enableMotionRecording()
   {
+    val recordingDir = settings.Files.videoPath
     if (!recordingDir.isDirectory) {
       if (!recordingDir.mkdirs) {
         throw new IOException(
@@ -251,13 +255,14 @@ class CameraSentinel(input : CameraInput, view : CameraView)
   private def applyClassifier(
     classifier : CvHaarClassifierCascade,
     storage : CvMemStorage,
-    gray : IplImage) : Seq[CvRect] =
+    gray : IplImage,
+    minSize : Int = 0) : Seq[CvRect] =
   {
     cvClearMemStorage(storage)
     val seq = cvHaarDetectObjects(
       gray, classifier, storage, 1.1, 10,
       CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_DO_ROUGH_SEARCH,
-      cvSize(0, 0), cvSize(0, 0))
+      cvSize(minSize, minSize), cvSize(0, 0))
     if (seq == null) {
       Seq.empty
     } else {
@@ -317,7 +322,7 @@ class CameraSentinel(input : CameraInput, view : CameraView)
             }
             if (detectVisitors) {
               val visitors = applyClassifier(
-                visitorClassifier, visitorStorage, gray)
+                visitorClassifier, visitorStorage, gray, minVisitorSize)
               if (!visitors.isEmpty) {
                 visitorFrameCount += 1
               }

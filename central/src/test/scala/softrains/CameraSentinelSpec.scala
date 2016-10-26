@@ -14,6 +14,8 @@
 // limitations under the License.
 package softrains
 
+import com.typesafe.config._
+
 import org.specs2.mutable._
 import org.specs2.specification.core._
 
@@ -21,14 +23,17 @@ import java.io._
 
 class CameraSentinelSpec extends Specification
 {
+  private val settings = CentralSettings(ConfigFactory.load)
+
   "CameraSentinel" should
   {
     "detect faces" >> {
       Fragment.foreach(
         Seq(
           ("data/johnLeaving.mkv", 0, 2),
-          ("data/rhiannonArriving.mkv", 0, 3),
+          ("data/rhiannonArriving.mkv", 0, 2),
           ("data/johnArriving.mkv", 4, 8),
+          ("data/pedestrians.mkv", 0, 0),
           ("data/muniLeft.mkv", 0, 0),
           ("data/nightCar.mkv", 0, 0)))
       {
@@ -36,7 +41,8 @@ class CameraSentinelSpec extends Specification
           "in file " + fileName >> {
             {
               val input = new CameraFileInput(new File(fileName))
-              val sentinel = new CameraSentinel(input, CameraNullView)
+              val sentinel = new CameraSentinel(
+                input, CameraNullView, settings)
               sentinel.enableVisitorDetection(false)
               sentinel.run
               sentinel.getFaceFrameCount must be equalTo faceCount
