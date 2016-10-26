@@ -31,7 +31,8 @@ class CameraSentinelSpec extends Specification
       Fragment.foreach(
         Seq(
           ("data/johnLeaving.mkv", 0, 2),
-          ("data/rhiannonArriving.mkv", 0, 2),
+          ("data/rhiannonArriving.mkv", 0, 3),
+          ("data/rhiannonLeaving.mkv", 0, 1),
           ("data/johnArriving.mkv", 4, 8),
           ("data/pedestrians.mkv", 0, 0),
           ("data/muniLeft.mkv", 0, 0),
