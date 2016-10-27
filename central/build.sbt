@@ -31,6 +31,7 @@ libraryDependencies ++= Seq(
     "container,compile" artifacts Artifact("javax.servlet", "jar", "jar"),
   "javax.mail" % "mail" % "1.4",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
+  "com.meetup" %% "archery" % "0.4.0",
   "nu.validator" % "htmlparser" % "1.4.4",
   "org.bytedeco" % "javacv" % javacppVersion,
   "org.bytedeco" % "javacpp" % javacppPointVersion,

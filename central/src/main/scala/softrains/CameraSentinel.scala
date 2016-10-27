@@ -31,8 +31,11 @@ import org.bytedeco.javacpp.opencv_video._
 import org.bytedeco.javacpp.opencv_core._
 import org.bytedeco.javacpp.opencv_objdetect._
 import org.bytedeco.javacpp.avutil._
+import org.bytedeco.javacpp._
 import org.bytedeco.javacv._
 import org.bytedeco.javacv.{Frame => CvFrame}
+
+import scala.collection._
 
 object UrlAuthHandler extends sun.net.www.protocol.http.Handler
 {
@@ -180,7 +183,11 @@ class CameraSentinel(
 
   private val bgSubtractor = createBackgroundSubtractorMOG2(200, 130, false)
 
+  private val mergeDistance = settings.Visitors.mergeDistance
+
   private val minVisitorSize = settings.Visitors.minSize
+
+  private val visitorProximityZone = settings.Visitors.proximityZone
 
   private var saveFaces = false
 
@@ -188,15 +195,17 @@ class CameraSentinel(
 
   private var recordingDirOpt : Option[File] = None
 
-  private var visitorFrameCount = 0
+  private var visitorDetected = false
 
-  private var faceFrameCount = 0
+  private var faceDetected = false
 
   private var nextFaceNumber = 0
 
-  def getVisitorFrameCount = visitorFrameCount
+  private var lastMotion = 0
 
-  def getFaceFrameCount = faceFrameCount
+  def wasVisitorDetected = visitorDetected
+
+  def wasFaceDetected = faceDetected
 
   private def recordMotion = !recordingDirOpt.isEmpty
 
@@ -274,9 +283,8 @@ class CameraSentinel(
   def run()
   {
     input.startGrabber
-    val visitorClassifier = loadClassifier("haarcascade_upperbody.xml")
     val faceClassifier = loadClassifier("haarcascade_frontalface_alt.xml")
-    val visitorStorage = AbstractCvMemStorage.create
+    val contourStorage = AbstractCvMemStorage.create
     val faceStorage = AbstractCvMemStorage.create
     var diffOpt : Option[IplImage] = None
     var grayOpt : Option[IplImage] = None
@@ -291,7 +299,7 @@ class CameraSentinel(
             val gray = grayOpt.get
             cvCvtColor(img, gray, CV_BGR2GRAY)
             cvSmooth(gray, gray, CV_GAUSSIAN, 3, 3, 0, 0)
-            if (recordMotion) {
+            if (recordMotion || detectVisitors) {
               val first = diffOpt.isEmpty
               if (first) {
                 diffOpt = Some(AbstractIplImage.create(
@@ -302,68 +310,107 @@ class CameraSentinel(
               bgSubtractor.apply(new Mat(gray), new Mat(diff), -1)
               cvErode(diff, diff, null, 3)
               val nonZeroCount = countNonZero(new Mat(diff))
-              if (!first) {
-                if (nonZeroCount > 10) {
-                  recorder.enableRecording(recordingDirOpt)
-                } else {
-                  if (visitorFrameCount > 0) {
-                    recorder.storeVisitorDetected()
+              if (!first && (nonZeroCount > 10)) {
+                cvClearMemStorage(contourStorage)
+                var contour = new CvSeq(null)
+                cvFindContours(
+                  diff, contourStorage, contour,
+                  Loader.sizeof(classOf[CvContour]),
+                  CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0, 0))
+                val rects = new mutable.ArrayBuffer[CvRect]
+                while ((contour != null) && !contour.isNull) {
+                  if (contour.elem_size > 0) {
+                    val rect = cvBoundingRect(contour)
+                    rects += rect
                   }
-                  if (faceFrameCount > 0) {
-                    recorder.storeFaceDetected()
-                  }
-                  recorder.enableRecording(None)
-                  recorder.quit
-                  faceFrameCount = 0
-                  visitorFrameCount = 0
+                  contour = contour.h_next
                 }
-              }
-              recorder.store(frame)
-            }
-            if (detectVisitors) {
-              val visitors = applyClassifier(
-                visitorClassifier, visitorStorage, gray, minVisitorSize)
-              if (!visitors.isEmpty) {
-                visitorFrameCount += 1
-              }
-              visitors.foreach(visitor => {
-                cvSetImageROI(gray, visitor)
-                val faces = applyClassifier(
-                  faceClassifier, faceStorage, gray)
-                cvResetImageROI(gray)
-                if (!faces.isEmpty) {
-                  faceFrameCount += 1
-                }
-                if (saveFaces) {
-                  faces.foreach(
-                    face => {
-                      cvSetImageROI(img, nestRect(visitor, face))
-                      val outFileName = "/tmp/face" + nextFaceNumber + ".jpg"
-                      nextFaceNumber += 1
-                      cvSaveImage(outFileName, img)
-                      cvResetImageROI(img)
+                val maxDistance = img.height * mergeDistance
+                val blobMerger = new BlobProximityMerger(maxDistance.toFloat)
+                val minSize = img.height * minVisitorSize
+                val blobs = blobMerger.merge(rects).filter(blob =>
+                  (blob.width > minSize) && (blob.height > minSize))
+                val proximityThreshold =
+                  img.height - (img.height * visitorProximityZone)
+                def isVisitor(blob : CvRect) =
+                  ((blob.y + blob.height) > proximityThreshold)
+                blobs.foreach(blob => {
+                  highlightRectangle(
+                    img, blob,
+                    if (isVisitor(blob)) {
+                      AbstractCvScalar.RED
+                    } else {
+                      AbstractCvScalar.GREEN
                     }
                   )
+                })
+                if (recordMotion) {
+                  if (!blobs.isEmpty) {
+                    lastMotion = 0
+                    recorder.enableRecording(recordingDirOpt)
+                  }
                 }
-                cvSetImageROI(img, visitor)
-                faces.foreach(
-                  face => highlightRectangle(img, face)
-                )
-                cvResetImageROI(img)
-                if (faces.isEmpty) {
-                  highlightRectangle(img, visitor)
+                if (detectVisitors) {
+                  if (blobs.exists(isVisitor(_))) {
+                    visitorDetected = true
+                    blobs.foreach(visitor => {
+                      cvSetImageROI(gray, visitor)
+                      val faces = applyClassifier(
+                        faceClassifier, faceStorage, gray)
+                      cvResetImageROI(gray)
+                      if (!faces.isEmpty) {
+                        faceDetected = true
+                      }
+                      if (saveFaces) {
+                        faces.foreach(
+                          face => {
+                            cvSetImageROI(img, nestRect(visitor, face))
+                            val outFileName = "/tmp/face" +
+                            nextFaceNumber + ".jpg"
+                            nextFaceNumber += 1
+                            cvSaveImage(outFileName, img)
+                            cvResetImageROI(img)
+                          }
+                        )
+                      }
+                      cvSetImageROI(img, visitor)
+                      faces.foreach(
+                        face => highlightRectangle(
+                          img, face, AbstractCvScalar.BLUE)
+                      )
+                      cvResetImageROI(img)
+                    })
+                  }
                 }
-              })
+              }
+            }
+            if (recordMotion) {
+              recorder.store(frame)
             }
             view.display(frame)
             img.release
+            if (recordMotion) {
+              lastMotion += 1
+              if (lastMotion > 10) {
+                if (visitorDetected) {
+                  recorder.storeVisitorDetected()
+                }
+                if (faceDetected) {
+                  recorder.storeFaceDetected()
+                }
+                recorder.enableRecording(None)
+                recorder.quit
+                faceDetected = false
+                visitorDetected = false
+              }
+            }
           }
           case _ =>
         }
       }
     } finally {
-      visitorStorage.release
       faceStorage.release
+      contourStorage.release
       diffOpt.foreach(_.release)
       grayOpt.foreach(_.release)
       quit
@@ -377,13 +424,14 @@ class CameraSentinel(
       innerRect.width,
       innerRect.height)
 
-  private def highlightRectangle(img : IplImage, rect : CvRect)
+  private def highlightRectangle(
+    img : IplImage, rect : CvRect, color : CvScalar)
   {
     cvRectangle(
       img,
       cvPoint(rect.x, rect.y),
       cvPoint(rect.x + rect.width, rect.y + rect.height),
-      cvScalar(0, 0, 255, 0),
+      color,
       2, 8, 0)
   }
 }
