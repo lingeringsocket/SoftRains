@@ -22,6 +22,8 @@ autoCompilerPlugins := true
 
 classpathTypes += "maven-plugin"
 
+resolvers += "bintray/meetup" at "http://dl.bintray.com/meetup/maven"
+
 libraryDependencies ++= Seq(
   "net.liftweb" %% "lift-webkit" % liftVersion % "compile",
   "net.liftmodules" %% "lift-jquery-module_3.0" % "2.10",
