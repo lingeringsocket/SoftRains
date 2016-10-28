@@ -56,9 +56,10 @@ class CentralSettings(rootConf : Config)
   object Visitors
   {
     val subConf = conf.getConfig("visitors")
-    val minSize = subConf.getDouble("min-size")
+    val blobMergeDistance = subConf.getDouble("blob-merge-distance")
+    val blobMinSize = subConf.getDouble("blob-min-size")
+    val bodyMinSize = subConf.getDouble("body-min-size")
     val proximityZone = subConf.getDouble("proximity-zone")
-    val mergeDistance = subConf.getDouble("merge-distance")
   }
 
   object Test

@@ -36,6 +36,7 @@ class CameraSentinelSpec extends Specification
           ("data/rhiannonLeaving.mkv", false, true),
           ("data/pedestrians.mkv", false, false),
           ("data/muniLeft.mkv", false, false),
+          ("data/muniRight.mkv", false, false),
           ("data/nightCar.mkv", false, false)))
       {
         case (fileName, faceExpected, visitorExpected) =>

@@ -17,6 +17,7 @@ before_install:
 install:
   - sudo apt-get install -qq libopencv-dev libstdc++6
   - wget -O central/data/haarcascade_frontalface_alt.xml https://raw.githubusercontent.com/opencv/opencv/2.4.9.1/data/haarcascades/haarcascade_frontalface_alt.xml
+  - wget -O central/data/haarcascade_upperbody.xml https://raw.githubusercontent.com/opencv/opencv/2.4.9.1/data/haarcascades/haarcascade_upperbody.xml
 
 script: cd central && sbt ++$TRAVIS_SCALA_VERSION clean test \
     scalastyle test:scalastyle

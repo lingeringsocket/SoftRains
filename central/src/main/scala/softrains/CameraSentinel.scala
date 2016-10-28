@@ -183,9 +183,11 @@ class CameraSentinel(
 
   private val bgSubtractor = createBackgroundSubtractorMOG2(200, 130, false)
 
-  private val mergeDistance = settings.Visitors.mergeDistance
+  private val blobMergeDistance = settings.Visitors.blobMergeDistance
 
-  private val minVisitorSize = settings.Visitors.minSize
+  private val blobMinSize = settings.Visitors.blobMinSize
+
+  private val bodyMinSize = settings.Visitors.bodyMinSize
 
   private val visitorProximityZone = settings.Visitors.proximityZone
 
@@ -194,6 +196,8 @@ class CameraSentinel(
   private var detectVisitors = false
 
   private var recordingDirOpt : Option[File] = None
+
+  private var proximityDetected = false
 
   private var visitorDetected = false
 
@@ -283,7 +287,9 @@ class CameraSentinel(
   def run()
   {
     input.startGrabber
+    val bodyClassifier = loadClassifier("haarcascade_upperbody.xml")
     val faceClassifier = loadClassifier("haarcascade_frontalface_alt.xml")
+    val bodyStorage = AbstractCvMemStorage.create
     val contourStorage = AbstractCvMemStorage.create
     val faceStorage = AbstractCvMemStorage.create
     var diffOpt : Option[IplImage] = None
@@ -325,19 +331,19 @@ class CameraSentinel(
                   }
                   contour = contour.h_next
                 }
-                val maxDistance = img.height * mergeDistance
+                val maxDistance = img.height * blobMergeDistance
                 val blobMerger = new BlobProximityMerger(maxDistance.toFloat)
-                val minSize = img.height * minVisitorSize
+                val blobMinPixels = img.height * blobMinSize
                 val blobs = blobMerger.merge(rects).filter(blob =>
-                  (blob.width > minSize) && (blob.height > minSize))
+                  (blob.width > blobMinPixels) && (blob.height > blobMinPixels))
                 val proximityThreshold =
                   img.height - (img.height * visitorProximityZone)
-                def isVisitor(blob : CvRect) =
+                def isCloseEnough(blob : CvRect) =
                   ((blob.y + blob.height) > proximityThreshold)
                 blobs.foreach(blob => {
                   highlightRectangle(
                     img, blob,
-                    if (isVisitor(blob)) {
+                    if (isCloseEnough(blob)) {
                       AbstractCvScalar.RED
                     } else {
                       AbstractCvScalar.GREEN
@@ -351,14 +357,27 @@ class CameraSentinel(
                   }
                 }
                 if (detectVisitors) {
-                  if (blobs.exists(isVisitor(_))) {
-                    visitorDetected = true
+                  if (blobs.exists(isCloseEnough(_))) {
+                    proximityDetected = true
+                  }
+                  if (proximityDetected) {
+                    val bodyMinPixels = bodyMinSize * img.height
+                    val bodies = applyClassifier(
+                      bodyClassifier, bodyStorage, gray, bodyMinPixels.toInt)
+                    if (!bodies.isEmpty) {
+                      visitorDetected = true
+                      bodies.foreach(
+                        body => highlightRectangle(
+                          img, body, AbstractCvScalar.CYAN)
+                      )
+                    }
                     blobs.foreach(visitor => {
                       cvSetImageROI(gray, visitor)
                       val faces = applyClassifier(
-                        faceClassifier, faceStorage, gray)
+                        faceClassifier, faceStorage, gray, blobMinPixels.toInt)
                       cvResetImageROI(gray)
                       if (!faces.isEmpty) {
+                        visitorDetected = true
                         faceDetected = true
                       }
                       if (saveFaces) {
@@ -402,6 +421,7 @@ class CameraSentinel(
                 recorder.quit
                 faceDetected = false
                 visitorDetected = false
+                proximityDetected = false
               }
             }
           }
@@ -410,6 +430,7 @@ class CameraSentinel(
       }
     } finally {
       faceStorage.release
+      bodyStorage.release
       contourStorage.release
       diffOpt.foreach(_.release)
       grayOpt.foreach(_.release)
