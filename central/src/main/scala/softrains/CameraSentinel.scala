@@ -340,21 +340,12 @@ class CameraSentinel(
                   img.height - (img.height * visitorProximityZone)
                 def isCloseEnough(blob : CvRect) =
                   ((blob.y + blob.height) > proximityThreshold)
-                blobs.foreach(blob => {
-                  highlightRectangle(
-                    img, blob,
-                    if (isCloseEnough(blob)) {
-                      AbstractCvScalar.RED
-                    } else {
-                      AbstractCvScalar.GREEN
-                    }
-                  )
-                })
                 if (recordMotion) {
                   if (!blobs.isEmpty) {
                     lastMotion = 0
                     recorder.enableRecording(recordingDirOpt)
                   }
+                  recorder.store(frame)
                 }
                 if (detectVisitors) {
                   if (blobs.exists(isCloseEnough(_))) {
@@ -366,10 +357,6 @@ class CameraSentinel(
                       bodyClassifier, bodyStorage, gray, bodyMinPixels.toInt)
                     if (!bodies.isEmpty) {
                       visitorDetected = true
-                      bodies.foreach(
-                        body => highlightRectangle(
-                          img, body, AbstractCvScalar.CYAN)
-                      )
                     }
                     blobs.foreach(visitor => {
                       cvSetImageROI(gray, visitor)
@@ -399,12 +386,23 @@ class CameraSentinel(
                       )
                       cvResetImageROI(img)
                     })
+                    bodies.foreach(
+                      body => highlightRectangle(
+                        img, body, AbstractCvScalar.CYAN)
+                    )
                   }
+                  blobs.foreach(blob => {
+                    highlightRectangle(
+                      img, blob,
+                      if (isCloseEnough(blob)) {
+                        AbstractCvScalar.RED
+                      } else {
+                        AbstractCvScalar.GREEN
+                      }
+                    )
+                  })
                 }
               }
-            }
-            if (recordMotion) {
-              recorder.store(frame)
             }
             view.display(frame)
             img.release
