@@ -410,7 +410,7 @@ class CameraSentinel(
             img.release
             if (recordMotion) {
               lastMotion += 1
-              if (lastMotion > 10) {
+              if (lastMotion > 6) {
                 if (visitorDetected) {
                   recorder.storeVisitorDetected()
                 }
