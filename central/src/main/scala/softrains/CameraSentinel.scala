@@ -250,9 +250,11 @@ class CameraSentinel(
     }
     recordingDirOpt = Some(recordingDir)
     val facesDir = getFacesDir
-    if (!facesDir.mkdirs) {
-      throw new IOException(
-        "Unable to create faces directory " + facesDir)
+    if (!facesDir.isDirectory) {
+      if (!facesDir.mkdirs) {
+        throw new IOException(
+          "Unable to create faces directory " + facesDir)
+      }
     }
   }
 
@@ -527,9 +529,11 @@ class VideoRecorder(filterString : String = "")
     val suffix = "mkv"
     val timestamp = Calendar.getInstance.getTime
     val dateDir = getDateDir(timestamp)
-    if (!dateDir.mkdirs) {
-      throw new IOException(
-        "Unable to create daily recording directory " + dateDir)
+    if (!dateDir.isDirectory) {
+      if (!dateDir.mkdirs) {
+        throw new IOException(
+          "Unable to create daily recording directory " + dateDir)
+      }
     }
     val file = getTimeFile(timestamp, "r", suffix)
     recordingFile = Some(file)
