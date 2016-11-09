@@ -16,6 +16,7 @@ package softrains
 
 import java.io._
 import java.net._
+import java.nio.file._
 import java.text._
 import java.util._
 
@@ -176,8 +177,37 @@ class CameraDesktopView(feed : CameraFeed) extends CameraView
   }
 }
 
+trait RecordingProducer
+{
+  private val dateFormatter = new SimpleDateFormat("yyyy-MM-dd")
+
+  private val timeFormatter = new SimpleDateFormat("HHmmss")
+
+  protected var recordingDirOpt : Option[File] = None
+
+  protected def getRecordingDir = recordingDirOpt.get
+
+  protected def getTimestamp = Calendar.getInstance.getTime
+
+  protected def getDateDir(timestamp : Date) : File =
+  {
+    val dateStamp = dateFormatter.format(timestamp)
+    new File(getRecordingDir, "d" + dateStamp)
+  }
+
+  protected def getTimeFile(
+    timestamp : Date, prefix : String, suffix : String) : File =
+  {
+    val timeStamp = timeFormatter.format(timestamp)
+    new File(getDateDir(timestamp), prefix + timeStamp + "." + suffix)
+  }
+
+  protected def getFacesDir : File = new File(getRecordingDir, "faces")
+}
+
 class CameraSentinel(
   input : CameraInput, view : CameraView, settings : CentralSettings)
+    extends RecordingProducer
 {
   private val recorder = new VideoRecorder
 
@@ -195,15 +225,11 @@ class CameraSentinel(
 
   private var detectVisitors = false
 
-  private var recordingDirOpt : Option[File] = None
-
   private var proximityDetected = false
 
   private var visitorDetected = false
 
   private var faceDetected = false
-
-  private var nextFaceNumber = 0
 
   private var lastMotion = 0
 
@@ -223,6 +249,11 @@ class CameraSentinel(
       }
     }
     recordingDirOpt = Some(recordingDir)
+    val facesDir = getFacesDir
+    if (!facesDir.mkdirs) {
+      throw new IOException(
+        "Unable to create faces directory " + facesDir)
+    }
   }
 
   def enableVisitorDetection(save : Boolean)
@@ -371,9 +402,8 @@ class CameraSentinel(
                         faces.foreach(
                           face => {
                             cvSetImageROI(img, nestRect(visitor, face))
-                            val outFileName = "/tmp/face" +
-                            nextFaceNumber + ".jpg"
-                            nextFaceNumber += 1
+                            val outFileName = File.createTempFile(
+                              "face", ".jpg", getFacesDir).getCanonicalPath
                             cvSaveImage(outFileName, img)
                             cvResetImageROI(img)
                           }
@@ -409,17 +439,7 @@ class CameraSentinel(
             if (recordMotion) {
               lastMotion += 1
               if (lastMotion > 6) {
-                if (visitorDetected) {
-                  recorder.storeVisitorDetected()
-                }
-                if (faceDetected) {
-                  recorder.storeFaceDetected()
-                }
-                recorder.enableRecording(None)
-                recorder.quit
-                faceDetected = false
-                visitorDetected = false
-                proximityDetected = false
+                endRecording
               }
             }
           }
@@ -434,6 +454,21 @@ class CameraSentinel(
       grayOpt.foreach(_.release)
       quit
     }
+  }
+
+  def endRecording()
+  {
+    if (visitorDetected) {
+      recorder.storeVisitorDetected()
+    }
+    if (faceDetected) {
+      recorder.storeFaceDetected()
+    }
+    recorder.enableRecording(None)
+    recorder.quit
+    faceDetected = false
+    visitorDetected = false
+    proximityDetected = false
   }
 
   private def nestRect(outerRect : CvRect, innerRect : CvRect) : CvRect =
@@ -456,12 +491,13 @@ class CameraSentinel(
 }
 
 class VideoRecorder(filterString : String = "")
+    extends RecordingProducer
 {
   private var recorder : Option[FrameRecorder] = None
 
   private var filter : Option[FrameFilter] = None
 
-  private var recordingDirOpt : Option[File] = None
+  private var recordingFile : Option[File] = None
 
   private var visitorDetectedFile : Option[File] = None
 
@@ -469,12 +505,11 @@ class VideoRecorder(filterString : String = "")
 
   private def isEnabled = !recordingDirOpt.isEmpty
 
-  private val sdfFilename = new SimpleDateFormat("yyyy-MM-dd'T'HHmmss")
-
   def enableRecording(dirOpt : Option[File])
   {
     recordingDirOpt = dirOpt
     if (!isEnabled) {
+      recordingFile = None
       visitorDetectedFile = None
       faceDetectedFile = None
     }
@@ -490,11 +525,16 @@ class VideoRecorder(filterString : String = "")
       filter = Some(f)
     }
     val suffix = "mkv"
-    val timestamp = sdfFilename.format(Calendar.getInstance.getTime)
-    val recordingDir = recordingDirOpt.get
-    val file = new File(recordingDir, "r" + timestamp + "." + suffix)
-    visitorDetectedFile = Some(new File(recordingDir, "v" + timestamp + ".txt"))
-    faceDetectedFile = Some(new File(recordingDir, "f" + timestamp + ".txt"))
+    val timestamp = Calendar.getInstance.getTime
+    val dateDir = getDateDir(timestamp)
+    if (!dateDir.mkdirs) {
+      throw new IOException(
+        "Unable to create daily recording directory " + dateDir)
+    }
+    val file = getTimeFile(timestamp, "r", suffix)
+    recordingFile = Some(file)
+    visitorDetectedFile = Some(getTimeFile(timestamp, "v", suffix))
+    faceDetectedFile = Some(getTimeFile(timestamp, "f", suffix))
     val r = new FFmpegFrameRecorder(file, width, height)
     r.setFormat(suffix)
     r.setFrameRate(4)
@@ -505,12 +545,14 @@ class VideoRecorder(filterString : String = "")
 
   def storeFaceDetected()
   {
-    faceDetectedFile.foreach(_.createNewFile)
+    faceDetectedFile.foreach(file =>
+      Files.createSymbolicLink(file.toPath, recordingFile.get.toPath))
   }
 
   def storeVisitorDetected()
   {
-    visitorDetectedFile.foreach(_.createNewFile)
+    visitorDetectedFile.foreach(file =>
+      Files.createSymbolicLink(file.toPath, recordingFile.get.toPath))
   }
 
   def store(frame : CvFrame)

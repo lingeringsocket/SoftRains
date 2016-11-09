@@ -50,7 +50,7 @@ class CentralSettings(rootConf : Config)
   object Files
   {
     val subConf = conf.getConfig("files")
-    val videoPath = new File(subConf.getString("video-path"))
+    val videoPath = new File(subConf.getString("video-path")).getAbsoluteFile
   }
 
   object Visitors
