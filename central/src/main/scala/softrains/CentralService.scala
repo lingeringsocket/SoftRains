@@ -25,6 +25,8 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
   val db = new CentralDb(settings)
   seedDb
 
+  val emailEnabled = settings.Mail.enabled
+
   def seedDb()
   {
     val deviceMap = settings.Residents.deviceMap
@@ -81,7 +83,9 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
       if ((nRequests % tenHours) == 0) {
         deviceMonitor.requestLogin
       }
-      suppressEmail = false
+      if (emailEnabled) {
+        suppressEmail = false
+      }
     }
   }
 
@@ -155,10 +159,28 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
           "See ya later, " + resident.name + "!",
           "Have a nice day :)")
       }
+      updateOpenhab(resident, "OFF")
     }
   }
 
-  def sendMail(resident : HomeResident, subject : String, body : String)
+  private def updateOpenhab(resident : HomeResident, state : String)
+  {
+    import dispatch._, Defaults._
+
+    val request = (url(settings.Openhab.url) / "rest" / "items" /
+      (resident.name.toLowerCase + "_phone_wifi") / "state") .
+      PUT.setContentType("text/plain", "UTF-8").
+      setBody(state) <:< Map("Accept" -> "application/json")
+    val result = Http(request OK as.String).either
+    result() match {
+      case Right(content) =>
+      case Left(StatusCode(code)) => println(
+        "Openhab update failed with status code " + code)
+      case _ => println("Openhab update mystery")
+    }
+  }
+
+  private def sendMail(resident : HomeResident, subject : String, body : String)
   {
     import javax.mail._
     import javax.mail.internet._
@@ -244,6 +266,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
                 "Welcome Home, " + owner.name + "!",
                 "Glad to see you back :)")
             }
+            updateOpenhab(owner, "ON")
           }
         }
       }

@@ -24,6 +24,12 @@ class CentralSettings(rootConf : Config)
 {
   private val conf = rootConf.getConfig("softrains")
 
+  object Openhab
+  {
+    val subConf = conf.getConfig("openhab")
+    val url = subConf.getString("url")
+  }
+
   object Router
   {
     val subConf = conf.getConfig("router")
@@ -45,6 +51,7 @@ class CentralSettings(rootConf : Config)
     val subConf = conf.getConfig("mail")
     val user = subConf.getString("user")
     val password = subConf.getString("password")
+    val enabled = subConf.getBoolean("enabled")
   }
 
   object Files
