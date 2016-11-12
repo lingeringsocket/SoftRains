@@ -167,6 +167,10 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
   {
     import dispatch._, Defaults._
 
+    if (settings.Test.active) {
+      return
+    }
+
     val request = (url(settings.Openhab.url) / "rest" / "items" /
       (resident.name.toLowerCase + "_phone_wifi") / "state") .
       PUT.setContentType("text/plain", "UTF-8").
