@@ -172,7 +172,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     }
 
     val request = (url(settings.Openhab.url) / "rest" / "items" /
-      (resident.name.toLowerCase + "_phone_wifi") / "state") .
+      (resident.name.toLowerCase + "_phone_radio") / "state") .
       PUT.setContentType("text/plain", "UTF-8").
       setBody(state) <:< Map("Accept" -> "application/json")
     val result = Http(request OK as.String).either
@@ -287,5 +287,5 @@ object CentralSingleton
 
 object CentralApp extends App
 {
-  CentralSingleton.service.runCamera
+  CentralSingleton.service.runLan
 }
