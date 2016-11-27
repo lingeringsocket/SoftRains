@@ -14,15 +14,22 @@
 // limitations under the License.
 package softrains
 
+import akka.actor._
 import com.typesafe.config._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
 
 import java.io._
+import java.util.concurrent._
 
 class CentralSettings(rootConf : Config)
 {
   private val conf = rootConf.getConfig("softrains")
+
+  private def getMillis(subConf: Config, path : String) =
+    FiniteDuration(
+      subConf.getDuration(path, TimeUnit.MILLISECONDS), MILLISECONDS)
 
   object Openhab
   {
@@ -36,6 +43,7 @@ class CentralSettings(rootConf : Config)
     val url = subConf.getString("url")
     val user = subConf.getString("user")
     val password = subConf.getString("password")
+    val scanFreq = getMillis(subConf, "scanFreq")
   }
 
   object Db
@@ -104,4 +112,22 @@ object CentralSettings
   {
     throw new ConfigException.Missing(path)
   }
+}
+
+class CentralActorSettings(
+  rootConf : Config, extendedSystem : ExtendedActorSystem)
+    extends CentralSettings(rootConf)
+    with Extension
+{
+}
+
+object CentralActorSettings
+    extends ExtensionId[CentralActorSettings] with ExtensionIdProvider
+{
+  override def lookup = CentralActorSettings
+
+  override def createExtension(system : ExtendedActorSystem) =
+    new CentralActorSettings(system.settings.config, system)
+
+  def apply(context : ActorContext) : CentralActorSettings = apply(context.system)
 }

@@ -100,17 +100,17 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
       getDeviceCount must be equalTo 2
       getHomeActiveCount must be equalTo 0
       deviceMonitor.setHtml(readResource("/devices1.html"))
-      central.scanLan(true)
+      central.scanLan
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
       deviceMonitor.setHtml(readResource("/devices2.html"))
-      central.scanLan(true)
+      central.scanLan
       getLanActiveCount must be equalTo 4
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 2
       deviceMonitor.setHtml(readResource("/devices1.html"))
-      central.scanLan(true)
+      central.scanLan
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
@@ -121,7 +121,7 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
       getExceptionCount must be equalTo 0
       val startTime = central.readClockTime
       deviceMonitor.setHtml("<blah>")
-      central.scanLan(true)
+      central.scanLan
       val endTime = central.readClockTime
       getExceptionCount must be equalTo 1
       val report = central.db.query[ExceptionReport].fetchOne.get

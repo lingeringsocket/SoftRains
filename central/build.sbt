@@ -31,7 +31,6 @@ libraryDependencies ++= Seq(
     "container,test",
   "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
     "container,compile" artifacts Artifact("javax.servlet", "jar", "jar"),
-  "javax.mail" % "mail" % "1.4",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
   "com.meetup" %% "archery" % "0.4.0",
   "nu.validator" % "htmlparser" % "1.4.4",
@@ -49,9 +48,9 @@ libraryDependencies ++= Seq(
   "org.sorm-framework" % "sorm" % "0.3.20",
   "com.h2database" % "h2" % "1.3.168",
   "org.postgresql" % "postgresql" % "9.4.1210",
-  "com.typesafe.akka" %% "akka-actor" % "2.4.10",
-  "com.typesafe.akka" %% "akka-testkit" % "2.4.10" % "test",
-  "org.specs2" %% "specs2-core" % "3.7.2" % "test"
+  "com.typesafe.akka" %% "akka-actor" % "2.4.14",
+  "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test",
+  "org.specs2" %% "specs2-core" % "3.8.5" % "test"
 )
 
 scalaVersion := "2.11.8"

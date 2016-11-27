@@ -20,12 +20,16 @@ import org.joda.time._
 
 import java.io._
 
+import akka.actor._
+
+import scala.concurrent._
+
 class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
 {
   val db = new CentralDb(settings)
   seedDb
 
-  val emailEnabled = settings.Mail.enabled
+  def getDeviceMonitor = deviceMonitor
 
   def seedDb()
   {
@@ -67,26 +71,13 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     })
   }
 
-  def runLan()
+  def runAgent()
   {
-    val tenHours = 600
-    var nRequests = 0
-    var suppressEmail = true
-    while (true) {
-      deviceMonitor.loginIfNeeded
-      scanLan(suppressEmail)
-      logEvent(
-        "Active device count: " +
-          db.query[LanPresence].whereEqual("active", true).fetch.size)
-      Thread.sleep(60000)
-      nRequests += 1
-      if ((nRequests % tenHours) == 0) {
-        deviceMonitor.requestLogin
-      }
-      if (emailEnabled) {
-        suppressEmail = false
-      }
-    }
+    val config = ConfigFactory.load()
+    val system = ActorSystem("SoftRains", config)
+    val props = Props(classOf[CentralActor])
+    system.actorOf(props, "centralActor")
+    Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
   }
 
   def logEvent(msg : String)
@@ -94,11 +85,15 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     println(msg)
   }
 
-  def scanLan(suppressEmail : Boolean)
+  def scanLan()
   {
     val scanTime = readClockTime
     try {
-      scanDevices(scanTime, suppressEmail)
+      deviceMonitor.loginIfNeeded
+      scanDevices(scanTime)
+      logEvent(
+        "Active device count: " +
+          db.query[LanPresence].whereEqual("active", true).fetch.size)
     } catch {
       case ex : Exception => {
         handleException(scanTime, ex)
@@ -122,13 +117,12 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     deviceMonitor.requestLogin
   }
 
-  private def scanDevices(
-    scanTime : DateTime, suppressEmail : Boolean)
+  private def scanDevices(scanTime : DateTime)
   {
     deviceMonitor.scanDevices.foreach(device =>
-      updatePresence(device, scanTime, suppressEmail))
+      updatePresence(device, scanTime))
     markInactiveDevices(scanTime)
-    markInactiveResidents(scanTime, suppressEmail)
+    markInactiveResidents(scanTime)
   }
 
   private def markInactiveDevices(scanTime : DateTime)
@@ -142,8 +136,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     }
   }
 
-  private def markInactiveResidents(
-    scanTime : DateTime, suppressEmail : Boolean)
+  private def markInactiveResidents(scanTime : DateTime)
   {
     val presences = db.query[HomePresence].
       whereEqual("active", true).
@@ -153,12 +146,6 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
       val resident = presence.resident
       db.save(presence.copy(active = false))
       logEvent("Resident departed:  " + resident.name)
-      if (!suppressEmail) {
-        sendMail(
-          resident,
-          "See ya later, " + resident.name + "!",
-          "Have a nice day :)")
-      }
       updateOpenhab(resident, "OFF")
     }
   }
@@ -223,8 +210,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
 
   private def updatePresence(
     deviceState : DeviceState,
-    scanTime : DateTime,
-    suppressEmail : Boolean)
+    scanTime : DateTime)
   {
     val deviceOpt = db.query[LanDevice].
       whereEqual("name", deviceState.name).fetchOne
@@ -264,12 +250,6 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
             db.save(HomePresence(
               owner, scanTime, scanTime, true))
             logEvent("Resident arrived:  " + owner.name)
-            if (!suppressEmail) {
-              sendMail(
-                owner,
-                "Welcome Home, " + owner.name + "!",
-                "Glad to see you back :)")
-            }
             updateOpenhab(owner, "ON")
           }
         }
@@ -287,5 +267,5 @@ object CentralSingleton
 
 object CentralApp extends App
 {
-  CentralSingleton.service.runLan
+  CentralSingleton.service.runAgent
 }
