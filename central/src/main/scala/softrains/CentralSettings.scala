@@ -129,5 +129,6 @@ object CentralActorSettings
   override def createExtension(system : ExtendedActorSystem) =
     new CentralActorSettings(system.settings.config, system)
 
-  def apply(context : ActorContext) : CentralActorSettings = apply(context.system)
+  def apply(context : ActorContext) : CentralActorSettings =
+    apply(context.system)
 }

@@ -36,7 +36,7 @@ class DeviceMonitorActor extends Actor
   private val tenHours = 600
 
   private var nRequests = 0
-  
+
   def receive =
   {
     case ScanNetwork => {
