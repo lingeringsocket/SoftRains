@@ -19,8 +19,8 @@ import akka.event._
 
 object DeviceMonitorActor
 {
-  // message to request a network scan
-  case object ScanNetwork
+  // request a network scan
+  case object ScanNetworkMsg
 }
 
 class DeviceMonitorActor extends Actor
@@ -39,7 +39,7 @@ class DeviceMonitorActor extends Actor
 
   def receive =
   {
-    case ScanNetwork => {
+    case ScanNetworkMsg => {
       nRequests += 1
       if ((nRequests % tenHours) == 0) {
         log.info("Refreshing session")

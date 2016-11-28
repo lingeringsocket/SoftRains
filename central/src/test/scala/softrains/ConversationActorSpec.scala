@@ -15,35 +15,26 @@
 package softrains
 
 import akka.actor._
-import akka.event._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
-object CentralActor
+class ConversationActorSpec extends AkkaActorSpecification
 {
-}
+  import ConversationActor._
+  import LandlineActor._
 
-class CentralActor extends Actor
-{
-  private val settings = CentralActorSettings(context)
-
-  private val networkScanFreq = settings.Router.scanFreq
-
-  private val log = Logging(context.system, this)
-
-  private val deviceMonitorActor = context.actorOf(
-    Props(classOf[DeviceMonitorActor]),
-    "deviceMonitorActor")
-
-  override def preStart()
+  "ConversationActor" should
   {
-    context.system.scheduler.schedule(
-      networkScanFreq, networkScanFreq,
-      deviceMonitorActor, DeviceMonitorActor.ScanNetworkMsg)
-  }
-
-  def receive =
-  {
-    case "test" => log.info("received test")
+    "have a one-way conversation" in new AkkaActorExample
+    {
+      val actor = system.actorOf(Props(classOf[ConversationActor]))
+      val typhlosion = new HomeResident("Typhlosion")
+      val greeting = new DailyGreeting(typhlosion)
+      actor ! ActivateMsg(greeting, self)
+      expectMsg(PairRequestMsg(voiceName))
+      actor ! PairAcceptedMsg
+      expectMsg(PartnerUtteranceMsg("Good morning, Typhlosion!"))
+      actor ! UtteranceFinishedMsg
+      expectMsg(UnpairMsg)
+    }
   }
 }
+
