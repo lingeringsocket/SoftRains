@@ -34,7 +34,7 @@ abstract class AkkaActorSpecification(confFile : String = "test.conf")
     extends Specification
 {
   protected val settings = CentralSettings(loadConfig(confFile))
-  
+
   protected def configureSystem(overrideConf : String) =
     ActorSystem(
       "TestActors_" + AkkaActorSpecification.suffixGenerator.incrementAndGet,
@@ -70,7 +70,7 @@ class LandlineActorSpec extends AkkaActorSpecification
 {
   // speaker output is shared, so we need isolation
   sequential
-  
+
   import LandlineActor._
 
   private val voice = "charlie the unicorn"
