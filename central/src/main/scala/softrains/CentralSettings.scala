@@ -62,6 +62,19 @@ class CentralSettings(rootConf : Config)
     val enabled = subConf.getBoolean("enabled")
   }
 
+  object WatsonTts
+  {
+    val subConf = conf.getConfig("watson-tts")
+    val user = subConf.getString("user")
+    val password = subConf.getString("password")
+  }
+
+  object Speaker
+  {
+    val subConf = conf.getConfig("speaker")
+    val command = subConf.getString("command")
+  }
+
   object Files
   {
     val subConf = conf.getConfig("files")

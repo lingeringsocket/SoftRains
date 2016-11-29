@@ -75,7 +75,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
   {
     val config = ConfigFactory.load()
     val system = ActorSystem("SoftRains", config)
-    val props = Props(classOf[CentralActor])
+    val props = Props(classOf[CentralActor], this)
     system.actorOf(props, "centralActor")
     Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
   }

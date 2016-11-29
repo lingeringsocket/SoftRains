@@ -23,7 +23,7 @@ object CentralActor
 {
 }
 
-class CentralActor extends Actor
+class CentralActor(central : CentralService) extends Actor
 {
   private val settings = CentralActorSettings(context)
 
@@ -32,7 +32,7 @@ class CentralActor extends Actor
   private val log = Logging(context.system, this)
 
   private val deviceMonitorActor = context.actorOf(
-    Props(classOf[DeviceMonitorActor]),
+    Props(classOf[DeviceMonitorActor], central),
     "deviceMonitorActor")
 
   override def preStart()

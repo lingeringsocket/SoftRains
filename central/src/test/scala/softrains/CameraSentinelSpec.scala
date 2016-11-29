@@ -28,7 +28,7 @@ class CameraSentinelSpec extends Specification
   // filesystem state is shared, so we need isolation
   sequential
 
-  private val settings = CentralSettings(ConfigFactory.load)
+  private val settings = CentralSettings(ConfigFactory.load("test.conf"))
 
   private def cleanVideoFiles()
   {

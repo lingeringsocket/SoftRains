@@ -14,6 +14,8 @@
 // limitations under the License.
 package softrains
 
+import com.typesafe.config._
+
 import akka.actor._
 import akka.testkit._
 
@@ -21,9 +23,41 @@ import org.specs2.mutable._
 
 import scala.concurrent.duration._
 
-abstract class AkkaActorSpecification extends Specification
+import java.util.concurrent.atomic._
+
+object AkkaActorSpecification
 {
-  abstract class AkkaActorExample extends TestKit(ActorSystem())
+  private val suffixGenerator = new AtomicLong
+}
+
+abstract class AkkaActorSpecification(confFile : String = "test.conf")
+    extends Specification
+{
+  protected val settings = CentralSettings(loadConfig(confFile))
+  
+  protected def configureSystem(overrideConf : String) =
+    ActorSystem(
+      "TestActors_" + AkkaActorSpecification.suffixGenerator.incrementAndGet,
+      loadConfig(overrideConf))
+
+  protected def loadConfig(overrideConf : String) =
+  {
+    val actualConf = {
+      if (overrideConf.isEmpty) {
+        confFile
+      } else {
+        overrideConf
+      }
+    }
+    if (actualConf.isEmpty) {
+      ConfigFactory.load
+    } else {
+      ConfigFactory.load(actualConf)
+    }
+  }
+
+  abstract class AkkaActorExample(overrideConf : String = "test.conf")
+      extends TestKit(configureSystem(overrideConf))
       with After
       with ImplicitSender
   {
@@ -34,6 +68,9 @@ abstract class AkkaActorSpecification extends Specification
 
 class LandlineActorSpec extends AkkaActorSpecification
 {
+  // speaker output is shared, so we need isolation
+  sequential
+  
   import LandlineActor._
 
   private val voice = "charlie the unicorn"
@@ -70,7 +107,7 @@ class LandlineActorSpec extends AkkaActorSpecification
       expectMsg(PairAcceptedMsg)
 
       actor ! PartnerUtteranceMsg("hello")
-      expectMsg(UtteranceFinishedMsg)
+      expectMsg(10 seconds, UtteranceFinishedMsg)
 
       actor ! PartnerListenMsg
       expectMsg(SilenceMsg)
@@ -124,7 +161,7 @@ class LandlineActorSpec extends AkkaActorSpecification
       probe.expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
 
       actor ! PartnerUtteranceMsg("sorry to interrupt")
-      expectMsg(UtteranceFinishedMsg)
+      expectMsg(10 seconds, UtteranceFinishedMsg)
     }
   }
 }

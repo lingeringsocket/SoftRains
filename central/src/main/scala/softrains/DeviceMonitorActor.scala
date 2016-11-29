@@ -23,11 +23,9 @@ object DeviceMonitorActor
   case object ScanNetworkMsg
 }
 
-class DeviceMonitorActor extends Actor
+class DeviceMonitorActor(central : CentralService) extends Actor
 {
   import DeviceMonitorActor._
-
-  private val central = CentralSingleton.service
 
   private val settings = CentralActorSettings(context)
 

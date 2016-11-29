@@ -57,7 +57,7 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
   sequential
 
   private val deviceMonitor = new MockCableRouterMonitor
-  private val settings = CentralSettings(ConfigFactory.load)
+  private val settings = CentralSettings(ConfigFactory.load("test.conf"))
   private val central = new CentralService(settings, deviceMonitor)
 
   private def getCameraCount =

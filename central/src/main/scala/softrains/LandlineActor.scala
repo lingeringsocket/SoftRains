@@ -16,6 +16,12 @@ package softrains
 
 import akka.actor._
 
+import com.ibm.watson.developer_cloud.text_to_speech.v1._
+import com.ibm.watson.developer_cloud.text_to_speech.v1.model._
+import com.ibm.watson.developer_cloud.text_to_speech.v1.util._
+
+import sys.process._
+
 object LandlineActor
 {
   val PROTOCOL_ALREADY_PAIRED = "already paired"
@@ -56,10 +62,19 @@ import LandlineActor._
 
 class LandlineActor extends LoggingFSM[State, Data]
 {
-
   private val settings = CentralActorSettings(context)
 
   private val unpaired = ActorRef.noSender
+
+  private val tts = new TextToSpeech
+
+  override def preStart()
+  {
+    if (isWatsonEnabled) {
+      tts.setUsernameAndPassword(
+        settings.WatsonTts.user, settings.WatsonTts.password)
+    }
+  }
 
   startWith(Active, Partner(unpaired, VOICE_NONE))
 
@@ -94,6 +109,7 @@ class LandlineActor extends LoggingFSM[State, Data]
     case Event(PartnerUtteranceMsg(utterance), Partner(partner, voiceName)) => {
       if (sender == partner) {
         log.info("Say '" + utterance + "' using voice " + voiceName)
+        say(utterance, voiceName)
         partner ! UtteranceFinishedMsg
         stay
       } else {
@@ -111,6 +127,19 @@ class LandlineActor extends LoggingFSM[State, Data]
         stay
       }
     }
+  }
+
+  private def isWatsonEnabled = !settings.WatsonTts.user.isEmpty
+
+  private def say(utterance : String, voiceName : String)
+  {
+    if (!isWatsonEnabled) {
+      return
+    }
+    val stream = tts.synthesize(
+      utterance, Voice.EN_ALLISON, AudioFormat.WAV)
+    val in = WaveUtils.reWriteWaveHeader(stream.execute)
+    (settings.Speaker.command #< in).!
   }
 
   initialize()
