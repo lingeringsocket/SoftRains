@@ -69,6 +69,13 @@ class CentralSettings(rootConf : Config)
     val password = subConf.getString("password")
   }
 
+  object WatsonStt
+  {
+    val subConf = conf.getConfig("watson-stt")
+    val user = subConf.getString("user")
+    val password = subConf.getString("password")
+  }
+
   object Speaker
   {
     val subConf = conf.getConfig("speaker")

@@ -82,6 +82,45 @@ class DailyGreeting(resident : HomeResident) extends Anticipation(resident)
   override def getPriority() = ASAP
 }
 
+class EchoLoop(resident : HomeResident) extends Anticipation(resident)
+{
+  private var done = false
+
+  override def isReady() = true
+
+  override def isExpired() = false
+
+  override def isConversational() : Boolean = !done
+
+  override def startCommunication() : ConversationProcessor =
+    new ConversationProcessor {
+      var echo = ""
+
+      def produceUtterance() =
+      {
+        if (echo.isEmpty) {
+          Some(
+            "I am going to repeat whatever you say until you say terminate," +
+              " OK " + resident.name + "?")
+        } else {
+          if (echo == "terminate") {
+            done = true
+            Some("OK, talk to you later!")
+          } else {
+            Some(echo)
+          }
+        }
+      }
+
+      def consumeUtterance(utterance : String) =
+      {
+        echo = utterance
+      }
+    }
+
+  override def getPriority() = ASAP
+}
+
 class FireAlarm(resident : HomeResident) extends Anticipation(resident)
 {
   override def isReady() = true

@@ -49,6 +49,7 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.3.168",
   "org.postgresql" % "postgresql" % "9.4.1210",
   "com.ibm.watson.developer_cloud" % "text-to-speech" % "3.5.1",
+  "com.ibm.watson.developer_cloud" % "speech-to-text" % "3.5.1",
   "com.typesafe.akka" %% "akka-actor" % "2.4.14",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test",
   "org.specs2" %% "specs2-core" % "3.8.5" % "test"

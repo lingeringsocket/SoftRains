@@ -20,7 +20,25 @@ import com.ibm.watson.developer_cloud.text_to_speech.v1._
 import com.ibm.watson.developer_cloud.text_to_speech.v1.model._
 import com.ibm.watson.developer_cloud.text_to_speech.v1.util._
 
+import com.ibm.watson.developer_cloud.speech_to_text.v1._
+import com.ibm.watson.developer_cloud.speech_to_text.v1.model._
+import com.ibm.watson.developer_cloud.speech_to_text.v1.websocket._
+
+import com.ibm.watson.developer_cloud.http._
+
 import sys.process._
+
+import javax.sound.sampled._
+
+import scala.concurrent._
+import scala.concurrent.duration._
+
+import com.ibm.watson.developer_cloud.text_to_speech.v1.model.{
+  AudioFormat => WatsonAudioFormat
+}
+import javax.sound.sampled.{
+  AudioFormat => JavaAudioFormat
+}
 
 object LandlineActor
 {
@@ -68,11 +86,15 @@ class LandlineActor extends LoggingFSM[State, Data]
 
   private val tts = new TextToSpeech
 
+  private val stt = new SpeechToText
+
   override def preStart()
   {
     if (isWatsonEnabled) {
       tts.setUsernameAndPassword(
         settings.WatsonTts.user, settings.WatsonTts.password)
+      stt.setUsernameAndPassword(
+        settings.WatsonStt.user, settings.WatsonStt.password)
     }
   }
 
@@ -120,16 +142,27 @@ class LandlineActor extends LoggingFSM[State, Data]
     case Event(PartnerListenMsg, Partner(partner, _)) => {
       if (sender == partner) {
         log.info("Listening...")
-        partner ! SilenceMsg
-        stay
+        if (isWatsonEnabled) {
+          val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
+          val old = Thread.currentThread.getContextClassLoader
+          try {
+            Thread.currentThread.setContextClassLoader(cl)
+            listen(partner)
+          } finally {
+            Thread.currentThread.setContextClassLoader(old)
+          }
+        } else {
+          partner ! SilenceMsg
+        }
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR)
-        stay
       }
+      stay
     }
   }
 
-  private def isWatsonEnabled = !settings.WatsonTts.user.isEmpty
+  private def isWatsonEnabled =
+    !settings.WatsonTts.user.isEmpty && !settings.WatsonStt.user.isEmpty
 
   private def say(utterance : String, voiceName : String)
   {
@@ -137,9 +170,62 @@ class LandlineActor extends LoggingFSM[State, Data]
       return
     }
     val stream = tts.synthesize(
-      utterance, Voice.EN_ALLISON, AudioFormat.WAV)
+      utterance, Voice.EN_ALLISON, WatsonAudioFormat.WAV)
     val in = WaveUtils.reWriteWaveHeader(stream.execute)
     (settings.Speaker.command #< in).!
+  }
+
+  private def listen(partner : ActorRef)
+  {
+    var result : AnyRef = SilenceMsg
+    val sampleRate = 44100
+    val format = new JavaAudioFormat(sampleRate, 16, 1, true, false)
+    val info = new DataLine.Info(classOf[TargetDataLine], format)
+    val line = AudioSystem.getLine(info).asInstanceOf[TargetDataLine]
+    line.open(format)
+    line.start
+    try {
+      val audio = new AudioInputStream(line)
+      val options = (new RecognizeOptions.Builder).
+        contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
+        maxAlternatives(1).build
+      val speechPromise = Promise[SpeechResults]()
+      val speechFuture = speechPromise.future
+      val disconnectPromise = Promise[Object]()
+      val disconnectFuture = disconnectPromise.future
+      stt.recognizeUsingWebSocket(
+        audio, options, new BaseRecognizeCallback {
+          override def onTranscription(speechResults : SpeechResults)
+          {
+            audio.close
+            val transcript =
+              speechResults.getResults.get(speechResults.getResultIndex)
+            val utterance = transcript.getAlternatives.get(0).getTranscript.trim
+            log.info("Heard:  " + utterance)
+            result = PersonUtteranceMsg(utterance)
+            speechPromise.success(speechResults)
+          }
+
+          override def onError(e : Exception)
+          {
+            audio.close
+            // FIXME proper error handling
+            speechPromise.failure(e)
+          }
+
+          override def onDisconnected()
+          {
+            disconnectPromise.success(null)
+          }
+        })
+      Await.ready(disconnectFuture, Duration.Inf)
+      Await.ready(speechFuture, Duration.Inf)
+    } finally {
+      line.stop
+      line.close
+      log.info("Done listening.")
+      partner ! result
+    }
   }
 
   initialize()

@@ -80,6 +80,24 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
   }
 
+  def runConversation()
+  {
+    val config = ConfigFactory.load()
+    val system = ActorSystem("SoftRains", config)
+    val landlineProps = Props(classOf[LandlineActor])
+    val landlineActor =
+      system.actorOf(landlineProps, "landlineActor")
+    val conversationProps = Props(classOf[ConversationActor])
+    val conversationActor =
+      system.actorOf(conversationProps, "conversationActor")
+    val tiberius = new HomeResident("John")
+    val anticipation = new EchoLoop(tiberius)
+    conversationActor ! ConversationActor.ActivateMsg(
+      anticipation,
+      landlineActor)
+    Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
+  }
+
   def logEvent(msg : String)
   {
     println(msg)
