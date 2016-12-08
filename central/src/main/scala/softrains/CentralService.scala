@@ -71,12 +71,19 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     })
   }
 
-  def runAgent()
+  def runActors()
   {
     val config = ConfigFactory.load()
     val system = ActorSystem("SoftRains", config)
-    val props = Props(classOf[CentralActor], this)
-    system.actorOf(props, "centralActor")
+    if (settings.Actors.central) {
+      val props = Props(classOf[CentralActor], this)
+      system.actorOf(props, "centralActor")
+    }
+    if (settings.Actors.landline) {
+      val props = Props(classOf[LandlineActor])
+      val landlineActor =
+        system.actorOf(props, "landlineActor")
+    }
     Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
   }
 
@@ -285,5 +292,5 @@ object CentralSingleton
 
 object CentralApp extends App
 {
-  CentralSingleton.service.runAgent
+  CentralSingleton.service.runActors
 }

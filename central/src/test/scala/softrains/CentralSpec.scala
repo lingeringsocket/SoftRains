@@ -16,7 +16,7 @@ package softrains
 
 import com.typesafe.config._
 
-import io.Source
+import scala.io.Source
 
 import org.specs2.mutable._
 

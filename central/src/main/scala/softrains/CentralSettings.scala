@@ -31,6 +31,13 @@ class CentralSettings(rootConf : Config)
     FiniteDuration(
       subConf.getDuration(path, TimeUnit.MILLISECONDS), MILLISECONDS)
 
+  object Actors
+  {
+    val subConf = conf.getConfig("actors")
+    val central = subConf.getBoolean("central")
+    val landline = subConf.getBoolean("landline")
+  }
+
   object Openhab
   {
     val subConf = conf.getConfig("openhab")
