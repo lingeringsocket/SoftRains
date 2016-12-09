@@ -19,7 +19,7 @@ import akka.actor._
 class ConversationActorSpec extends AkkaActorSpecification
 {
   import ConversationActor._
-  import LandlineActor._
+  import IntercomActor._
 
   "ConversationActor" should
   {

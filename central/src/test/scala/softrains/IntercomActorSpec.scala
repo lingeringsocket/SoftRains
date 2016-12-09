@@ -66,22 +66,22 @@ abstract class AkkaActorSpecification(confFile : String = "test.conf")
   }
 }
 
-class LandlineActorSpec extends AkkaActorSpecification
+class IntercomActorSpec extends AkkaActorSpecification
 {
   // speaker output is shared, so we need isolation
   sequential
 
-  import LandlineActor._
+  import IntercomActor._
 
   private val voice = "charlie the unicorn"
 
   private val voice2 = "magical liopleurodon"
 
-  "LandlineActor" should
+  "IntercomActor" should
   {
     "encounter protocol errors" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[LandlineActor]))
+      val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       actor ! UnpairMsg
       expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
@@ -104,7 +104,7 @@ class LandlineActorSpec extends AkkaActorSpecification
 
     "have a very short conversation" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[LandlineActor]))
+      val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       actor ! RingtoneMsg
       expectMsg(SpeakerSoundFinishedMsg)
@@ -129,7 +129,7 @@ class LandlineActorSpec extends AkkaActorSpecification
 
     "provide a busy signal" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[LandlineActor]))
+      val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       val probe = TestProbe()
       actor.tell(PairRequestMsg(voice2), probe.ref)
@@ -161,7 +161,7 @@ class LandlineActorSpec extends AkkaActorSpecification
 
     "support preemption" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[LandlineActor]))
+      val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       val probe = TestProbe()
       actor.tell(PairRequestMsg(voice2), probe.ref)

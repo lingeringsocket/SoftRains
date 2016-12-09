@@ -35,7 +35,7 @@ class CentralSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("actors")
     val central = subConf.getString("central")
-    val landline = subConf.getString("landline")
+    val intercom = subConf.getString("intercom")
     val echo = subConf.getString("echo")
   }
 

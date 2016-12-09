@@ -45,7 +45,7 @@ import CommunicationPriority._
 
 class ConversationActor extends LoggingFSM[State, Data]
 {
-  import LandlineActor._
+  import IntercomActor._
 
   private val settings = CentralActorSettings(context)
 

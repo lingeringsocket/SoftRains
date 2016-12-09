@@ -28,9 +28,9 @@ trait ConversationProcessor
 {
   def produceUtterance() : Option[String]
 
-  def produceMessage() : Option[LandlineActor.SpeakerSoundMsg] =
+  def produceMessage() : Option[IntercomActor.SpeakerSoundMsg] =
   {
-    produceUtterance.map(LandlineActor.PartnerUtteranceMsg(_))
+    produceUtterance.map(IntercomActor.PartnerUtteranceMsg(_))
   }
 
   def consumeUtterance(utterance : String)
@@ -107,17 +107,17 @@ class EchoLoop(resident : HomeResident) extends Anticipation(resident)
       {
         if (echo.isEmpty) {
           Some(
-            LandlineActor.PartnerUtteranceMsg(
+            IntercomActor.PartnerUtteranceMsg(
               "I am going to repeat whatever you say until you say terminate," +
                 " OK " + resident.name + "?"))
         } else {
           if (echo == "terminate") {
             done = true
-            Some(LandlineActor.PartnerUtteranceMsg("OK, talk to you later!"))
+            Some(IntercomActor.PartnerUtteranceMsg("OK, talk to you later!"))
           } else if (echo == "ring the bell") {
-            Some(LandlineActor.DoorbellMsg)
+            Some(IntercomActor.DoorbellMsg)
           } else {
-            Some(LandlineActor.PartnerUtteranceMsg(echo))
+            Some(IntercomActor.PartnerUtteranceMsg(echo))
           }
         }
       }

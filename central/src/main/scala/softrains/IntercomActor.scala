@@ -40,7 +40,7 @@ import javax.sound.sampled.{
   AudioFormat => JavaAudioFormat
 }
 
-object LandlineActor
+object IntercomActor
 {
   val PROTOCOL_ALREADY_PAIRED = "already paired"
 
@@ -95,9 +95,9 @@ object LandlineActor
   final case class Partner(actorRef : ActorRef, voiceName : String)
       extends Data
 }
-import LandlineActor._
+import IntercomActor._
 
-class LandlineActor extends LoggingFSM[State, Data]
+class IntercomActor extends LoggingFSM[State, Data]
 {
   private val settings = CentralActorSettings(context)
 

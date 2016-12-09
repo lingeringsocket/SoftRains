@@ -80,18 +80,18 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
       val props = Props(classOf[CentralActor], this)
       system.actorOf(props, centralSpec)
     }
-    val landlineSpec = settings.Actors.landline
-    if (!landlineSpec.isEmpty) {
-      val landlineActor = {
-        if (landlineSpec.startsWith("akka:")) {
-          val landlineActorSelection = system.actorSelection(landlineSpec)
-          val landlineActorFuture = landlineActorSelection.resolveOne(
+    val intercomSpec = settings.Actors.intercom
+    if (!intercomSpec.isEmpty) {
+      val intercomActor = {
+        if (intercomSpec.startsWith("akka:")) {
+          val intercomActorSelection = system.actorSelection(intercomSpec)
+          val intercomActorFuture = intercomActorSelection.resolveOne(
             duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
           Await.result(
-            landlineActorFuture, duration.Duration.Inf)
+            intercomActorFuture, duration.Duration.Inf)
         } else {
-          val props = Props(classOf[LandlineActor])
-          system.actorOf(props, landlineSpec)
+          val props = Props(classOf[IntercomActor])
+          system.actorOf(props, intercomSpec)
         }
       }
       val echoSpec = settings.Actors.echo
@@ -103,7 +103,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
         val anticipation = new EchoLoop(resident)
         conversationActor ! ConversationActor.ActivateMsg(
           anticipation,
-          landlineActor)
+          intercomActor)
       }
     }
     Await.result(system.whenTerminated, duration.Duration.Inf)
