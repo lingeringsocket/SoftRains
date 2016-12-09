@@ -88,7 +88,8 @@ class CentralSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("speaker")
     val command = subConf.getString("command")
-    val bellCommand = subConf.getString("bell-command")
+    val doorbellCommand = subConf.getString("doorbell-command")
+    val ringtoneCommand = subConf.getString("ringtone-command")
   }
 
   object Files

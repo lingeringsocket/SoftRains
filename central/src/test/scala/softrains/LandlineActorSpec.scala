@@ -97,20 +97,32 @@ class LandlineActorSpec extends AkkaActorSpecification
 
       actor ! PairRequestMsg(voice)
       expectMsg(ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED))
+
+      actor ! RingtoneMsg
+      expectMsg(ProtocolErrorMsg(PROTOCOL_RING_WHILE_PAIRED))
     }
 
     "have a very short conversation" in new AkkaActorExample
     {
       val actor = system.actorOf(Props(classOf[LandlineActor]))
 
+      actor ! RingtoneMsg
+      expectMsg(SpeakerSoundFinishedMsg)
+
+      actor ! DoorbellMsg
+      expectMsg(SpeakerSoundFinishedMsg)
+
       actor ! PairRequestMsg(voice)
       expectMsg(PairAcceptedMsg)
 
       actor ! PartnerUtteranceMsg("hello")
-      expectMsg(10 seconds, UtteranceFinishedMsg)
+      expectMsg(10 seconds, SpeakerSoundFinishedMsg)
 
       actor ! PartnerListenMsg
       expectMsg(SilenceMsg)
+
+      actor ! DoorbellMsg
+      expectMsg(SpeakerSoundFinishedMsg)
 
       actor ! UnpairMsg
     }
@@ -123,8 +135,14 @@ class LandlineActorSpec extends AkkaActorSpecification
       actor.tell(PairRequestMsg(voice2), probe.ref)
       probe.expectMsg(PairAcceptedMsg)
 
+      actor ! RingtoneMsg
+      expectMsg(BusyMsg)
+
       actor ! PairRequestMsg(voice)
       expectMsg(BusyMsg)
+
+      actor ! DoorbellMsg
+      expectMsg(SpeakerSoundFinishedMsg)
 
       actor ! UnpairMsg
       expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
@@ -161,7 +179,7 @@ class LandlineActorSpec extends AkkaActorSpecification
       probe.expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
 
       actor ! PartnerUtteranceMsg("sorry to interrupt")
-      expectMsg(10 seconds, UtteranceFinishedMsg)
+      expectMsg(10 seconds, SpeakerSoundFinishedMsg)
     }
   }
 }

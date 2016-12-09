@@ -32,7 +32,7 @@ class ConversationActorSpec extends AkkaActorSpecification
       expectMsg(PairRequestMsg(voiceName))
       actor ! PairAcceptedMsg
       expectMsg(PartnerUtteranceMsg("Good morning, Typhlosion!"))
-      actor ! UtteranceFinishedMsg
+      actor ! SpeakerSoundFinishedMsg
       expectMsg(UnpairMsg)
     }
   }

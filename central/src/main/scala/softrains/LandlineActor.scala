@@ -50,24 +50,29 @@ object LandlineActor
 
   val PROTOCOL_LISTEN_WITHOUT_PAIR = "must be paired before listening"
 
+  val PROTOCOL_RING_WHILE_PAIRED = "cannot ring phone while paired"
+
   val VOICE_NONE = "none"
 
   sealed trait State
   sealed trait Data
 
   // received messages
+  trait SpeakerSoundMsg extends PeripheralMsg
   final case class PairRequestMsg(voiceName : String)
       extends PeripheralMsg
   final case class PairPreemptMsg(voiceName : String)
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String)
-      extends PeripheralMsg
+      extends SpeakerSoundMsg
   case object PartnerListenMsg
       extends PeripheralMsg
   case object UnpairMsg
       extends PeripheralMsg
-  case object RingBellMsg
-      extends PeripheralMsg
+  case object RingtoneMsg
+      extends SpeakerSoundMsg
+  case object DoorbellMsg
+      extends SpeakerSoundMsg
 
   // sent messages
   case object BusyMsg
@@ -80,7 +85,7 @@ object LandlineActor
       extends PeripheralMsg
   final case class PersonUtteranceMsg(utterance : String)
       extends PeripheralMsg
-  case object UtteranceFinishedMsg
+  case object SpeakerSoundFinishedMsg
       extends PeripheralMsg
   case object SilenceMsg
       extends PeripheralMsg
@@ -146,7 +151,7 @@ class LandlineActor extends LoggingFSM[State, Data]
       if (sender == partner) {
         log.info("Say '" + utterance + "' using voice " + voiceName)
         say(utterance, voiceName)
-        partner ! UtteranceFinishedMsg
+        partner ! SpeakerSoundFinishedMsg
         stay
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR)
@@ -173,14 +178,28 @@ class LandlineActor extends LoggingFSM[State, Data]
       }
       stay
     }
-    case Event(RingBellMsg, Partner(partner, _)) => {
-      if ((partner == unpaired) || (sender == partner)) {
+    case Event(RingtoneMsg, Partner(partner, _)) => {
+      if (partner == unpaired) {
         log.info("Ring ring")
-        (settings.Speaker.bellCommand).!
-        partner ! UtteranceFinishedMsg
+        val command = settings.Speaker.ringtoneCommand
+        if (!command.isEmpty) {
+          command.!
+        }
+        sender ! SpeakerSoundFinishedMsg
+      } else if (partner == sender) {
+        sender ! ProtocolErrorMsg(PROTOCOL_RING_WHILE_PAIRED)
       } else {
-        sender ! ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR)
+        sender ! BusyMsg
       }
+      stay
+    }
+    case Event(DoorbellMsg, Partner(partner, _)) => {
+      log.info("Ding dong")
+      val command = settings.Speaker.doorbellCommand
+      if (!command.isEmpty) {
+        command.!
+      }
+      sender ! SpeakerSoundFinishedMsg
       stay
     }
   }

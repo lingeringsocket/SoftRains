@@ -28,7 +28,7 @@ trait ConversationProcessor
 {
   def produceUtterance() : Option[String]
 
-  def produceMessage() : Option[PeripheralMsg] =
+  def produceMessage() : Option[LandlineActor.SpeakerSoundMsg] =
   {
     produceUtterance.map(LandlineActor.PartnerUtteranceMsg(_))
   }
@@ -115,7 +115,7 @@ class EchoLoop(resident : HomeResident) extends Anticipation(resident)
             done = true
             Some(LandlineActor.PartnerUtteranceMsg("OK, talk to you later!"))
           } else if (echo == "ring the bell") {
-            Some(LandlineActor.RingBellMsg)
+            Some(LandlineActor.DoorbellMsg)
           } else {
             Some(LandlineActor.PartnerUtteranceMsg(echo))
           }

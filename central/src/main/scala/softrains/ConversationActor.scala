@@ -90,7 +90,7 @@ class ConversationActor extends LoggingFSM[State, Data]
   }
 
   when(Paired) {
-    case Event(UtteranceFinishedMsg, ConvoData(anticipation, _)) => {
+    case Event(SpeakerSoundFinishedMsg, ConvoData(anticipation, _)) => {
       if (anticipation.isConversational) {
         sender ! PartnerListenMsg
         stay
