@@ -84,16 +84,18 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
       val landlineActor =
         system.actorOf(props, "landlineActor")
     }
-    Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
+    Await.result(system.whenTerminated, duration.Duration.Inf)
   }
 
   def runConversation()
   {
     val config = ConfigFactory.load()
     val system = ActorSystem("SoftRains", config)
-    val landlineProps = Props(classOf[LandlineActor])
-    val landlineActor =
-      system.actorOf(landlineProps, "landlineActor")
+    val landlineActorSelection = system.actorSelection(
+      "akka://SoftRains@127.0.0.1:25520/user/landlineActor")
+    val landlineActorFuture = landlineActorSelection.resolveOne(
+      duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
+    val landlineActor = Await.result(landlineActorFuture, duration.Duration.Inf)
     val conversationProps = Props(classOf[ConversationActor])
     val conversationActor =
       system.actorOf(conversationProps, "conversationActor")
@@ -102,7 +104,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
     conversationActor ! ConversationActor.ActivateMsg(
       anticipation,
       landlineActor)
-    Await.result(system.whenTerminated, scala.concurrent.duration.Duration.Inf)
+    Await.result(system.whenTerminated, duration.Duration.Inf)
   }
 
   def logEvent(msg : String)

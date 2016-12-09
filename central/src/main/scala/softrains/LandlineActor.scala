@@ -57,19 +57,31 @@ object LandlineActor
 
   // received messages
   final case class PairRequestMsg(voiceName : String)
+      extends PeripheralMsg
   final case class PairPreemptMsg(voiceName : String)
+      extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String)
+      extends PeripheralMsg
   case object PartnerListenMsg
+      extends PeripheralMsg
   case object UnpairMsg
+      extends PeripheralMsg
 
   // sent messages
   case object BusyMsg
+      extends PeripheralMsg
   final case class ProtocolErrorMsg(error : String)
+      extends PeripheralMsg
   case object PairAcceptedMsg
+      extends PeripheralMsg
   case object PreemptionDisconnectMsg
+      extends PeripheralMsg
   final case class PersonUtteranceMsg(utterance : String)
+      extends PeripheralMsg
   case object UtteranceFinishedMsg
+      extends PeripheralMsg
   case object SilenceMsg
+      extends PeripheralMsg
 
   case object Active extends State
 

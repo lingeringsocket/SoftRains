@@ -20,7 +20,7 @@ import akka.event._
 object DeviceMonitorActor
 {
   // request a network scan
-  case object ScanNetworkMsg
+  case object ScanNetworkMsg extends CentralMsg
 }
 
 class DeviceMonitorActor(central : CentralService) extends Actor

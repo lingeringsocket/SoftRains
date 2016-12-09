@@ -23,6 +23,7 @@ object ConversationActor
 
   // received messages
   final case class ActivateMsg(anticipation : Anticipation, channel : ActorRef)
+      extends CentralMsg
 
   sealed trait State
   sealed trait Data

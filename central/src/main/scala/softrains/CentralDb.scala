@@ -17,13 +17,19 @@ package softrains
 import sorm._
 import org.joda.time._
 
+trait CentralDbEntity extends RemoteReady
+{
+}
+
 case class HomeResident(
-  name : String)
+  name : String
+) extends CentralDbEntity
 
 case class LanDevice(
   name : String,
   displayName : String,
-  owner : Option[HomeResident] = None)
+  owner : Option[HomeResident] = None
+) extends CentralDbEntity
 
 case class LanPresence(
   device : LanDevice,
@@ -32,25 +38,26 @@ case class LanPresence(
   active : Boolean,
   connectionType : String,
   ipAddress : String,
-  macAddress : String)
+  macAddress : String
+) extends CentralDbEntity
 
 case class HomePresence(
   resident : HomeResident,
   startTime : DateTime,
   endTime : DateTime,
   active : Boolean
-)
+) extends CentralDbEntity
 
 case class CameraFeed(
   name : String,
   url : String
-)
+) extends CentralDbEntity
 
 case class ExceptionReport(
   tryTime : DateTime,
   catchTime : DateTime,
   message : String
-)
+) extends CentralDbEntity
 
 class CentralDb(settings : CentralSettings) extends Instance (
   entities = Set(

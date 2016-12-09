@@ -19,6 +19,18 @@ import akka.event._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+trait RemoteReady
+{
+}
+
+trait CentralMsg
+{
+}
+
+trait PeripheralMsg extends CentralMsg with RemoteReady
+{
+}
+
 object CentralActor
 {
 }
