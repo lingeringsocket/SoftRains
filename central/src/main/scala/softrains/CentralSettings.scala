@@ -34,8 +34,9 @@ class CentralSettings(rootConf : Config)
   object Actors
   {
     val subConf = conf.getConfig("actors")
-    val central = subConf.getBoolean("central")
-    val landline = subConf.getBoolean("landline")
+    val central = subConf.getString("central")
+    val landline = subConf.getString("landline")
+    val echo = subConf.getString("echo")
   }
 
   object Openhab

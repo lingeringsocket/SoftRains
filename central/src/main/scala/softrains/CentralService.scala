@@ -75,35 +75,37 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
   {
     val config = ConfigFactory.load()
     val system = ActorSystem("SoftRains", config)
-    if (settings.Actors.central) {
+    val centralSpec = settings.Actors.central
+    if (!centralSpec.isEmpty) {
       val props = Props(classOf[CentralActor], this)
-      system.actorOf(props, "centralActor")
+      system.actorOf(props, centralSpec)
     }
-    if (settings.Actors.landline) {
-      val props = Props(classOf[LandlineActor])
-      val landlineActor =
-        system.actorOf(props, "landlineActor")
+    val landlineSpec = settings.Actors.landline
+    if (!landlineSpec.isEmpty) {
+      val landlineActor = {
+        if (landlineSpec.startsWith("akka:")) {
+          val landlineActorSelection = system.actorSelection(landlineSpec)
+          val landlineActorFuture = landlineActorSelection.resolveOne(
+            duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
+          Await.result(
+            landlineActorFuture, duration.Duration.Inf)
+        } else {
+          val props = Props(classOf[LandlineActor])
+          system.actorOf(props, landlineSpec)
+        }
+      }
+      val echoSpec = settings.Actors.echo
+      if (!echoSpec.isEmpty) {
+        val conversationProps = Props(classOf[ConversationActor])
+        val conversationActor =
+          system.actorOf(conversationProps, echoSpec)
+        val resident = new HomeResident("Human")
+        val anticipation = new EchoLoop(resident)
+        conversationActor ! ConversationActor.ActivateMsg(
+          anticipation,
+          landlineActor)
+      }
     }
-    Await.result(system.whenTerminated, duration.Duration.Inf)
-  }
-
-  def runConversation()
-  {
-    val config = ConfigFactory.load()
-    val system = ActorSystem("SoftRains", config)
-    val landlineActorSelection = system.actorSelection(
-      "akka://SoftRains@127.0.0.1:25520/user/landlineActor")
-    val landlineActorFuture = landlineActorSelection.resolveOne(
-      duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
-    val landlineActor = Await.result(landlineActorFuture, duration.Duration.Inf)
-    val conversationProps = Props(classOf[ConversationActor])
-    val conversationActor =
-      system.actorOf(conversationProps, "conversationActor")
-    val tiberius = new HomeResident("John")
-    val anticipation = new EchoLoop(tiberius)
-    conversationActor ! ConversationActor.ActivateMsg(
-      anticipation,
-      landlineActor)
     Await.result(system.whenTerminated, duration.Duration.Inf)
   }
 
