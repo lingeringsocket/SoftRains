@@ -28,6 +28,11 @@ trait ConversationProcessor
 {
   def produceUtterance() : Option[String]
 
+  def produceMessage() : Option[PeripheralMsg] =
+  {
+    produceUtterance.map(LandlineActor.PartnerUtteranceMsg(_))
+  }
+
   def consumeUtterance(utterance : String)
 }
 
@@ -96,18 +101,23 @@ class EchoLoop(resident : HomeResident) extends Anticipation(resident)
     new ConversationProcessor {
       var echo = ""
 
-      def produceUtterance() =
+      override def produceUtterance() = None
+
+      override def produceMessage() =
       {
         if (echo.isEmpty) {
           Some(
-            "I am going to repeat whatever you say until you say terminate," +
-              " OK " + resident.name + "?")
+            LandlineActor.PartnerUtteranceMsg(
+              "I am going to repeat whatever you say until you say terminate," +
+                " OK " + resident.name + "?"))
         } else {
           if (echo == "terminate") {
             done = true
-            Some("OK, talk to you later!")
+            Some(LandlineActor.PartnerUtteranceMsg("OK, talk to you later!"))
+          } else if (echo == "ring the bell") {
+            Some(LandlineActor.RingBellMsg)
           } else {
-            Some(echo)
+            Some(LandlineActor.PartnerUtteranceMsg(echo))
           }
         }
       }

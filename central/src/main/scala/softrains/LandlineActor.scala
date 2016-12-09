@@ -66,6 +66,8 @@ object LandlineActor
       extends PeripheralMsg
   case object UnpairMsg
       extends PeripheralMsg
+  case object RingBellMsg
+      extends PeripheralMsg
 
   // sent messages
   case object BusyMsg
@@ -166,6 +168,16 @@ class LandlineActor extends LoggingFSM[State, Data]
         } else {
           partner ! SilenceMsg
         }
+      } else {
+        sender ! ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR)
+      }
+      stay
+    }
+    case Event(RingBellMsg, Partner(partner, _)) => {
+      if ((partner == unpaired) || (sender == partner)) {
+        log.info("Ring ring")
+        (settings.Speaker.bellCommand).!
+        partner ! UtteranceFinishedMsg
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR)
       }

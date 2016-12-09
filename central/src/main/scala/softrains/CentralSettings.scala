@@ -88,6 +88,7 @@ class CentralSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("speaker")
     val command = subConf.getString("command")
+    val bellCommand = subConf.getString("bell-command")
   }
 
   object Files

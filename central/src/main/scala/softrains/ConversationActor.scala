@@ -106,9 +106,9 @@ class ConversationActor extends LoggingFSM[State, Data]
     }
     case Event(PersonUtteranceMsg(utterance), ConvoData(_, processor)) => {
       processor.consumeUtterance(utterance)
-      processor.produceUtterance match {
+      processor.produceMessage match {
         case Some(reply) => {
-          sender ! PartnerUtteranceMsg(reply)
+          sender ! reply
           stay
         }
         case _ => {
@@ -127,8 +127,7 @@ class ConversationActor extends LoggingFSM[State, Data]
     anticipation : Anticipation, channel : ActorRef) =
   {
     val processor = anticipation.startCommunication
-    processor.produceUtterance.foreach(
-      channel ! PartnerUtteranceMsg(_))
+    processor.produceMessage.foreach(channel ! _)
     processor
   }
 
