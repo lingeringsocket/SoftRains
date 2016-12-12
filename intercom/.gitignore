@@ -1,4 +1,4 @@
-src/main/resources/application.conf
+src/main/resources
 
 # sbt specific
 .cache

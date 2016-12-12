@@ -31,6 +31,13 @@ class SoftRainsSettings(rootConf : Config)
     FiniteDuration(
       subConf.getDuration(path, TimeUnit.MILLISECONDS), MILLISECONDS)
 
+  object Http
+  {
+    val subConf = conf.getConfig("http")
+    val address = subConf.getString("address")
+    val port = subConf.getInt("port")
+  }
+
   object Actors
   {
     val subConf = conf.getConfig("actors")

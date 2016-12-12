@@ -25,10 +25,18 @@ import com.typesafe.config._
 import org.joda.time._
 
 import java.io._
+import scala.io._
 
 import akka.actor._
 
 import scala.concurrent._
+
+import akka.http.scaladsl._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
+import akka.stream._
+
+import org.joda.time.DateTime
 
 class CentralService(
   settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
@@ -81,15 +89,16 @@ class CentralService(
   def runActors()
   {
     val config = ConfigFactory.load()
-    val system = ActorSystem("SoftRains", config)
+    implicit val system = ActorSystem("SoftRains", config)
     val centralSpec = settings.Actors.central
     if (!centralSpec.isEmpty) {
       val props = Props(classOf[CentralActor], this)
       system.actorOf(props, centralSpec)
     }
     val intercomSpec = settings.Actors.intercom
+    var intercomActor : ActorRef = null
     if (!intercomSpec.isEmpty) {
-      val intercomActor = {
+      intercomActor = {
         if (intercomSpec.startsWith("akka:")) {
           val intercomActorSelection = system.actorSelection(intercomSpec)
           val intercomActorFuture = intercomActorSelection.resolveOne(
@@ -113,6 +122,28 @@ class CentralService(
           intercomActor)
       }
     }
+
+    implicit val materializer = ActorMaterializer()
+    implicit val executionContext = system.dispatcher
+
+    val route = path("doorbell") {
+      get {
+        complete({
+          intercomActor ! IntercomActor.DoorbellMsg
+          HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Ding Dong!</h1>")
+        })
+      }
+    }
+
+    val address = settings.Http.address
+    val port = settings.Http.port
+    val bindingFuture = Http().bindAndHandle(route, address, port)
+
+    println(s"HTTP listening at http://$address:$port/\nPress RETURN to stop...")
+    StdIn.readLine
+    bindingFuture
+      .flatMap(_.unbind)
+      .onComplete(_ => system.terminate)
     Await.result(system.whenTerminated, duration.Duration.Inf)
   }
 
