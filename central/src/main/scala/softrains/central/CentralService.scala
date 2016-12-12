@@ -30,7 +30,8 @@ import akka.actor._
 
 import scala.concurrent._
 
-class CentralService(settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
+class CentralService(
+  settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
 {
   val db = new CentralDb(settings)
   seedDb
