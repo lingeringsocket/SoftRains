@@ -139,7 +139,8 @@ class CentralService(
     val port = settings.Http.port
     val bindingFuture = Http().bindAndHandle(route, address, port)
 
-    println(s"HTTP listening at http://$address:$port/\nPress RETURN to stop...")
+    println(
+      s"HTTP listening at http://$address:$port/\nPress RETURN to stop...")
     StdIn.readLine
     bindingFuture
       .flatMap(_.unbind)
