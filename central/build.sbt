@@ -10,8 +10,6 @@ scalacOptions := Common.scalacOptions
 
 classpathTypes += "maven-plugin"
 
-val liftVersion = "3.0-RC3"
-
 resolvers ++= Common.resolvers
 
 val platform = org.bytedeco.javacpp.Loader.getPlatform
@@ -29,12 +27,9 @@ libraryDependencies ++= Seq(
   "javax.mail" % "mail" % "1.4.7",
   "com.meetup" %% "archery" % "0.4.0",
   "nu.validator" % "htmlparser" % "1.4.4",
-  "com.jsuereth" %% "scala-arm" % "1.4",
   "org.sorm-framework" % "sorm" % "0.3.20",
   "com.h2database" % "h2" % "1.3.168",
-  "org.postgresql" % "postgresql" % "9.4.1210",
-  "com.ibm.watson.developer_cloud" % "text-to-speech" % "3.5.1",
-  "com.ibm.watson.developer_cloud" % "speech-to-text" % "3.5.1"
+  "org.postgresql" % "postgresql" % "9.4.1210"
 )
 
 libraryDependencies ++= Common.javacvDeps

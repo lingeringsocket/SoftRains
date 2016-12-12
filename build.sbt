@@ -8,4 +8,8 @@ scalaVersion := Common.scalaVersion
 
 scalastyleFailOnError := true
 
-lazy val central = project
+lazy val base = project
+
+lazy val intercom = project.dependsOn(base % "test->test;compile->compile")
+
+lazy val central = project.dependsOn(intercom % "test->test;compile->compile")
