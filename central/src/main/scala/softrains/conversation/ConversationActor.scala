@@ -12,7 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.conversation
+
+import softrains.base._
+import softrains.intercom._
 
 import akka.actor._
 
@@ -23,7 +26,7 @@ object ConversationActor
 
   // received messages
   final case class ActivateMsg(anticipation : Anticipation, channel : ActorRef)
-      extends CentralMsg
+      extends SoftRainsMsg
 
   sealed trait State
   sealed trait Data
@@ -47,7 +50,7 @@ class ConversationActor extends LoggingFSM[State, Data]
 {
   import IntercomActor._
 
-  private val settings = CentralActorSettings(context)
+  private val settings = SoftRainsActorSettings(context)
 
   startWith(Inactive, Empty)
 

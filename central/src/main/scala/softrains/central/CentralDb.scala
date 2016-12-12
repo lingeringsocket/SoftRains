@@ -12,7 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.central
+
+import softrains.base._
 
 import sorm._
 import org.joda.time._
@@ -59,7 +61,7 @@ case class ExceptionReport(
   message : String
 ) extends CentralDbEntity
 
-class CentralDb(settings : CentralSettings) extends Instance (
+class CentralDb(settings : SoftRainsSettings) extends Instance (
   entities = Set(
     Entity[ExceptionReport](),
     Entity[CameraFeed](unique = Set() + Seq("name")),

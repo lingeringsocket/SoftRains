@@ -12,7 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.base
 
 import akka.actor._
 import com.typesafe.config._
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import java.io._
 import java.util.concurrent._
 
-class CentralSettings(rootConf : Config)
+class SoftRainsSettings(rootConf : Config)
 {
   private val conf = rootConf.getConfig("softrains")
 
@@ -134,9 +134,9 @@ class CentralSettings(rootConf : Config)
   }
 }
 
-object CentralSettings
+object SoftRainsSettings
 {
-  def apply(config : Config) = new CentralSettings(config)
+  def apply(config : Config) = new SoftRainsSettings(config)
 
   def complainMissing(path : String)
   {
@@ -144,21 +144,21 @@ object CentralSettings
   }
 }
 
-class CentralActorSettings(
+class SoftRainsActorSettings(
   rootConf : Config, extendedSystem : ExtendedActorSystem)
-    extends CentralSettings(rootConf)
+    extends SoftRainsSettings(rootConf)
     with Extension
 {
 }
 
-object CentralActorSettings
-    extends ExtensionId[CentralActorSettings] with ExtensionIdProvider
+object SoftRainsActorSettings
+    extends ExtensionId[SoftRainsActorSettings] with ExtensionIdProvider
 {
-  override def lookup = CentralActorSettings
+  override def lookup = SoftRainsActorSettings
 
   override def createExtension(system : ExtendedActorSystem) =
-    new CentralActorSettings(system.settings.config, system)
+    new SoftRainsActorSettings(system.settings.config, system)
 
-  def apply(context : ActorContext) : CentralActorSettings =
+  def apply(context : ActorContext) : SoftRainsActorSettings =
     apply(context.system)
 }

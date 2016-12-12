@@ -12,7 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.network
+
+import softrains.base._
 
 import dispatch._, Defaults._
 
@@ -63,7 +65,7 @@ abstract class AbstractCableRouterMonitor
   }
 }
 
-class CableRouterMonitor(settings : CentralSettings)
+class CableRouterMonitor(settings : SoftRainsSettings)
     extends AbstractCableRouterMonitor
 {
   private var cookies = ""

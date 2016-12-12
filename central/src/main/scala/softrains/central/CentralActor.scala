@@ -12,40 +12,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.central
+
+import softrains.base._
+import softrains.network._
 
 import akka.actor._
 import akka.event._
 
-object DeviceMonitorActor
+import scala.concurrent.ExecutionContext.Implicits.global
+
+object CentralActor
 {
-  // request a network scan
-  case object ScanNetworkMsg extends CentralMsg
 }
 
-class DeviceMonitorActor(central : CentralService) extends Actor
+class CentralActor(central : CentralService) extends Actor
 {
-  import DeviceMonitorActor._
+  private val settings = SoftRainsActorSettings(context)
 
-  private val settings = CentralActorSettings(context)
+  private val networkScanFreq = settings.Router.scanFreq
 
   private val log = Logging(context.system, this)
 
-  private val tenHours = 600
+  private val deviceMonitorActor = context.actorOf(
+    Props(classOf[DeviceMonitorActor], central),
+    "deviceMonitorActor")
 
-  private var nRequests = 0
+  override def preStart()
+  {
+    context.system.scheduler.schedule(
+      networkScanFreq, networkScanFreq,
+      deviceMonitorActor, DeviceMonitorActor.ScanNetworkMsg)
+  }
 
   def receive =
   {
-    case ScanNetworkMsg => {
-      nRequests += 1
-      if ((nRequests % tenHours) == 0) {
-        log.info("Refreshing session")
-        central.getDeviceMonitor.requestLogin
-      }
-      log.info("Scanning network")
-      central.scanLan
-      log.info("Network scan complete")
-    }
+    case "test" => log.info("received test")
   }
 }

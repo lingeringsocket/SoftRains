@@ -12,7 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.central
+
+import softrains.base._
+import softrains.network._
 
 import com.typesafe.config._
 
@@ -57,7 +60,7 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
   sequential
 
   private val deviceMonitor = new MockCableRouterMonitor
-  private val settings = CentralSettings(ConfigFactory.load("test.conf"))
+  private val settings = SoftRainsSettings(ConfigFactory.load("test.conf"))
   private val central = new CentralService(settings, deviceMonitor)
 
   private def getCameraCount =

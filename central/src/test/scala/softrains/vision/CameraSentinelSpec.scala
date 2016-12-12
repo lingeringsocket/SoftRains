@@ -12,7 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.vision
+
+import softrains.base._
 
 import com.typesafe.config._
 
@@ -28,7 +30,7 @@ class CameraSentinelSpec extends Specification
   // filesystem state is shared, so we need isolation
   sequential
 
-  private val settings = CentralSettings(ConfigFactory.load("test.conf"))
+  private val settings = SoftRainsSettings(ConfigFactory.load("test.conf"))
 
   private def cleanVideoFiles()
   {

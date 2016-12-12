@@ -12,7 +12,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.central
+
+import softrains.base._
+import softrains.conversation._
+import softrains.intercom._
+import softrains.network._
+import softrains.vision._
 
 import com.typesafe.config._
 
@@ -24,7 +30,7 @@ import akka.actor._
 
 import scala.concurrent._
 
-class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
+class CentralService(settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
 {
   val db = new CentralDb(settings)
   seedDb
@@ -290,7 +296,7 @@ class CentralService(settings : CentralSettings, deviceMonitor : DeviceMonitor)
 
 object CentralSingleton
 {
-  val settings = CentralSettings(ConfigFactory.load)
+  val settings = SoftRainsSettings(ConfigFactory.load)
   val service = new CentralService(settings, new CableRouterMonitor(settings))
 }
 

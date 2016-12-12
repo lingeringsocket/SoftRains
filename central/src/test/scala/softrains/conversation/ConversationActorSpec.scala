@@ -12,7 +12,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.conversation
+
+import softrains.base._
+import softrains.central._
+import softrains.intercom._
 
 import akka.actor._
 

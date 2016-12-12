@@ -12,7 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains
+package softrains.intercom
+
+import softrains.base._
 
 import akka.actor._
 
@@ -99,7 +101,7 @@ import IntercomActor._
 
 class IntercomActor extends LoggingFSM[State, Data]
 {
-  private val settings = CentralActorSettings(context)
+  private val settings = SoftRainsActorSettings(context)
 
   private val unpaired = ActorRef.noSender
 
