@@ -273,7 +273,7 @@ class CameraSentinel(
 
   private def loadClassifier(classifierName : String) =
   {
-    val classifierFile = new File("data", classifierName)
+    val classifierFile = new File("central/data", classifierName)
     if ((classifierFile == null) || (classifierFile.length <= 0)) {
       throw new IOException(
         "Classifier " + classifierFile.getAbsolutePath + " not found.")

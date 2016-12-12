@@ -57,14 +57,14 @@ class CameraSentinelSpec extends Specification
     "detect faces" >> {
       Fragment.foreach(
         Seq(
-          ("data/johnLeaving.mkv", false, true),
-          ("data/johnArriving.mkv", true, true),
-          ("data/rhiannonArriving.mkv", false, true),
-          ("data/rhiannonLeaving.mkv", false, true),
-          ("data/pedestrians.mkv", false, false),
-          ("data/muniLeft.mkv", false, false),
-          ("data/muniRight.mkv", false, false),
-          ("data/nightCar.mkv", false, false)))
+          ("central/data/johnLeaving.mkv", false, true),
+          ("central/data/johnArriving.mkv", true, true),
+          ("central/data/rhiannonArriving.mkv", false, true),
+          ("central/data/rhiannonLeaving.mkv", false, true),
+          ("central/data/pedestrians.mkv", false, false),
+          ("central/data/muniLeft.mkv", false, false),
+          ("central/data/muniRight.mkv", false, false),
+          ("central/data/nightCar.mkv", false, false)))
       {
         case (fileName, faceExpected, visitorExpected) =>
           "in file " + fileName >> {
@@ -86,7 +86,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(new File("data/muniRight.mkv"))
+      val input = new CameraFileInput(new File("central/data/muniRight.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
@@ -114,7 +114,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(new File("data/johnArriving.mkv"))
+      val input = new CameraFileInput(new File("central/data/johnArriving.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
