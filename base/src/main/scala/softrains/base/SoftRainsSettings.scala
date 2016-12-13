@@ -97,6 +97,7 @@ class SoftRainsSettings(rootConf : Config)
     val command = subConf.getString("command")
     val doorbellCommand = subConf.getString("doorbell-command")
     val ringtoneCommand = subConf.getString("ringtone-command")
+    val whitenoiseCommand = subConf.getString("whitenoise-command")
   }
 
   object Files

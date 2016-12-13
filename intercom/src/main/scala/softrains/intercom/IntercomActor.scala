@@ -61,9 +61,9 @@ object IntercomActor
 
   // received messages
   trait SpeakerSoundMsg extends PeripheralMsg
-  final case class PairRequestMsg(voiceName : String)
+  final case class PairRequestMsg(voice : String)
       extends PeripheralMsg
-  final case class PairPreemptMsg(voiceName : String)
+  final case class PairPreemptMsg(voice : String)
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String)
       extends SpeakerSoundMsg
@@ -75,6 +75,10 @@ object IntercomActor
       extends SpeakerSoundMsg
   case object DoorbellMsg
       extends SpeakerSoundMsg
+  case object StartWhiteNoiseMsg
+      extends PeripheralMsg
+  case object StopWhiteNoiseMsg
+      extends PeripheralMsg
 
   // sent messages
   case object BusyMsg
@@ -94,7 +98,9 @@ object IntercomActor
 
   case object Active extends State
 
-  final case class Partner(actorRef : ActorRef, voiceName : String)
+  final case class Partner(
+    actorRef : ActorRef, voice : String,
+    background : Option[Process] = None)
       extends Data
 }
 import IntercomActor._
@@ -122,37 +128,37 @@ class IntercomActor extends LoggingFSM[State, Data]
   startWith(Active, Partner(unpaired, VOICE_NONE))
 
   when(Active) {
-    case Event(PairRequestMsg(voiceName), Partner(oldPartner, _)) => {
+    case Event(PairRequestMsg(voice), Partner(oldPartner, _, bg)) => {
       if (sender == oldPartner) {
         oldPartner ! ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED)
         stay
       } else if (oldPartner == unpaired) {
         sender ! PairAcceptedMsg
-        stay using Partner(sender, voiceName)
+        stay using Partner(sender, voice, bg)
       } else {
         sender ! BusyMsg
         stay
       }
     }
-    case Event(PairPreemptMsg(voiceName), Partner(oldPartner, _)) => {
+    case Event(PairPreemptMsg(voice), Partner(oldPartner, _, bg)) => {
       if (oldPartner != unpaired) {
         oldPartner ! PreemptionDisconnectMsg
       }
       sender ! PairAcceptedMsg
-      stay using Partner(sender, voiceName)
+      stay using Partner(sender, voice, bg)
     }
-    case Event(UnpairMsg, Partner(partner, _)) => {
+    case Event(UnpairMsg, Partner(partner, _, bg)) => {
       if (sender == partner) {
-        stay using Partner(unpaired, VOICE_NONE)
+        stay using Partner(unpaired, VOICE_NONE, bg)
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR)
         stay
       }
     }
-    case Event(PartnerUtteranceMsg(utterance), Partner(partner, voiceName)) => {
+    case Event(PartnerUtteranceMsg(utterance), Partner(partner, voice, _)) => {
       if (sender == partner) {
-        log.info("Say '" + utterance + "' using voice " + voiceName)
-        say(utterance, voiceName)
+        log.info("Say '" + utterance + "' using voice " + voice)
+        say(utterance, voice)
         partner ! SpeakerSoundFinishedMsg
         stay
       } else {
@@ -160,7 +166,7 @@ class IntercomActor extends LoggingFSM[State, Data]
         stay
       }
     }
-    case Event(PartnerListenMsg, Partner(partner, _)) => {
+    case Event(PartnerListenMsg, Partner(partner, _, _)) => {
       if (sender == partner) {
         log.info("Listening...")
         if (isWatsonEnabled) {
@@ -180,7 +186,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       }
       stay
     }
-    case Event(RingtoneMsg, Partner(partner, _)) => {
+    case Event(RingtoneMsg, Partner(partner, _, _)) => {
       if (partner == unpaired) {
         log.info("Ring ring")
         val command = settings.Speaker.ringtoneCommand
@@ -195,7 +201,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       }
       stay
     }
-    case Event(DoorbellMsg, Partner(partner, _)) => {
+    case Event(DoorbellMsg, Partner(partner, _, _)) => {
       log.info("Ding dong")
       val command = settings.Speaker.doorbellCommand
       if (!command.isEmpty) {
@@ -204,12 +210,34 @@ class IntercomActor extends LoggingFSM[State, Data]
       sender ! SpeakerSoundFinishedMsg
       stay
     }
+    case Event(StartWhiteNoiseMsg, Partner(partner, voice, background)) => {
+      background match {
+        case Some(process) => {
+          stay
+        }
+        case _ => {
+          val process = (settings.Speaker.whitenoiseCommand).run
+          stay using Partner(partner, voice, Some(process))
+        }
+      }
+    }
+    case Event(StopWhiteNoiseMsg, Partner(partner, voice, background)) => {
+      background match {
+        case Some(process) => {
+          process.destroy
+          stay using Partner(partner, voice)
+        }
+        case _ => {
+          stay
+        }
+      }
+    }
   }
 
   private def isWatsonEnabled =
     !settings.WatsonTts.user.isEmpty && !settings.WatsonStt.user.isEmpty
 
-  private def say(utterance : String, voiceName : String)
+  private def say(utterance : String, voice : String)
   {
     if (!isWatsonEnabled) {
       return
