@@ -44,6 +44,10 @@ class CentralService(
   val db = new CentralDb(settings)
   seedDb
 
+  var intercomActor : ActorRef = null
+
+  var conversationActor : ActorRef = null
+
   def getDeviceMonitor = deviceMonitor
 
   def seedDb()
@@ -96,7 +100,6 @@ class CentralService(
       system.actorOf(props, centralSpec)
     }
     val intercomSpec = settings.Actors.intercom
-    var intercomActor : ActorRef = null
     if (!intercomSpec.isEmpty) {
       intercomActor = {
         if (intercomSpec.startsWith("akka:")) {
@@ -111,15 +114,18 @@ class CentralService(
         }
       }
       val echoSpec = settings.Actors.echo
+      val conversationProps = Props(classOf[ConversationActor])
+      val conversationSpec = {
+        if (echoSpec.isEmpty) {
+          "conversationActor"
+        } else {
+          echoSpec
+        }
+      }
+      conversationActor =
+        system.actorOf(conversationProps, conversationSpec)
       if (!echoSpec.isEmpty) {
-        val conversationProps = Props(classOf[ConversationActor])
-        val conversationActor =
-          system.actorOf(conversationProps, echoSpec)
-        val resident = new HomeResident("Your Grace")
-        val anticipation = new EchoLoop(resident)
-        conversationActor ! ConversationActor.ActivateMsg(
-          anticipation,
-          intercomActor)
+        startEcho
       }
     }
 
@@ -128,7 +134,7 @@ class CentralService(
     implicit val executionContext = system.dispatcher
 
     val contentType = ContentTypes.`text/html(UTF-8)`
-    val route =
+    val route = {
       path("doorbell") {
         get {
           complete({
@@ -157,7 +163,16 @@ class CentralService(
             HttpEntity(contentType, "uptime in " + interval)
           })
         }
+      } ~
+      path("echo") {
+        get {
+          complete({
+            startEcho
+            HttpEntity(contentType, "Time to play!")
+          })
+        }
       }
+    }
 
     val address = settings.Http.address
     val port = settings.Http.port
@@ -170,6 +185,15 @@ class CentralService(
       .flatMap(_.unbind)
       .onComplete(_ => system.terminate)
     Await.result(system.whenTerminated, duration.Duration.Inf)
+  }
+
+  private def startEcho()
+  {
+    val resident = new HomeResident("Your Grace")
+    val anticipation = new EchoLoop(resident)
+    conversationActor ! ConversationActor.ActivateMsg(
+      anticipation,
+      intercomActor)
   }
 
   def logEvent(msg : String)
