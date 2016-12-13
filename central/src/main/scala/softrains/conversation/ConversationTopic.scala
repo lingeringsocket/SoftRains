@@ -158,7 +158,7 @@ class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
 
       def consumeUtterance(utterance : String) =
       {
-        echo = utterance
+        echo = utterance.toLowerCase
       }
     }
 
