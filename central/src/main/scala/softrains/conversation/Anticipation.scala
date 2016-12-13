@@ -90,6 +90,32 @@ class DailyGreeting(resident : HomeResident) extends Anticipation(resident)
   override def getPriority() = ASAP
 }
 
+class GenericGreeting(resident : HomeResident) extends Anticipation(resident)
+{
+  override def isReady() = true
+
+  override def isExpired() = false
+
+  override def startCommunication() : ConversationProcessor =
+  {
+    val hour = DateTime.now.hourOfDay.get
+    val greeting = {
+      if (hour < 3) {
+        "Shouldn't you be in bed?"
+      } else if (hour < 12) {
+        "Good morning!"
+      } else if (hour < 18) {
+        "Good afternoon!"
+      } else {
+        "Good evening!"
+      }
+    }
+    new NotificationConversationProcessor(greeting)
+  }
+
+  override def getPriority() = ASAP
+}
+
 class EchoLoop(resident : HomeResident) extends Anticipation(resident)
 {
   private var done = false

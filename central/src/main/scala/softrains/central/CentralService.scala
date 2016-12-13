@@ -164,6 +164,14 @@ class CentralService(
           })
         }
       } ~
+      path("greet") {
+        get {
+          complete({
+            startGreet
+            HttpEntity(contentType, "Salutations!")
+          })
+        }
+      } ~
       path("echo") {
         get {
           complete({
@@ -189,8 +197,17 @@ class CentralService(
 
   private def startEcho()
   {
-    val resident = new HomeResident("Your Grace")
+    val resident = new HomeResident("pal")
     val anticipation = new EchoLoop(resident)
+    conversationActor ! ConversationActor.ActivateMsg(
+      anticipation,
+      intercomActor)
+  }
+
+  private def startGreet()
+  {
+    val resident = new HomeResident("pal")
+    val anticipation = new GenericGreeting(resident)
     conversationActor ! ConversationActor.ActivateMsg(
       anticipation,
       intercomActor)
