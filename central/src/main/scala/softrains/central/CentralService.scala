@@ -115,7 +115,7 @@ class CentralService(
         val conversationProps = Props(classOf[ConversationActor])
         val conversationActor =
           system.actorOf(conversationProps, echoSpec)
-        val resident = new HomeResident("Human")
+        val resident = new HomeResident("Your Grace")
         val anticipation = new EchoLoop(resident)
         conversationActor ! ConversationActor.ActivateMsg(
           anticipation,
@@ -123,17 +123,41 @@ class CentralService(
       }
     }
 
+    val startTime = readClockTime
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
-    val route = path("doorbell") {
-      get {
-        complete({
-          intercomActor ! IntercomActor.DoorbellMsg
-          HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Ding Dong!</h1>")
-        })
+    val contentType = ContentTypes.`text/html(UTF-8)`
+    val route =
+      path("doorbell") {
+        get {
+          complete({
+            intercomActor ! IntercomActor.DoorbellMsg
+            HttpEntity(contentType, "<h1>Ding Dong!</h1>")
+          })
+        }
+      } ~
+      path("uptime") {
+        get {
+          complete({
+            val checkTime = readClockTime
+            val diff = Seconds.secondsBetween(startTime, checkTime)
+            val interval = {
+              diff.getSeconds match {
+                case d if (d > 86400) =>
+                  "days:  " + diff.toStandardDays.getDays
+                case h if (h > 3600) =>
+                  "hours:  " + diff.toStandardHours.getHours
+                case m if (m > 60) =>
+                  "minutes:  " + diff.toStandardMinutes.getMinutes
+                case _ =>
+                  "seconds:  " + diff.getSeconds
+              }
+            }
+            HttpEntity(contentType, "uptime in " + interval)
+          })
+        }
       }
-    }
 
     val address = settings.Http.address
     val port = settings.Http.port

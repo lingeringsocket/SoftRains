@@ -117,7 +117,7 @@ class EchoLoop(resident : HomeResident) extends Anticipation(resident)
           if (echo == "terminate") {
             done = true
             Some(IntercomActor.PartnerUtteranceMsg("OK, talk to you later!"))
-          } else if (echo == "ring the bell") {
+          } else if ((echo == "ring the bell") || (echo == "big ben")) {
             Some(IntercomActor.DoorbellMsg)
           } else {
             Some(IntercomActor.PartnerUtteranceMsg(echo))
