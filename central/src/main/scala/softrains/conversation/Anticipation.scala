@@ -98,8 +98,9 @@ class GenericGreeting(resident : HomeResident) extends Anticipation(resident)
 
   override def startCommunication() : ConversationProcessor =
   {
-    val hour = DateTime.now.hourOfDay.get
-    val greeting = {
+    val time = DateTime.now
+    val hour = time.hourOfDay.get
+    val greetingTime = {
       if (hour < 3) {
         "Shouldn't you be in bed?"
       } else if (hour < 12) {
@@ -110,7 +111,9 @@ class GenericGreeting(resident : HomeResident) extends Anticipation(resident)
         "Good evening!"
       }
     }
-    new NotificationConversationProcessor(greeting)
+    val day = time.dayOfWeek.getAsText
+    val greetingDay = "Happy " + day + "!"
+    new NotificationConversationProcessor(greetingTime + " " + greetingDay)
   }
 
   override def getPriority() = ASAP
