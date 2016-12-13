@@ -143,6 +143,22 @@ class CentralService(
           })
         }
       } ~
+      path("whitenoise" / "on") {
+        get {
+          complete({
+            intercomActor ! IntercomActor.StartWhiteNoiseMsg
+            HttpEntity(contentType, "<h1>White Noise Now On</h1>")
+          })
+        }
+      } ~
+      path("whitenoise" / "off") {
+        get {
+          complete({
+            intercomActor ! IntercomActor.StopWhiteNoiseMsg
+            HttpEntity(contentType, "<h1>White Noise Now Off</h1>")
+          })
+        }
+      } ~
       path("uptime") {
         get {
           complete({
