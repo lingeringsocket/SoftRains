@@ -39,7 +39,7 @@ trait ConversationProcessor
   def consumeUtterance(utterance : String)
 }
 
-abstract class Anticipation(resident : HomeResident)
+abstract class ConversationTopic(resident : HomeResident)
 {
   def isReady() : Boolean = false
 
@@ -72,7 +72,8 @@ class NotificationConversationProcessor(notification : String)
   }
 }
 
-class DailyGreeting(resident : HomeResident) extends Anticipation(resident)
+class DailyGreeting(resident : HomeResident)
+    extends ConversationTopic(resident)
 {
   private val expiration = (new DateTime).withTimeAtStartOfDay.plusDays(1)
 
@@ -90,7 +91,8 @@ class DailyGreeting(resident : HomeResident) extends Anticipation(resident)
   override def getPriority() = ASAP
 }
 
-class GenericGreeting(resident : HomeResident) extends Anticipation(resident)
+class GenericGreeting(resident : HomeResident)
+    extends ConversationTopic(resident)
 {
   override def isReady() = true
 
@@ -119,7 +121,7 @@ class GenericGreeting(resident : HomeResident) extends Anticipation(resident)
   override def getPriority() = ASAP
 }
 
-class EchoLoop(resident : HomeResident) extends Anticipation(resident)
+class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
 {
   private var done = false
 
@@ -163,7 +165,7 @@ class EchoLoop(resident : HomeResident) extends Anticipation(resident)
   override def getPriority() = ASAP
 }
 
-class FireAlarm(resident : HomeResident) extends Anticipation(resident)
+class FireAlarm(resident : HomeResident) extends ConversationTopic(resident)
 {
   override def isReady() = true
 

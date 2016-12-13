@@ -198,18 +198,18 @@ class CentralService(
   private def startEcho()
   {
     val resident = new HomeResident("pal")
-    val anticipation = new EchoLoop(resident)
+    val topic = new EchoLoop(resident)
     conversationActor ! ConversationActor.ActivateMsg(
-      anticipation,
+      topic,
       intercomActor)
   }
 
   private def startGreet()
   {
     val resident = new HomeResident("pal")
-    val anticipation = new GenericGreeting(resident)
+    val topic = new GenericGreeting(resident)
     conversationActor ! ConversationActor.ActivateMsg(
-      anticipation,
+      topic,
       intercomActor)
   }
 

@@ -25,7 +25,8 @@ object ConversationActor
   val voiceName = "SoftRains"
 
   // received messages
-  final case class ActivateMsg(anticipation : Anticipation, channel : ActorRef)
+  final case class ActivateMsg(
+    topic : ConversationTopic, channel : ActorRef)
       extends SoftRainsMsg
 
   sealed trait State
@@ -37,10 +38,11 @@ object ConversationActor
   case object Paired extends State
 
   case object Empty extends Data
-  final case class PairingData(anticipation : Anticipation, channel : ActorRef)
+  final case class PairingData(
+    topic : ConversationTopic, channel : ActorRef)
       extends Data
   final case class ConvoData(
-    anticipation : Anticipation, processor : ConversationProcessor)
+    topic : ConversationTopic, processor : ConversationProcessor)
       extends Data
 }
 import ConversationActor._
@@ -55,19 +57,19 @@ class ConversationActor extends LoggingFSM[State, Data]
   startWith(Inactive, Empty)
 
   when(Inactive) {
-    case Event(ActivateMsg(anticipation, channel), _) => {
-      if (!anticipation.isReady || anticipation.isExpired) {
+    case Event(ActivateMsg(topic, channel), _) => {
+      if (!topic.isReady || topic.isExpired) {
         stay
       } else {
         channel ! PairRequestMsg(voiceName)
-        goto(Pairing) using PairingData(anticipation, channel)
+        goto(Pairing) using PairingData(topic, channel)
       }
     }
   }
 
   when(Pairing) {
-    case Event(BusyMsg, PairingData(anticipation, channel)) => {
-      anticipation.getPriority match {
+    case Event(BusyMsg, PairingData(topic, channel)) => {
+      topic.getPriority match {
         case EMERGENCY => {
           channel ! PairPreemptMsg(voiceName)
           goto(Preempting)
@@ -78,23 +80,23 @@ class ConversationActor extends LoggingFSM[State, Data]
         }
       }
     }
-    case Event(PairAcceptedMsg, PairingData(anticipation, channel)) => {
-      val processor = startConversation(anticipation, channel)
-      goto(Paired) using ConvoData(anticipation, processor)
+    case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
+      val processor = startConversation(topic, channel)
+      goto(Paired) using ConvoData(topic, processor)
     }
   }
 
   when(Preempting) {
-    case Event(PairAcceptedMsg, PairingData(anticipation, channel)) => {
+    case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
       // TODO:  insert apology for interrupting
-      val processor = startConversation(anticipation, channel)
-      goto(Paired) using ConvoData(anticipation, processor)
+      val processor = startConversation(topic, channel)
+      goto(Paired) using ConvoData(topic, processor)
     }
   }
 
   when(Paired) {
-    case Event(SpeakerSoundFinishedMsg, ConvoData(anticipation, _)) => {
-      if (anticipation.isConversational) {
+    case Event(SpeakerSoundFinishedMsg, ConvoData(topic, _)) => {
+      if (topic.isConversational) {
         sender ! PartnerListenMsg
         stay
       } else {
@@ -127,9 +129,9 @@ class ConversationActor extends LoggingFSM[State, Data]
   }
 
   private def startConversation(
-    anticipation : Anticipation, channel : ActorRef) =
+    topic : ConversationTopic, channel : ActorRef) =
   {
-    val processor = anticipation.startCommunication
+    val processor = topic.startCommunication
     processor.produceMessage.foreach(channel ! _)
     processor
   }
