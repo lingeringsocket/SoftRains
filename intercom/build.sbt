@@ -17,6 +17,7 @@ traceLevel := Common.traceLevel
 scalastyleFailOnError := true
 
 libraryDependencies ++= Seq(
+  "commons-io" % "commons-io" % "2.5",
   "com.ibm.watson.developer_cloud" % "text-to-speech" % "3.5.1",
   "com.ibm.watson.developer_cloud" % "speech-to-text" % "3.5.1"
 )

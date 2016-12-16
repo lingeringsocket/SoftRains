@@ -44,7 +44,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       actor ! PartnerUtteranceMsg("hello")
       expectMsg(ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR))
 
-      actor ! PartnerListenMsg
+      actor ! PartnerListenMsg()
       expectMsg(ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR))
 
       actor ! PairRequestMsg(voice)
@@ -73,7 +73,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       actor ! PartnerUtteranceMsg("hello")
       expectMsg(10 seconds, SpeakerSoundFinishedMsg)
 
-      actor ! PartnerListenMsg
+      actor ! PartnerListenMsg()
       expectMsg(SilenceMsg)
 
       actor ! DoorbellMsg
@@ -105,7 +105,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       actor ! PartnerUtteranceMsg("hello")
       expectMsg(ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR))
 
-      actor ! PartnerListenMsg
+      actor ! PartnerListenMsg()
       expectMsg(ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR))
 
       actor.tell(UnpairMsg, probe.ref)

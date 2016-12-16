@@ -104,6 +104,7 @@ class SoftRainsSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("files")
     val videoPath = new File(subConf.getString("video-path")).getAbsoluteFile
+    val audioPath = new File(subConf.getString("audio-path")).getAbsoluteFile
   }
 
   object Visitors

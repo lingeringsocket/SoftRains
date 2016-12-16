@@ -32,8 +32,15 @@ import sys.process._
 
 import javax.sound.sampled._
 
+import java.io._
+import java.net._
+
+import org.apache.commons.io.output._
+
 import scala.concurrent._
 import scala.concurrent.duration._
+
+import com.bitsinharmony.recognito._
 
 import com.ibm.watson.developer_cloud.text_to_speech.v1.model.{
   AudioFormat => WatsonAudioFormat
@@ -67,7 +74,7 @@ object IntercomActor
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String)
       extends SpeakerSoundMsg
-  case object PartnerListenMsg
+  case class PartnerListenMsg(newPersonName : String = "")
       extends PeripheralMsg
   case object UnpairMsg
       extends PeripheralMsg
@@ -89,7 +96,7 @@ object IntercomActor
       extends PeripheralMsg
   case object PreemptionDisconnectMsg
       extends PeripheralMsg
-  final case class PersonUtteranceMsg(utterance : String)
+  final case class PersonUtteranceMsg(utterance : String, personName : String)
       extends PeripheralMsg
   case object SpeakerSoundFinishedMsg
       extends PeripheralMsg
@@ -115,6 +122,14 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   private val stt = new SpeechToText
 
+  private val audioDir = settings.Files.audioPath
+
+  private var first = true
+
+  private val recognito = new Recognito[String](44100.0f)
+
+  private var personCount = 0
+
   override def preStart()
   {
     if (isWatsonEnabled) {
@@ -122,6 +137,12 @@ class IntercomActor extends LoggingFSM[State, Data]
         settings.WatsonTts.user, settings.WatsonTts.password)
       stt.setUsernameAndPassword(
         settings.WatsonStt.user, settings.WatsonStt.password)
+    }
+    if (!audioDir.isDirectory) {
+      if (!audioDir.mkdirs) {
+        throw new IOException(
+          "Unable to create audio directory " + audioDir)
+      }
     }
   }
 
@@ -158,7 +179,11 @@ class IntercomActor extends LoggingFSM[State, Data]
     case Event(PartnerUtteranceMsg(utterance), Partner(partner, voice, _)) => {
       if (sender == partner) {
         log.info("Say '" + utterance + "' using voice " + voice)
-        say(utterance, voice)
+        if (first) {
+          say("Hello there!", voice, false)
+          first = false
+        }
+        say(utterance, voice, true)
         partner ! SpeakerSoundFinishedMsg
         stay
       } else {
@@ -166,7 +191,7 @@ class IntercomActor extends LoggingFSM[State, Data]
         stay
       }
     }
-    case Event(PartnerListenMsg, Partner(partner, _, _)) => {
+    case Event(PartnerListenMsg(newPersonName), Partner(partner, _, _)) => {
       if (sender == partner) {
         log.info("Listening...")
         if (isWatsonEnabled) {
@@ -174,7 +199,7 @@ class IntercomActor extends LoggingFSM[State, Data]
           val old = Thread.currentThread.getContextClassLoader
           try {
             Thread.currentThread.setContextClassLoader(cl)
-            listen(partner)
+            listen(partner, newPersonName)
           } finally {
             Thread.currentThread.setContextClassLoader(old)
           }
@@ -237,28 +262,46 @@ class IntercomActor extends LoggingFSM[State, Data]
   private def isWatsonEnabled =
     !settings.WatsonTts.user.isEmpty && !settings.WatsonStt.user.isEmpty
 
-  private def say(utterance : String, voice : String)
+  private def say(utterance : String, voice : String, cache : Boolean)
   {
     if (!isWatsonEnabled) {
       return
     }
-    val stream = tts.synthesize(
-      utterance, Voice.EN_ALLISON, WatsonAudioFormat.WAV)
-    val in = WaveUtils.reWriteWaveHeader(stream.execute)
-    (settings.Speaker.command #< in).!
+    val file = new File(
+      audioDir, "tts-" + URLEncoder.encode(utterance, "UTF-8") + ".wav")
+    if (cache && file.isFile) {
+      (settings.Speaker.command #< file).!
+    } else {
+      val stream = tts.synthesize(
+        utterance, Voice.EN_ALLISON, WatsonAudioFormat.WAV)
+      val in = WaveUtils.reWriteWaveHeader(stream.execute)
+      ((("tee " + file) #| settings.Speaker.command) #< in).!
+    }
   }
 
-  private def listen(partner : ActorRef)
+  private def listen(partner : ActorRef, newPersonName : String)
   {
     var result : AnyRef = SilenceMsg
     val sampleRate = 44100
-    val format = new JavaAudioFormat(sampleRate, 16, 1, true, false)
+    val format = new JavaAudioFormat(sampleRate, 16, 1, true, true)
     val info = new DataLine.Info(classOf[TargetDataLine], format)
     val line = AudioSystem.getLine(info).asInstanceOf[TargetDataLine]
     line.open(format)
     line.start
     try {
-      val audio = new AudioInputStream(line)
+      val orig = new AudioInputStream(line)
+      val pipedOutputStream = new PipedOutputStream
+      val pipedInputStream = new BufferedInputStream(
+        new PipedInputStream(pipedOutputStream))
+      val rawFile = File.createTempFile("stt-", ".au", audioDir)
+      val wavFile = new File(
+        rawFile.getCanonicalPath.stripSuffix(".au") + ".wav")
+      val teeOutputStream = new TeeOutputStream(
+        pipedOutputStream, new FileOutputStream(rawFile))
+      val pipeFuture = Future {
+        AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
+      }(ExecutionContext.Implicits.global)
+      val audio = AudioSystem.getAudioInputStream(pipedInputStream)
       val options = (new RecognizeOptions.Builder).
         contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
         maxAlternatives(1).build
@@ -275,7 +318,7 @@ class IntercomActor extends LoggingFSM[State, Data]
               speechResults.getResults.get(speechResults.getResultIndex)
             val utterance = transcript.getAlternatives.get(0).getTranscript.trim
             log.info("Heard:  " + utterance)
-            result = PersonUtteranceMsg(utterance)
+            result = PersonUtteranceMsg(utterance, newPersonName)
             speechPromise.success(speechResults)
           }
 
@@ -293,6 +336,27 @@ class IntercomActor extends LoggingFSM[State, Data]
         })
       Await.ready(disconnectFuture, Duration.Inf)
       Await.ready(speechFuture, Duration.Inf)
+      Await.ready(pipeFuture, Duration.Inf)
+      teeOutputStream.close
+      (s"sox $rawFile $wavFile").!
+      rawFile.delete
+      if (newPersonName.isEmpty) {
+        if (personCount > 0) {
+          val recognitoResults = recognito.identify(wavFile)
+          if (!recognitoResults.isEmpty) {
+            val identifiedPersonName = recognitoResults.get(0).getKey
+            result match {
+              case PersonUtteranceMsg(utterance, _) => {
+                result = PersonUtteranceMsg(utterance, identifiedPersonName)
+              }
+              case _ =>
+            }
+          }
+        }
+      } else {
+        recognito.createVoicePrint(newPersonName, wavFile)
+        personCount += 1
+      }
     } finally {
       line.stop
       line.close

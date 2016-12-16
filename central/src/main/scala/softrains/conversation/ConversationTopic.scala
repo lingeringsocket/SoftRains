@@ -36,7 +36,7 @@ trait ConversationProcessor
     produceUtterance.map(IntercomActor.PartnerUtteranceMsg(_))
   }
 
-  def consumeUtterance(utterance : String)
+  def consumeUtterance(utterance : String, personName : String)
 }
 
 abstract class ConversationTopic(resident : HomeResident)
@@ -48,6 +48,8 @@ abstract class ConversationTopic(resident : HomeResident)
   def isConversational() : Boolean = false
 
   def getPriority() : CommunicationPriority
+
+  def getNewSpeakerName() : String = ""
 
   def startCommunication() : ConversationProcessor
 }
@@ -67,7 +69,7 @@ class NotificationConversationProcessor(notification : String)
     }
   }
 
-  override def consumeUtterance(utterance : String)
+  override def consumeUtterance(utterance : String, personName : String)
   {
   }
 }
@@ -156,9 +158,66 @@ class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
         }
       }
 
-      def consumeUtterance(utterance : String) =
+      def consumeUtterance(utterance : String, personName : String) =
       {
         echo = utterance.toLowerCase
+      }
+    }
+
+  override def getPriority() = ASAP
+}
+
+class VoiceIdentifier(resident : HomeResident)
+    extends ConversationTopic(resident)
+{
+  private var counter = 0
+
+  override def isReady() = true
+
+  override def isExpired() = false
+
+  override def isConversational() : Boolean = true
+
+  override def getNewSpeakerName() : String =
+  {
+    if (counter == 0) {
+      "Sujin"
+    } else if (counter == 1) {
+      "John"
+    } else {
+      ""
+    }
+  }
+
+  private var lastUtterance = ""
+
+  private var lastPerson = ""
+
+  override def startCommunication() : ConversationProcessor =
+    new ConversationProcessor {
+      override def produceUtterance() =
+      {
+        if (counter == 0) {
+          Some(
+            "Sujin, please say, the quick brown fox jumped over the lazy dog.")
+        } else if (counter == 1) {
+          Some(
+            "Now, John, you say the same sentence.")
+        } else if (counter == 2) {
+          Some(
+            "Now someone say anything and I will try to identify the speaker.")
+        } else {
+          Some(
+            "I heard " + lastPerson + " say, " + lastUtterance +
+              ".  Try another?")
+        }
+      }
+
+      def consumeUtterance(utterance : String, personName : String) =
+      {
+        lastUtterance = utterance
+        lastPerson = personName
+        counter += 1
       }
     }
 

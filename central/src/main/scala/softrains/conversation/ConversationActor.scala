@@ -97,7 +97,7 @@ class ConversationActor extends LoggingFSM[State, Data]
   when(Paired) {
     case Event(SpeakerSoundFinishedMsg, ConvoData(topic, _)) => {
       if (topic.isConversational) {
-        sender ! PartnerListenMsg
+        sender ! PartnerListenMsg(topic.getNewSpeakerName)
         stay
       } else {
         sender ! UnpairMsg
@@ -109,8 +109,10 @@ class ConversationActor extends LoggingFSM[State, Data]
       sender ! UnpairMsg
       goto(Inactive) using Empty
     }
-    case Event(PersonUtteranceMsg(utterance), ConvoData(_, processor)) => {
-      processor.consumeUtterance(utterance)
+    case Event(PersonUtteranceMsg(utterance, personName),
+      ConvoData(_, processor)) =>
+    {
+      processor.consumeUtterance(utterance, personName)
       processor.produceMessage match {
         case Some(reply) => {
           sender ! reply
