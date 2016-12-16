@@ -213,8 +213,7 @@ class CentralService(
 
   private def startEcho()
   {
-    val resident = new HomeResident("pal")
-    val topic = new VoiceIdentifier(resident)
+    val topic = new EchoLoop
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
       intercomActor)
@@ -222,8 +221,7 @@ class CentralService(
 
   private def startGreet()
   {
-    val resident = new HomeResident("pal")
-    val topic = new GenericGreeting(resident)
+    val topic = new GenericGreeting
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
       intercomActor)

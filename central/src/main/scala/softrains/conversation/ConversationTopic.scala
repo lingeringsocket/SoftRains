@@ -39,7 +39,7 @@ trait ConversationProcessor
   def consumeUtterance(utterance : String, personName : String)
 }
 
-abstract class ConversationTopic(resident : HomeResident)
+abstract class ConversationTopic
 {
   def isReady() : Boolean = false
 
@@ -75,7 +75,7 @@ class NotificationConversationProcessor(notification : String)
 }
 
 class DailyGreeting(resident : HomeResident)
-    extends ConversationTopic(resident)
+    extends ConversationTopic
 {
   private val expiration = (new DateTime).withTimeAtStartOfDay.plusDays(1)
 
@@ -93,8 +93,8 @@ class DailyGreeting(resident : HomeResident)
   override def getPriority() = ASAP
 }
 
-class GenericGreeting(resident : HomeResident)
-    extends ConversationTopic(resident)
+class GenericGreeting
+    extends ConversationTopic
 {
   override def isReady() = true
 
@@ -104,8 +104,10 @@ class GenericGreeting(resident : HomeResident)
   {
     val time = DateTime.now
     val hour = time.hourOfDay.get
+    var includeDay = true
     val greetingTime = {
       if (hour < 3) {
+        includeDay = false
         "Shouldn't you be in bed?"
       } else if (hour < 12) {
         "Good morning!"
@@ -115,15 +117,28 @@ class GenericGreeting(resident : HomeResident)
         "Good evening!"
       }
     }
-    val day = time.dayOfWeek.getAsText
-    val greetingDay = "Happy " + day + "!"
-    new NotificationConversationProcessor(greetingTime + " " + greetingDay)
+    val fullGreeting = {
+      if (includeDay) {
+        val dayOfWeek = time.dayOfWeek
+        val greetingDay = dayOfWeek.get match {
+          case DateTimeConstants.MONDAY => "Ready for another week?"
+          case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
+          case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
+          case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
+          case _ => "Happy " + dayOfWeek.getAsText + "!"
+        }
+        greetingTime + " " + greetingDay
+      } else {
+        greetingTime
+      }
+    }
+    new NotificationConversationProcessor(fullGreeting)
   }
 
   override def getPriority() = ASAP
 }
 
-class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
+class EchoLoop extends ConversationTopic
 {
   private var done = false
 
@@ -143,9 +158,7 @@ class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
       {
         if (echo.isEmpty) {
           Some(
-            IntercomActor.PartnerUtteranceMsg(
-              "I am going to repeat whatever you say until you say terminate," +
-                " OK " + resident.name + "?"))
+            IntercomActor.PartnerUtteranceMsg("Polly wants a cracker!"))
         } else {
           if (echo == "terminate") {
             done = true
@@ -167,8 +180,8 @@ class EchoLoop(resident : HomeResident) extends ConversationTopic(resident)
   override def getPriority() = ASAP
 }
 
-class VoiceIdentifier(resident : HomeResident)
-    extends ConversationTopic(resident)
+class VoiceIdentifier(residents : Seq[HomeResident])
+    extends ConversationTopic
 {
   private var counter = 0
 
@@ -180,10 +193,8 @@ class VoiceIdentifier(resident : HomeResident)
 
   override def getNewSpeakerName() : String =
   {
-    if (counter == 0) {
-      "Sujin"
-    } else if (counter == 1) {
-      "John"
+    if (counter < residents.size) {
+      residents(counter).name
     } else {
       ""
     }
@@ -199,11 +210,13 @@ class VoiceIdentifier(resident : HomeResident)
       {
         if (counter == 0) {
           Some(
-            "Sujin, please say, the quick brown fox jumped over the lazy dog.")
+            residents.head.name +
+              ", please say, the quick brown fox jumped over the lazy dog.")
         } else if (counter == 1) {
           Some(
-            "Now, John, you say the same sentence.")
-        } else if (counter == 2) {
+            "Now, " + residents(counter).name +
+              ", you say the same sentence.")
+        } else if (counter == residents.size) {
           Some(
             "Now someone say anything and I will try to identify the speaker.")
         } else {
@@ -224,7 +237,7 @@ class VoiceIdentifier(resident : HomeResident)
   override def getPriority() = ASAP
 }
 
-class FireAlarm(resident : HomeResident) extends ConversationTopic(resident)
+class FireAlarm(resident : HomeResident) extends ConversationTopic
 {
   override def isReady() = true
 
