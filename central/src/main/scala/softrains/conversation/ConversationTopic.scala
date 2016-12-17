@@ -23,41 +23,184 @@ object CommunicationPriority extends Enumeration
 {
   type CommunicationPriority = Value
   val ONLY_IF_NOT_BUSY, ASAP, EMERGENCY = Value
-
 }
 import CommunicationPriority._
 
-trait ConversationProcessor
+abstract class ConversationTopic
 {
+  def isInProgress() : Boolean = false
+
+  protected def delegateToProduceMessage() =
+  {
+    produceMessage() match {
+      case Some(IntercomActor.PartnerUtteranceMsg(utterance)) =>
+        Some(utterance)
+      case _ =>
+        None
+    }
+  }
+
+  protected def delegateToProduceUtterance() =
+    produceUtterance.map(IntercomActor.PartnerUtteranceMsg(_))
+
   def produceUtterance() : Option[String]
 
   def produceMessage() : Option[IntercomActor.SpeakerSoundMsg] =
-  {
-    produceUtterance.map(IntercomActor.PartnerUtteranceMsg(_))
-  }
+    delegateToProduceUtterance
 
   def consumeUtterance(utterance : String, personName : String)
-}
-
-abstract class ConversationTopic
-{
-  def isReady() : Boolean = false
-
-  def isExpired() : Boolean = false
-
-  def isConversational() : Boolean = false
-
-  def getPriority() : CommunicationPriority
 
   def getNewSpeakerName() : String = ""
 
-  def startCommunication() : ConversationProcessor
+  def getPriority() : CommunicationPriority
 }
 
-class NotificationConversationProcessor(notification : String)
-    extends ConversationProcessor
+trait ConversationTopicSource
+{
+  def proposeTopicForPerson(personName : String) : Option[ConversationTopic]
+}
+
+class SequentialTopicSource(topics : Seq[ConversationTopic])
+    extends ConversationTopicSource
+{
+  private val iterator = topics.iterator
+
+  override def proposeTopicForPerson(personName : String) =
+  {
+    if (iterator.hasNext) {
+      Some(iterator.next)
+    } else {
+      None
+    }
+  }
+}
+
+class TopicDispatcher(topicSource : ConversationTopicSource)
+    extends ConversationTopic
+{
+  private var done = false
+
+  private var response = "Who goes there?"
+
+  private var currentPerson = ""
+
+  private var subTopic : Option[ConversationTopic] = None
+
+  override def getPriority() = ONLY_IF_NOT_BUSY
+
+  override def isInProgress() = !done
+
+  override def getNewSpeakerName() =
+    subTopic.map(_.getNewSpeakerName).getOrElse("")
+
+  override def produceUtterance() = delegateToProduceMessage
+
+  override def produceMessage() =
+  {
+    if (response.isEmpty) {
+      subTopic match {
+        case Some(topic) => {
+          val messageOpt = topic.produceMessage
+          if (messageOpt.isEmpty) {
+            changeTopic
+            if (done) {
+              // FIXME:  turnTheTables instead
+              softLanding
+            } else {
+              // FIXME:  smoother transition
+              subTopic.get.produceUtterance match {
+                case Some(utterance) => {
+                  // FIXME:  smoother transition
+                  Some(IntercomActor.PartnerUtteranceMsg(
+                    "OK, well then.  " + utterance))
+                }
+                case _ => {
+                  softLanding
+                }
+              }
+
+            }
+          } else {
+            messageOpt
+          }
+        }
+        case _ => None
+      }
+    } else {
+      val message = IntercomActor.PartnerUtteranceMsg(response)
+      response = ""
+      Some(message)
+    }
+  }
+
+  private def changeTopic()
+  {
+    topicSource.proposeTopicForPerson(currentPerson) match {
+      case Some(newTopic) => {
+        subTopic = Some(newTopic)
+      }
+      case _ => {
+        subTopic = None
+        done = true
+      }
+    }
+  }
+
+  private def turnTheTables()
+  {
+    // FIXME:  start passive topic
+    response = "Hey, " + currentPerson +
+      ", what can I help you with?"
+  }
+
+  private def softLanding() =
+  {
+    Some(IntercomActor.PartnerUtteranceMsg(
+      "Well, " + currentPerson + ", it has been nice chatting with you!"))
+  }
+
+  override def consumeUtterance(utterance : String, personName : String) =
+  {
+    subTopic match {
+      case Some(topic) => topic.consumeUtterance(
+        utterance, personName)
+      case _ => {
+        if (personName.isEmpty) {
+          response = "Sorry, I don't recognize your voice."
+          done = true
+        } else {
+          currentPerson = personName
+          changeTopic
+          subTopic match {
+            case Some(topic) => {
+              // FIXME what if they start out with message
+              // instead of utterance?
+              topic.produceUtterance match {
+                case Some(utterance) => {
+                  // FIXME:  smoother transition
+                  response = "Oh, hello, " + personName + "!  " + utterance
+                }
+                case _ => {
+                  turnTheTables
+                }
+              }
+            }
+            case _ => {
+              turnTheTables
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+abstract class NotificationTopic
+    extends ConversationTopic
 {
   private var over = false
+
+  protected def getNotification() : String
 
   override def produceUtterance() =
   {
@@ -65,7 +208,7 @@ class NotificationConversationProcessor(notification : String)
       None
     } else {
       over = true
-      Some(notification)
+      Some(getNotification)
     }
   }
 
@@ -75,32 +218,20 @@ class NotificationConversationProcessor(notification : String)
 }
 
 class DailyGreeting(resident : HomeResident)
-    extends ConversationTopic
+    extends NotificationTopic
 {
-  private val expiration = (new DateTime).withTimeAtStartOfDay.plusDays(1)
-
-  // TODO:  check whether resident is awake?
-  override def isReady() = true
-
-  // TODO:  expire if we already had some other conversation today
-  override def isExpired() =
-    DateTime.now.compareTo(expiration) > 0
-
-  override def startCommunication() : ConversationProcessor =
-    new NotificationConversationProcessor(
-      "Good morning, " + resident.name + "!")
+  override protected def getNotification() =
+    "Good morning, " + resident.name + "!"
 
   override def getPriority() = ASAP
 }
 
 class GenericGreeting
-    extends ConversationTopic
+    extends NotificationTopic
 {
-  override def isReady() = true
+  override def getPriority() = ASAP
 
-  override def isExpired() = false
-
-  override def startCommunication() : ConversationProcessor =
+  override protected def getNotification() =
   {
     val time = DateTime.now
     val hour = time.hourOfDay.get
@@ -132,52 +263,42 @@ class GenericGreeting
         greetingTime
       }
     }
-    new NotificationConversationProcessor(fullGreeting)
+    fullGreeting
   }
-
-  override def getPriority() = ASAP
 }
 
 class EchoLoop extends ConversationTopic
 {
   private var done = false
-
-  override def isReady() = true
-
-  override def isExpired() = false
-
-  override def isConversational() : Boolean = !done
-
-  override def startCommunication() : ConversationProcessor =
-    new ConversationProcessor {
-      var echo = ""
-
-      override def produceUtterance() = None
-
-      override def produceMessage() =
-      {
-        if (echo.isEmpty) {
-          Some(
-            IntercomActor.PartnerUtteranceMsg("Polly wants a cracker!"))
-        } else {
-          if (echo == "terminate") {
-            done = true
-            Some(IntercomActor.PartnerUtteranceMsg("OK, talk to you later!"))
-          } else if ((echo == "ring the bell") || (echo == "big ben")) {
-            Some(IntercomActor.DoorbellMsg)
-          } else {
-            Some(IntercomActor.PartnerUtteranceMsg(echo))
-          }
-        }
-      }
-
-      def consumeUtterance(utterance : String, personName : String) =
-      {
-        echo = utterance.toLowerCase
-      }
-    }
+  private var echo = ""
 
   override def getPriority() = ASAP
+
+  override def isInProgress() : Boolean = !done
+
+  override def produceUtterance() = delegateToProduceMessage
+
+  override def produceMessage() =
+  {
+    if (echo.isEmpty) {
+      Some(
+        IntercomActor.PartnerUtteranceMsg("Polly wants a cracker!"))
+    } else {
+      if (echo == "terminate") {
+        done = true
+        None
+      } else if ((echo == "ring the bell") || (echo == "big ben")) {
+        Some(IntercomActor.DoorbellMsg)
+      } else {
+        Some(IntercomActor.PartnerUtteranceMsg(echo))
+      }
+    }
+  }
+
+  def consumeUtterance(utterance : String, personName : String) =
+  {
+    echo = utterance.toLowerCase
+  }
 }
 
 class VoiceIdentifier(residents : Seq[HomeResident])
@@ -185,11 +306,13 @@ class VoiceIdentifier(residents : Seq[HomeResident])
 {
   private var counter = 0
 
-  override def isReady() = true
+  private var lastUtterance = ""
 
-  override def isExpired() = false
+  private var lastPerson = ""
 
-  override def isConversational() : Boolean = true
+  override def getPriority() = ASAP
+
+  override def isInProgress() : Boolean = true
 
   override def getNewSpeakerName() : String =
   {
@@ -200,53 +323,38 @@ class VoiceIdentifier(residents : Seq[HomeResident])
     }
   }
 
-  private var lastUtterance = ""
-
-  private var lastPerson = ""
-
-  override def startCommunication() : ConversationProcessor =
-    new ConversationProcessor {
-      override def produceUtterance() =
-      {
-        if (counter == 0) {
-          Some(
-            residents.head.name +
-              ", please say, the quick brown fox jumped over the lazy dog.")
-        } else if (counter == 1) {
-          Some(
-            "Now, " + residents(counter).name +
-              ", you say the same sentence.")
-        } else if (counter == residents.size) {
-          Some(
-            "Now someone say anything and I will try to identify the speaker.")
-        } else {
-          Some(
-            "I heard " + lastPerson + " say, " + lastUtterance +
-              ".  Try another?")
-        }
-      }
-
-      def consumeUtterance(utterance : String, personName : String) =
-      {
-        lastUtterance = utterance
-        lastPerson = personName
-        counter += 1
-      }
+  override def produceUtterance() =
+  {
+    if (counter == 0) {
+      Some(
+        getNewSpeakerName +
+          ", please say, the quick brown fox jumped over the lazy dog.")
+    } else if (counter == 1) {
+      Some(
+        "Now, " + getNewSpeakerName +
+          ", you say the same sentence.")
+    } else if (counter == residents.size) {
+      Some(
+        "Now someone say anything and I will try to identify the speaker.")
+    } else {
+      Some(
+        "I heard " + lastPerson + " say, " + lastUtterance +
+          ".  Try another?")
     }
+  }
 
-  override def getPriority() = ASAP
+  def consumeUtterance(utterance : String, personName : String) =
+  {
+    lastUtterance = utterance
+    lastPerson = personName
+    counter += 1
+  }
 }
 
-class FireAlarm(resident : HomeResident) extends ConversationTopic
+class FireAlarm(resident : HomeResident) extends NotificationTopic
 {
-  override def isReady() = true
-
-  // TODO:  when underlying alarm gets deactivated
-  override def isExpired() = false
-
-  override def startCommunication() : ConversationProcessor =
-    new NotificationConversationProcessor(
-      "O M G " + resident.name + ", the house is on fire!")
-
   override def getPriority() = EMERGENCY
+
+  override protected def getNotification() =
+    "O M G " + resident.name + ", the house is on fire!"
 }

@@ -24,24 +24,111 @@ class ConversationSpec extends Specification
   {
     "say good morning" in
     {
-      val notification = "Good morning!"
-      val processor = new NotificationConversationProcessor(notification)
-      processor.produceUtterance() must be equalTo(Some(notification))
-      processor.produceUtterance() must be equalTo(None)
-    }
-
-    "anticipate good morning" in
-    {
       val pikachu = new HomeResident("Pikachu")
       val greeting = new DailyGreeting(pikachu)
-      greeting.isReady must beTrue
-      greeting.isExpired must beFalse
-      greeting.isConversational must beFalse
       greeting.getPriority must be equalTo(CommunicationPriority.ASAP)
-      val processor = greeting.startCommunication
-      processor.produceUtterance() must be equalTo(
+      greeting.isInProgress must beFalse
+      greeting.produceUtterance() must be equalTo(
         Some("Good morning, Pikachu!"))
-      processor.produceUtterance() must be equalTo(None)
+      greeting.produceUtterance() must be equalTo(None)
+    }
+
+    "dispatch unknown voice" in
+    {
+      val topicSource = new SequentialTopicSource(Seq.empty)
+      val dispatcher = new TopicDispatcher(topicSource)
+      dispatcher.getPriority must be equalTo(
+        CommunicationPriority.ONLY_IF_NOT_BUSY)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Who goes there?"))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance(
+        "whatevs", "")
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Sorry, I don't recognize your voice."))
+      dispatcher.isInProgress must beFalse
+      dispatcher.produceUtterance() must be equalTo(None)
+    }
+
+    "dispatch to no topic" in
+    {
+      val topicSource = new SequentialTopicSource(Seq.empty)
+      val dispatcher = new TopicDispatcher(topicSource)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Who goes there?"))
+      dispatcher.consumeUtterance(
+        "Your worst enemy", "Voldemort")
+      // FIXME:  this should not be the end!
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Hey, Voldemort, what can I help you with?"))
+      dispatcher.isInProgress must beFalse
+    }
+
+    "dispatch to daily greeting" in
+    {
+      val frodo = new HomeResident("Frodo")
+      val greeting = new DailyGreeting(frodo)
+      val topicSource = new SequentialTopicSource(Seq(greeting))
+      val dispatcher = new TopicDispatcher(topicSource)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Who goes there?"))
+      dispatcher.consumeUtterance(
+        "The Ring-bearer", frodo.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Oh, hello, Frodo!  Good morning, Frodo!"))
+      dispatcher.isInProgress must beTrue
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Well, Frodo, it has been nice chatting with you!"))
+      dispatcher.isInProgress must beFalse
+    }
+
+    "dispatch to echo loop followed by voice identifier" in
+    {
+      val echoLoop = new EchoLoop
+      val bert = HomeResident("Bert")
+      val ernie = HomeResident("Ernie")
+      val voiceIdentifier = new VoiceIdentifier(Seq(
+        bert, ernie))
+      val topicSource = new SequentialTopicSource(Seq(
+        echoLoop, voiceIdentifier))
+      val dispatcher = new TopicDispatcher(topicSource)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Who goes there?"))
+      dispatcher.consumeUtterance(
+        "It's me, Bert", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Oh, hello, Bert!  Polly wants a cracker!"))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("here you go.", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("here you go."))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("want another one?", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("want another one?"))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("terminate", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("OK, well then.  " +
+          "Bert, please say, the quick brown fox jumped over the lazy dog."))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("blah blah blah", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Now, Ernie, you say the same sentence."))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("blah blah blah", ernie.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Now someone say anything and " +
+          "I will try to identify the speaker."))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("blah blah blah", ernie.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("I heard Ernie say, blah blah blah.  Try another?"))
+      dispatcher.isInProgress must beTrue
+      dispatcher.consumeUtterance("I want my rubber ducky", bert.name)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("I heard Bert say, I want my rubber ducky.  Try another?"))
+      dispatcher.isInProgress must beTrue
     }
   }
 }

@@ -42,7 +42,7 @@ object ConversationActor
     topic : ConversationTopic, channel : ActorRef)
       extends Data
   final case class ConvoData(
-    topic : ConversationTopic, processor : ConversationProcessor)
+    topic : ConversationTopic)
       extends Data
 }
 import ConversationActor._
@@ -58,12 +58,8 @@ class ConversationActor extends LoggingFSM[State, Data]
 
   when(Inactive) {
     case Event(ActivateMsg(topic, channel), _) => {
-      if (!topic.isReady || topic.isExpired) {
-        stay
-      } else {
-        channel ! PairRequestMsg(voiceName)
-        goto(Pairing) using PairingData(topic, channel)
-      }
+      channel ! PairRequestMsg(voiceName)
+      goto(Pairing) using PairingData(topic, channel)
     }
   }
 
@@ -81,22 +77,22 @@ class ConversationActor extends LoggingFSM[State, Data]
       }
     }
     case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
-      val processor = startConversation(topic, channel)
-      goto(Paired) using ConvoData(topic, processor)
+      startConversation(topic, channel)
+      goto(Paired) using ConvoData(topic)
     }
   }
 
   when(Preempting) {
     case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
       // TODO:  insert apology for interrupting
-      val processor = startConversation(topic, channel)
-      goto(Paired) using ConvoData(topic, processor)
+      startConversation(topic, channel)
+      goto(Paired) using ConvoData(topic)
     }
   }
 
   when(Paired) {
-    case Event(SpeakerSoundFinishedMsg, ConvoData(topic, _)) => {
-      if (topic.isConversational) {
+    case Event(SpeakerSoundFinishedMsg, ConvoData(topic)) => {
+      if (topic.isInProgress) {
         sender ! PartnerListenMsg(topic.getNewSpeakerName)
         stay
       } else {
@@ -110,10 +106,10 @@ class ConversationActor extends LoggingFSM[State, Data]
       goto(Inactive) using Empty
     }
     case Event(PersonUtteranceMsg(utterance, personName),
-      ConvoData(_, processor)) =>
+      ConvoData(topic)) =>
     {
-      processor.consumeUtterance(utterance, personName)
-      processor.produceMessage match {
+      topic.consumeUtterance(utterance, personName)
+      topic.produceMessage match {
         case Some(reply) => {
           sender ! reply
           stay
@@ -131,11 +127,9 @@ class ConversationActor extends LoggingFSM[State, Data]
   }
 
   private def startConversation(
-    topic : ConversationTopic, channel : ActorRef) =
+    topic : ConversationTopic, channel : ActorRef)
   {
-    val processor = topic.startCommunication
-    processor.produceMessage.foreach(channel ! _)
-    processor
+    topic.produceMessage.foreach(channel ! _)
   }
 
   initialize()
