@@ -16,7 +16,10 @@ package softrains.network
 
 import softrains.base._
 
-import dispatch._, Defaults._
+import akka.actor._
+import akka.http.scaladsl.model.headers._
+
+import scala.collection._
 
 case class DeviceState(
   name : String,
@@ -65,34 +68,46 @@ abstract class AbstractCableRouterMonitor
   }
 }
 
-class CableRouterMonitor(settings : SoftRainsSettings)
+class CableRouterMonitor(
+  actorSystem : ActorSystem, settings : SoftRainsSettings)
     extends AbstractCableRouterMonitor
 {
-  private var cookies = ""
+  private var cookie : Option[HttpCookie] = None
 
   override protected def fetchDevices() =
   {
-    val request =
-      (url(settings.Router.url) / "connected_devices_computers.php").
-        addHeader("Cookie", cookies)
-    val result = Http(request OK as.String)
-    result()
+    val http = new HttpConsumer(actorSystem)
+    var result = ""
+    val endpoint = settings.Router.url + "/connected_devices_computers.php"
+    http.fetchString(
+      endpoint, immutable.Seq(Cookie(cookie.get.pair))
+    ) { html =>
+      result = html
+    }
+    http.ensureSuccess
+    result
   }
 
   override def loginIfNeeded()
   {
-    if (!cookies.isEmpty) {
+    if (!cookie.isEmpty) {
       return
     }
-    val request = (url(settings.Router.url) / "check.php") << Map(
+    val http = new HttpConsumer(actorSystem)
+    val endpoint = settings.Router.url + "/check.php"
+    http.postMap(endpoint, immutable.Map(
       "username" -> settings.Router.user,
       "password" -> settings.Router.password)
-    val result = Http(request)
-    cookies = result().getHeader("Set-Cookie")
+    ) { response =>
+      response.headers.collectFirst {
+        case c : `Set-Cookie` => cookie = Some(c.cookie)
+      }
+    }
+    http.ensureSuccess
   }
 
   override def requestLogin()
   {
-    cookies = ""
+    cookie = None
   }
 }

@@ -30,6 +30,7 @@ import scala.io._
 import akka.actor._
 
 import scala.concurrent._
+import scala.collection.mutable._
 
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
@@ -41,14 +42,23 @@ import org.joda.time.DateTime
 class CentralService(
   settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
 {
+  private var actorSystem : Option[ActorSystem] = None
+
   val db = new CentralDb(settings)
   seedDb
 
-  var intercomActor : ActorRef = null
+  private var intercomActor : ActorRef = null
 
-  var conversationActor : ActorRef = null
+  private var conversationActor : ActorRef = null
 
   def getDeviceMonitor = deviceMonitor
+
+  def getActorSystem = actorSystem.get
+
+  def setActorSystem(system : ActorSystem)
+  {
+    actorSystem = Some(system)
+  }
 
   def seedDb()
   {
@@ -92,8 +102,7 @@ class CentralService(
 
   def runActors()
   {
-    val config = ConfigFactory.load()
-    implicit val system = ActorSystem("SoftRains", config)
+    implicit val system = getActorSystem
     val centralSpec = settings.Actors.central
     if (!centralSpec.isEmpty) {
       val props = Props(classOf[CentralActor], this)
@@ -188,6 +197,14 @@ class CentralService(
           })
         }
       } ~
+      path("conversation") {
+        get {
+          complete({
+            startConversation
+            HttpEntity(contentType, "Yakkety yak yak!")
+          })
+        }
+      } ~
       path("echo") {
         get {
           complete({
@@ -224,6 +241,41 @@ class CentralService(
     val topic = new GenericGreeting
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
+      intercomActor)
+  }
+
+  class PersonalizedTopicSource extends ConversationTopicSource
+  {
+    private var currentPerson = ""
+
+    private var iterator : Iterator[ConversationTopic] = Iterator.empty
+
+    override def proposeTopicForPerson(personName : String) =
+    {
+      if (personName != currentPerson) {
+        currentPerson = personName
+        val topics = new ArrayBuffer[ConversationTopic]
+        val openhab = new CentralOpenhab(getActorSystem, settings)
+        openhab.checkDoor("front_door", "front door")
+        openhab.checkDoor("rear_door", "rear door")
+        openhab.checkDoor("garage_door", "garage door")
+        topics += new WarningTopic(openhab.retrieveResults)
+        iterator = topics.iterator
+      }
+      if (iterator.hasNext) {
+        Some(iterator.next)
+      } else {
+        None
+      }
+    }
+  }
+
+  private def startConversation()
+  {
+    val topicSource = new PersonalizedTopicSource
+    val dispatcher = new TopicDispatcher(topicSource)
+    conversationActor ! ConversationActor.ActivateMsg(
+      dispatcher,
       intercomActor)
   }
 
@@ -266,10 +318,12 @@ class CentralService(
 
   private def scanDevices(scanTime : DateTime)
   {
+    val openhab = new CentralOpenhab(getActorSystem, settings)
     deviceMonitor.scanDevices.foreach(device =>
-      updatePresence(device, scanTime))
+      updatePresence(openhab, device, scanTime))
     markInactiveDevices(scanTime)
-    markInactiveResidents(scanTime)
+    markInactiveResidents(openhab, scanTime)
+    openhab.ensureSuccess
   }
 
   private def markInactiveDevices(scanTime : DateTime)
@@ -283,7 +337,8 @@ class CentralService(
     }
   }
 
-  private def markInactiveResidents(scanTime : DateTime)
+  private def markInactiveResidents(
+    openhab : CentralOpenhab, scanTime : DateTime)
   {
     val presences = db.query[HomePresence].
       whereEqual("active", true).
@@ -293,28 +348,7 @@ class CentralService(
       val resident = presence.resident
       db.save(presence.copy(active = false))
       logEvent("Resident departed:  " + resident.name)
-      updateOpenhab(resident, "OFF")
-    }
-  }
-
-  private def updateOpenhab(resident : HomeResident, state : String)
-  {
-    import dispatch._, Defaults._
-
-    if (settings.Test.active) {
-      return
-    }
-
-    val request = (url(settings.Openhab.url) / "rest" / "items" /
-      (resident.name.toLowerCase + "_phone_radio") / "state") .
-      PUT.setContentType("text/plain", "UTF-8").
-      setBody(state) <:< Map("Accept" -> "application/json")
-    val result = Http(request OK as.String).either
-    result() match {
-      case Right(content) =>
-      case Left(StatusCode(code)) => println(
-        "Openhab update failed with status code " + code)
-      case _ => println("Openhab update mystery")
+      openhab.updateResidentPhoneRadio(resident, "OFF")
     }
   }
 
@@ -356,6 +390,7 @@ class CentralService(
   }
 
   private def updatePresence(
+    openhab : CentralOpenhab,
     deviceState : DeviceState,
     scanTime : DateTime)
   {
@@ -397,7 +432,7 @@ class CentralService(
             db.save(HomePresence(
               owner, scanTime, scanTime, true))
             logEvent("Resident arrived:  " + owner.name)
-            updateOpenhab(owner, "ON")
+            openhab.updateResidentPhoneRadio(owner, "ON")
           }
         }
       }
@@ -406,13 +441,14 @@ class CentralService(
   }
 }
 
-object CentralSingleton
-{
-  val settings = SoftRainsSettings(ConfigFactory.load)
-  val service = new CentralService(settings, new CableRouterMonitor(settings))
-}
-
 object CentralApp extends App
 {
-  CentralSingleton.service.runActors
+  val config = ConfigFactory.load
+  val actorSystem = ActorSystem("SoftRains", config)
+  val settings = SoftRainsSettings(config)
+  val service = new CentralService(
+    settings,
+    new CableRouterMonitor(actorSystem, settings))
+  service.setActorSystem(actorSystem)
+  service.runActors
 }

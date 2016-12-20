@@ -17,11 +17,7 @@ package softrains.central
 import softrains.base._
 import softrains.network._
 
-import com.typesafe.config._
-
 import scala.io.Source
-
-import org.specs2.mutable._
 
 import org.joda.time._
 
@@ -54,41 +50,42 @@ class MockCableRouterMonitor
   }
 }
 
-class CentralSpec extends Specification with DateTimeOrderingImplicit
+class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
 {
   // database state is shared, so we need isolation
   sequential
 
-  private val deviceMonitor = new MockCableRouterMonitor
-  private val settings = SoftRainsSettings(ConfigFactory.load("test.conf"))
-  private val central = new CentralService(settings, deviceMonitor)
+  protected val deviceMonitor = new MockCableRouterMonitor
 
-  private def getCameraCount =
+  protected val central = new CentralService(settings, deviceMonitor)
+
+  protected def getCameraCount =
     central.db.query[CameraFeed].fetch.size
 
-  private def getDeviceCount =
+  protected def getDeviceCount =
     central.db.query[LanDevice].fetch.size
 
-  private def getLanActiveCount =
+  protected def getLanActiveCount =
     central.db.query[LanPresence].whereEqual("active", true).fetch.size
 
-  private def getResidentCount =
+  protected def getResidentCount =
     central.db.query[HomeResident].fetch.size
 
-  private def getHomeActiveCount =
+  protected def getHomeActiveCount =
     central.db.query[HomePresence].whereEqual("active", true).fetch.size
+
+  protected def getExceptionCount =
+    central.db.query[ExceptionReport].fetch.size
 
   private def readResource(resource : String) =
     Source.fromFile(getClass.getResource(resource).getPath).
       getLines.mkString("\n")
 
-  private def getExceptionCount =
-    central.db.query[ExceptionReport].fetch.size
-
   "Central" should
   {
-    "seed DB" in
+    "seed DB" in new AkkaActorExample
     {
+      central.setActorSystem(system)
       getCameraCount must be equalTo 1
       getHomeActiveCount must be equalTo 0
       getLanActiveCount must be equalTo 0
@@ -97,8 +94,9 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
       getExceptionCount must be equalTo 0
     }
 
-    "scan devices" in
+    "scan devices" in new AkkaActorExample
     {
+      central.setActorSystem(system)
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2
       getHomeActiveCount must be equalTo 0
@@ -119,8 +117,9 @@ class CentralSpec extends Specification with DateTimeOrderingImplicit
       getHomeActiveCount must be equalTo 1
     }
 
-    "handle scan failure" in
+    "handle scan failure" in new AkkaActorExample
     {
+      central.setActorSystem(system)
       getExceptionCount must be equalTo 0
       val startTime = central.readClockTime
       deviceMonitor.setHtml("<blah>")

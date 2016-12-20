@@ -351,6 +351,13 @@ class VoiceIdentifier(residents : Seq[HomeResident])
   }
 }
 
+class WarningTopic(warning : String) extends NotificationTopic
+{
+  override def getPriority() = ASAP
+
+  override protected def getNotification() = warning
+}
+
 class FireAlarm(resident : HomeResident) extends NotificationTopic
 {
   override def getPriority() = EMERGENCY
