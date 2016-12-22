@@ -82,10 +82,10 @@ object IntercomActor
       extends SpeakerSoundMsg
   case object DoorbellMsg
       extends SpeakerSoundMsg
-  case object StartWhiteNoiseMsg
-      extends PeripheralMsg
-  case object StopWhiteNoiseMsg
-      extends PeripheralMsg
+  case class StartAudioFileMsg(audioFile : String, loop : Boolean)
+      extends SpeakerSoundMsg
+  case object StopAudioFileMsg
+      extends SpeakerSoundMsg
 
   // sent messages
   case object BusyMsg
@@ -180,7 +180,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       if (sender == partner) {
         log.info("Say '" + utterance + "' using voice " + voice)
         if (first) {
-          say("Hey!", voice, false)
+          say("Hello!", voice, false)
           first = false
         }
         say(utterance, voice, true)
@@ -235,18 +235,26 @@ class IntercomActor extends LoggingFSM[State, Data]
       sender ! SpeakerSoundFinishedMsg
       stay
     }
-    case Event(StartWhiteNoiseMsg, Partner(partner, voice, background)) => {
+    case Event(StartAudioFileMsg(file, loop),
+      Partner(partner, voice, background)) =>
+    {
       background match {
         case Some(process) => {
-          stay
+          process.destroy
         }
-        case _ => {
-          val process = (settings.Speaker.whitenoiseCommand).run
-          stay using Partner(partner, voice, Some(process))
+        case _ =>
+      }
+      val command = {
+        if (loop) {
+          settings.Speaker.loopFileCommand
+        } else {
+          settings.Speaker.playFileCommand
         }
       }
+      val process = command.format(file).run
+      stay using Partner(partner, voice, Some(process))
     }
-    case Event(StopWhiteNoiseMsg, Partner(partner, voice, background)) => {
+    case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {
       background match {
         case Some(process) => {
           process.destroy

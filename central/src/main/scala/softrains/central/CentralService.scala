@@ -152,19 +152,29 @@ class CentralService(
           })
         }
       } ~
-      path("whitenoise" / "on") {
+      path("loop" / Segment) { file =>
         get {
           complete({
-            intercomActor ! IntercomActor.StartWhiteNoiseMsg
-            HttpEntity(contentType, "<h1>White Noise Now On</h1>")
+            intercomActor ! IntercomActor.StartAudioFileMsg(
+              file, true)
+            HttpEntity(contentType, s"<h1>Now Looping $file</h1>")
           })
         }
       } ~
-      path("whitenoise" / "off") {
+      path("play" / Segment) { file =>
         get {
           complete({
-            intercomActor ! IntercomActor.StopWhiteNoiseMsg
-            HttpEntity(contentType, "<h1>White Noise Now Off</h1>")
+            intercomActor ! IntercomActor.StartAudioFileMsg(
+              file, false)
+            HttpEntity(contentType, s"<h1>Now Playing $file</h1>")
+          })
+        }
+      } ~
+      path("silence") {
+        get {
+          complete({
+            intercomActor ! IntercomActor.StopAudioFileMsg
+            HttpEntity(contentType, "<h1>Silence is Golden</h1>")
           })
         }
       } ~
@@ -238,7 +248,7 @@ class CentralService(
 
   private def startGreet()
   {
-    val topic = new GenericGreeting
+    val topic = new ChristmasGreeting
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
       intercomActor)

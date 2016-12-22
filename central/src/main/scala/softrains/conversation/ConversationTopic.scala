@@ -267,6 +267,50 @@ class GenericGreeting
   }
 }
 
+class ChristmasGreeting extends ConversationTopic
+{
+  private var done = false
+  private var echo = ""
+
+  override def getPriority() = ASAP
+
+  override def isInProgress() : Boolean = !done
+
+  override def produceUtterance() = delegateToProduceMessage
+
+  override def produceMessage() =
+  {
+    if (echo.isEmpty) {
+      Some(
+        IntercomActor.PartnerUtteranceMsg(
+          "I am a talking Christmas tree!"))
+    } else {
+      if (echo == "goodbye") {
+        done = true
+        Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
+      } else if (echo.contains("merry christmas")) {
+        done = true
+        Some(IntercomActor.StartAudioFileMsg("JingleBells.mp3", true))
+      } else if (echo.contains("story")) {
+        done = true
+        Some(IntercomActor.StartAudioFileMsg("nicholas.wav", false))
+      } else if (echo.contains("hodor") || echo.contains("hold the door")) {
+        done = true
+        Some(IntercomActor.StartAudioFileMsg("hodor.mp3", true))
+      } else if ((echo == "ring the bell") || (echo == "big ben")) {
+        Some(IntercomActor.DoorbellMsg)
+      } else {
+        Some(IntercomActor.PartnerUtteranceMsg("I think you said, " + echo))
+      }
+    }
+  }
+
+  def consumeUtterance(utterance : String, personName : String) =
+  {
+    echo = utterance.toLowerCase
+  }
+}
+
 class EchoLoop extends ConversationTopic
 {
   private var done = false
