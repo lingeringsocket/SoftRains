@@ -351,13 +351,15 @@ class VoiceIdentifier(residents : Seq[HomeResident])
 {
   private var counter = 0
 
+  private var done = false
+
   private var lastUtterance = ""
 
   private var lastPerson = ""
 
   override def getPriority() = ASAP
 
-  override def isInProgress() : Boolean = true
+  override def isInProgress() : Boolean = !done
 
   override def getNewSpeakerName() : String =
   {
@@ -382,9 +384,14 @@ class VoiceIdentifier(residents : Seq[HomeResident])
       Some(
         "Now someone say anything and I will try to identify the speaker.")
     } else {
-      Some(
-        "I heard " + lastPerson + " say, " + lastUtterance +
-          ".  Try another?")
+      if (lastUtterance == "stop") {
+        done = true
+        Some("Yes, right away!")
+      } else {
+        Some(
+          "I heard " + lastPerson + " say, " + lastUtterance +
+            ".  Try another?")
+      }
     }
   }
 
