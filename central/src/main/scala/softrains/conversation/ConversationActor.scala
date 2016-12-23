@@ -112,6 +112,16 @@ class ConversationActor extends LoggingFSM[State, Data]
       topic.produceMessage match {
         case Some(reply) => {
           sender ! reply
+          if (topic.isInProgress) {
+            reply match {
+              case StartAudioFileMsg(_,_) | StopAudioFileMsg => {
+                sender ! PartnerListenMsg(topic.getNewSpeakerName)
+              }
+              case _ =>
+            }
+          } else {
+            sender ! UnpairMsg
+          }
           stay
         }
         case _ => {

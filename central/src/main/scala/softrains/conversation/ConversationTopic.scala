@@ -289,16 +289,17 @@ class ChristmasGreeting extends ConversationTopic
         done = true
         Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
       } else if (echo.contains("merry christmas")) {
-        done = true
         Some(IntercomActor.StartAudioFileMsg("JingleBells.mp3", true))
       } else if (echo.contains("story")) {
-        done = true
         Some(IntercomActor.StartAudioFileMsg("nicholas.wav", false))
       } else if (echo.contains("hodor") || echo.contains("hold the door")) {
-        done = true
-        Some(IntercomActor.StartAudioFileMsg("hodor.mp3", true))
+        Some(IntercomActor.StartAudioFileMsg("hodor.mp3", false))
       } else if ((echo == "ring the bell") || (echo == "big ben")) {
         Some(IntercomActor.DoorbellMsg)
+      } else if (echo.contains("stop") || echo.contains("quiet") ||
+        echo.contains("silen"))
+      {
+        Some(IntercomActor.StopAudioFileMsg)
       } else {
         Some(IntercomActor.PartnerUtteranceMsg("I think you said, " + echo))
       }
@@ -373,7 +374,7 @@ class VoiceIdentifier(residents : Seq[HomeResident])
       Some(
         getNewSpeakerName +
           ", please say, the quick brown fox jumped over the lazy dog.")
-    } else if (counter == 1) {
+    } else if (counter < residents.size) {
       Some(
         "Now, " + getNewSpeakerName +
           ", you say the same sentence.")

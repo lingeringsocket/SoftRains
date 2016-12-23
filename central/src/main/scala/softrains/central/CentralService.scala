@@ -207,6 +207,14 @@ class CentralService(
           })
         }
       } ~
+      path("identify") {
+        get {
+          complete({
+            startIdentify
+            HttpEntity(contentType, "Guess Who?")
+          })
+        }
+      } ~
       path("conversation") {
         get {
           complete({
@@ -249,6 +257,16 @@ class CentralService(
   private def startGreet()
   {
     val topic = new ChristmasGreeting
+    conversationActor ! ConversationActor.ActivateMsg(
+      topic,
+      intercomActor)
+  }
+
+  private def startIdentify()
+  {
+    val residents = Seq(
+      HomeResident("John"), HomeResident("Sujin"), HomeResident("Lara"))
+    val topic = new VoiceIdentifier(residents)
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
       intercomActor)

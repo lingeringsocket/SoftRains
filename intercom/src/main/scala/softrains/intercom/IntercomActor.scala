@@ -180,7 +180,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       if (sender == partner) {
         log.info("Say '" + utterance + "' using voice " + voice)
         if (first) {
-          say("Hello!", voice, false)
+          say("Hello there!", voice, false)
           first = false
         }
         say(utterance, voice, true)
