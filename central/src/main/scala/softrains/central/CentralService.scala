@@ -27,11 +27,10 @@ import org.joda.time._
 import java.io._
 import scala.io._
 
-import akka.actor._
-
 import scala.concurrent._
 import scala.collection.mutable._
 
+import akka.actor._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -47,7 +46,7 @@ class CentralService(
   val db = new CentralDb(settings)
   seedDb
 
-  private var intercomActor : ActorRef = null
+  private var intercomActorLocal : Option[ActorRef] = None
 
   private var conversationActor : ActorRef = null
 
@@ -100,6 +99,22 @@ class CentralService(
     })
   }
 
+  private def intercomActorTimeout =
+    duration.FiniteDuration(5, java.util.concurrent.TimeUnit.SECONDS)
+
+  private def getIntercomActor =
+  {
+    intercomActorLocal.getOrElse {
+      val intercomSpec = settings.Actors.intercom
+      assert(intercomSpec.startsWith("akka:"))
+      val intercomActorSelection = getActorSystem.actorSelection(intercomSpec)
+      val intercomActorFuture = intercomActorSelection.resolveOne(
+        intercomActorTimeout)
+      Await.result(
+        intercomActorFuture, intercomActorTimeout)
+    }
+  }
+
   def runActors()
   {
     implicit val system = getActorSystem
@@ -110,17 +125,9 @@ class CentralService(
     }
     val intercomSpec = settings.Actors.intercom
     if (!intercomSpec.isEmpty) {
-      intercomActor = {
-        if (intercomSpec.startsWith("akka:")) {
-          val intercomActorSelection = system.actorSelection(intercomSpec)
-          val intercomActorFuture = intercomActorSelection.resolveOne(
-            duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
-          Await.result(
-            intercomActorFuture, duration.Duration.Inf)
-        } else {
-          val props = Props(classOf[IntercomActor])
-          system.actorOf(props, intercomSpec)
-        }
+      if (!intercomSpec.startsWith("akka:")) {
+        val props = Props(classOf[IntercomActor])
+        intercomActorLocal = Some(system.actorOf(props, intercomSpec))
       }
       val echoSpec = settings.Actors.echo
       val conversationProps = Props(classOf[ConversationActor])
@@ -147,7 +154,7 @@ class CentralService(
       path("doorbell") {
         get {
           complete({
-            intercomActor ! IntercomActor.DoorbellMsg
+            getIntercomActor ! IntercomActor.DoorbellMsg
             HttpEntity(contentType, "<h1>Ding Dong!</h1>")
           })
         }
@@ -155,7 +162,7 @@ class CentralService(
       path("loop" / Segment) { file =>
         get {
           complete({
-            intercomActor ! IntercomActor.StartAudioFileMsg(
+            getIntercomActor ! IntercomActor.StartAudioFileMsg(
               file, true)
             HttpEntity(contentType, s"<h1>Now Looping $file</h1>")
           })
@@ -164,7 +171,7 @@ class CentralService(
       path("play" / Segment) { file =>
         get {
           complete({
-            intercomActor ! IntercomActor.StartAudioFileMsg(
+            getIntercomActor ! IntercomActor.StartAudioFileMsg(
               file, false)
             HttpEntity(contentType, s"<h1>Now Playing $file</h1>")
           })
@@ -173,7 +180,7 @@ class CentralService(
       path("silence") {
         get {
           complete({
-            intercomActor ! IntercomActor.StopAudioFileMsg
+            getIntercomActor ! IntercomActor.StopAudioFileMsg
             HttpEntity(contentType, "<h1>Silence is Golden</h1>")
           })
         }
@@ -182,20 +189,16 @@ class CentralService(
         get {
           complete({
             val checkTime = readClockTime
-            val diff = Seconds.secondsBetween(startTime, checkTime)
-            val interval = {
-              diff.getSeconds match {
-                case d if (d > 86400) =>
-                  "days:  " + diff.toStandardDays.getDays
-                case h if (h > 3600) =>
-                  "hours:  " + diff.toStandardHours.getHours
-                case m if (m > 60) =>
-                  "minutes:  " + diff.toStandardMinutes.getMinutes
-                case _ =>
-                  "seconds:  " + diff.getSeconds
-              }
-            }
+            val interval = computeUptime(startTime, checkTime)
             HttpEntity(contentType, "uptime in " + interval)
+          })
+        }
+      } ~
+      path("intercom" / "ping") {
+        get {
+          complete({
+            getIntercomActor
+            HttpEntity(contentType, "alive")
           })
         }
       } ~
@@ -237,8 +240,8 @@ class CentralService(
     val port = settings.Http.port
     val bindingFuture = Http().bindAndHandle(route, address, port)
 
-    println(
-      s"HTTP listening at http://$address:$port/\nPress RETURN to stop...")
+    println(s"Akka started, HTTP listening at http://$address:$port/")
+    println("Press RETURN to stop...")
     StdIn.readLine
     bindingFuture
       .flatMap(_.unbind)
@@ -251,7 +254,7 @@ class CentralService(
     val topic = new EchoLoop
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
-      intercomActor)
+      getIntercomActor)
   }
 
   private def startGreet()
@@ -259,7 +262,7 @@ class CentralService(
     val topic = new ChristmasGreeting
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
-      intercomActor)
+      getIntercomActor)
   }
 
   private def startIdentify()
@@ -269,7 +272,7 @@ class CentralService(
     val topic = new VoiceIdentifier(residents)
     conversationActor ! ConversationActor.ActivateMsg(
       topic,
-      intercomActor)
+      getIntercomActor)
   }
 
   class PersonalizedTopicSource extends ConversationTopicSource
@@ -304,7 +307,7 @@ class CentralService(
     val dispatcher = new TopicDispatcher(topicSource)
     conversationActor ! ConversationActor.ActivateMsg(
       dispatcher,
-      intercomActor)
+      getIntercomActor)
   }
 
   def logEvent(msg : String)

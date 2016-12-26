@@ -17,6 +17,8 @@ traceLevel := Common.traceLevel
 scalastyleFailOnError := true
 
 libraryDependencies ++= Seq(
+  "joda-time" % "joda-time" % "2.9.7",
+  "org.joda" % "joda-convert" % "1.7",
   "com.jsuereth" %% "scala-arm" % "1.4"
 )
 libraryDependencies ++= Common.specs2Deps

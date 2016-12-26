@@ -19,6 +19,7 @@ import softrains.base._
 import akka.actor._
 
 import scala.concurrent._
+import scala.io._
 
 import com.typesafe.config._
 
@@ -28,9 +29,12 @@ object IntercomApp extends App
   val settings = SoftRainsSettings(config)
   val system = ActorSystem("SoftRainsIntercom", config)
   val intercomSpec = settings.Actors.intercom
-  assert(!intercomSpec.isEmpty)
+  assert (!intercomSpec.isEmpty)
   assert(!intercomSpec.startsWith("akka:"))
   val props = Props(classOf[IntercomActor])
   system.actorOf(props, intercomSpec)
+  println("Akka listening, press RETURN to stop...")
+  StdIn.readLine
+  system.terminate
   Await.result(system.whenTerminated, duration.Duration.Inf)
 }

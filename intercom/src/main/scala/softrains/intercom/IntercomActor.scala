@@ -42,6 +42,8 @@ import scala.concurrent.duration._
 
 import com.bitsinharmony.recognito._
 
+import org.joda.time.Seconds
+
 import com.ibm.watson.developer_cloud.text_to_speech.v1.model.{
   AudioFormat => WatsonAudioFormat
 }
@@ -74,15 +76,17 @@ object IntercomActor
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String)
       extends SpeakerSoundMsg
-  case class PartnerListenMsg(newPersonName : String = "")
+  final case class PartnerListenMsg(newPersonName : String = "")
       extends PeripheralMsg
   case object UnpairMsg
+      extends PeripheralMsg
+  case object UptimeRequestMsg
       extends PeripheralMsg
   case object RingtoneMsg
       extends SpeakerSoundMsg
   case object DoorbellMsg
       extends SpeakerSoundMsg
-  case class StartAudioFileMsg(audioFile : String, loop : Boolean)
+  final case class StartAudioFileMsg(audioFile : String, loop : Boolean)
       extends SpeakerSoundMsg
   case object StopAudioFileMsg
       extends SpeakerSoundMsg
@@ -101,6 +105,8 @@ object IntercomActor
   case object SpeakerSoundFinishedMsg
       extends PeripheralMsg
   case object SilenceMsg
+      extends PeripheralMsg
+  final case class UptimeResponseMsg(seconds : Int)
       extends PeripheralMsg
 
   case object Active extends State
@@ -130,6 +136,8 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   private var personCount = 0
 
+  private val startTime = readClockTime
+
   override def preStart()
   {
     if (isWatsonEnabled) {
@@ -149,6 +157,12 @@ class IntercomActor extends LoggingFSM[State, Data]
   startWith(Active, Partner(unpaired, VOICE_NONE))
 
   when(Active) {
+    case Event(UptimeRequestMsg, _) => {
+      val checkTime = readClockTime
+      val diff = Seconds.secondsBetween(startTime, checkTime)
+      sender ! UptimeResponseMsg(diff.getSeconds)
+      stay
+    }
     case Event(PairRequestMsg(voice), Partner(oldPartner, _, bg)) => {
       if (sender == oldPartner) {
         oldPartner ! ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED)
