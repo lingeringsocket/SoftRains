@@ -198,7 +198,7 @@ class CentralService(
         get {
           complete({
             getIntercomActor
-            HttpEntity(contentType, "alive")
+            HttpEntity(contentType, "ON")
           })
         }
       } ~
