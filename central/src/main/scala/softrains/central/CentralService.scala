@@ -100,7 +100,7 @@ class CentralService(
   }
 
   private def intercomActorTimeout =
-    duration.FiniteDuration(5, java.util.concurrent.TimeUnit.SECONDS)
+    duration.FiniteDuration(3, java.util.concurrent.TimeUnit.SECONDS)
 
   private def getIntercomActor =
   {
@@ -197,8 +197,14 @@ class CentralService(
       path("intercom" / "ping") {
         get {
           complete({
-            getIntercomActor
-            HttpEntity(contentType, "ON")
+            try {
+              getIntercomActor
+              HttpEntity(contentType, "ON")
+            } catch {
+              case ex : Exception => {
+                HttpEntity(contentType, "OFF")
+              }
+            }
           })
         }
       } ~
