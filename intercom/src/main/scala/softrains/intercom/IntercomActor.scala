@@ -326,6 +326,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       val audio = AudioSystem.getAudioInputStream(pipedInputStream)
       val options = (new RecognizeOptions.Builder).
         contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
+        inactivityTimeout(30).
         maxAlternatives(1).build
       val speechPromise = Promise[SpeechResults]()
       val speechFuture = speechPromise.future
@@ -353,31 +354,42 @@ class IntercomActor extends LoggingFSM[State, Data]
 
           override def onDisconnected()
           {
+            speechPromise.tryFailure(new TimeoutException)
             disconnectPromise.success(null)
           }
         })
-      Await.ready(disconnectFuture, Duration.Inf)
-      Await.ready(speechFuture, Duration.Inf)
-      Await.ready(pipeFuture, Duration.Inf)
+      val duration = FiniteDuration(300, java.util.concurrent.TimeUnit.SECONDS)
+      var timeout = false
+      try {
+        Await.ready(disconnectFuture, duration)
+        Await.ready(speechFuture, duration)
+        Await.ready(pipeFuture, duration)
+      } catch {
+        case ex : TimeoutException => {
+          timeout = true
+        }
+      }
       teeOutputStream.close
       (s"sox $rawFile $wavFile").!
       rawFile.delete
-      if (newPersonName.isEmpty) {
-        if (personCount > 0) {
-          val recognitoResults = recognito.identify(wavFile)
-          if (!recognitoResults.isEmpty) {
-            val identifiedPersonName = recognitoResults.get(0).getKey
-            result match {
-              case PersonUtteranceMsg(utterance, _) => {
-                result = PersonUtteranceMsg(utterance, identifiedPersonName)
+      if (!timeout) {
+        if (newPersonName.isEmpty) {
+          if (personCount > 0) {
+            val recognitoResults = recognito.identify(wavFile)
+            if (!recognitoResults.isEmpty) {
+              val identifiedPersonName = recognitoResults.get(0).getKey
+              result match {
+                case PersonUtteranceMsg(utterance, _) => {
+                  result = PersonUtteranceMsg(utterance, identifiedPersonName)
+                }
+                case _ =>
               }
-              case _ =>
             }
           }
+        } else {
+          recognito.createVoicePrint(newPersonName, wavFile)
+          personCount += 1
         }
-      } else {
-        recognito.createVoicePrint(newPersonName, wavFile)
-        personCount += 1
       }
     } finally {
       line.stop
