@@ -52,7 +52,10 @@ object Common {
     "org.specs2" %% "specs2-core" % "3.8.5" % "test")
 
   def akkaDeps = Seq(
+    "org.slf4j" % "slf4j-api" % "1.7.22",
+    "org.slf4j" % "slf4j-simple" % "1.7.22",
     "com.typesafe.akka" %% "akka-actor" % "2.4.14",
+    "com.typesafe.akka" %% "akka-slf4j" % "2.4.14",
     "com.typesafe.akka" %% "akka-remote" % "2.4.14" exclude("io.netty", "netty"),
     "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test")
 

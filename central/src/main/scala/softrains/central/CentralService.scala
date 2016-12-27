@@ -31,10 +31,12 @@ import scala.concurrent._
 import scala.collection.mutable._
 
 import akka.actor._
+import akka.pattern.ask
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream._
+import akka.util._
 
 import org.joda.time.DateTime
 
@@ -198,7 +200,10 @@ class CentralService(
         get {
           complete({
             try {
-              getIntercomActor
+              val intercomActor = getIntercomActor
+              val uptimeFuture = intercomActor.ask(
+                IntercomActor.UptimeRequestMsg)(Timeout(intercomActorTimeout))
+              Await.ready(uptimeFuture, intercomActorTimeout)
               HttpEntity(contentType, "ON")
             } catch {
               case ex : Exception => {
