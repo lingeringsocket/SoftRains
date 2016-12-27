@@ -15,7 +15,6 @@
 package softrains.vision
 
 import softrains.base._
-import softrains.central._
 
 import java.io._
 import java.net._
@@ -112,10 +111,10 @@ class CameraFileInput(file : File)
   }
 }
 
-class CameraFeedInput(feed : CameraFeed)
+class CameraFeedInput(feedUrl : String)
     extends CameraInput
 {
-  private val url = new URL(new URL(feed.url), "videofeed", UrlAuthHandler)
+  private val url = new URL(new URL(feedUrl), "videofeed", UrlAuthHandler)
 
   override protected def newGrabber =
   {
@@ -141,7 +140,7 @@ object CameraNullView extends CameraView
   {}
 }
 
-class CameraDesktopView(feed : CameraFeed) extends CameraView
+class CameraDesktopView(feedName : String) extends CameraView
 {
   private val canvasFrame = initCanvasFrame
 
@@ -149,7 +148,7 @@ class CameraDesktopView(feed : CameraFeed) extends CameraView
 
   private def initCanvasFrame() =
   {
-    val cf = new CanvasFrame(feed.name)
+    val cf = new CanvasFrame(feedName)
     cf.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
     cf.addWindowListener(new WindowAdapter {
       override def windowClosing(e : WindowEvent)
@@ -276,7 +275,7 @@ class CameraSentinel(
 
   private def loadClassifier(classifierName : String) =
   {
-    val classifierFile = new File("central/data", classifierName)
+    val classifierFile = new File("vision/data", classifierName)
     if ((classifierFile == null) || (classifierFile.length <= 0)) {
       throw new IOException(
         "Classifier " + classifierFile.getAbsolutePath + " not found.")

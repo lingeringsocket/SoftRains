@@ -16,6 +16,9 @@ package softrains
 
 import org.joda.time._
 
+import java.io._
+import scala.io._
+
 package object base
 {
   def readClockTime = new DateTime(DateTimeZone.UTC)
@@ -34,4 +37,14 @@ package object base
         "seconds:  " + diff.getSeconds
     }
   }
+
+  def getResourcePath(resource : String) =
+    getClass.getResource(resource).getPath
+
+  def getResourceFile(resource : String) =
+    new File(getResourcePath(resource))
+
+  def readResource(resource : String) : String =
+    Source.fromFile(getResourcePath(resource)).
+      getLines.mkString("\n")
 }

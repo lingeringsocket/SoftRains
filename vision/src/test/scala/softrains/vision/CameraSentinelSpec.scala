@@ -54,24 +54,27 @@ class CameraSentinelSpec extends Specification
     }
   }
 
+  private def getVideoFile(resource : String) =
+    getResourceFile("/video/" + resource)
+
   "CameraSentinel" should
   {
     "detect faces" >> {
       Fragment.foreach(
         Seq(
-          ("central/data/johnLeaving.mkv", false, true),
-          ("central/data/johnArriving.mkv", true, true),
-          ("central/data/rhiannonArriving.mkv", false, true),
-          ("central/data/rhiannonLeaving.mkv", false, true),
-          ("central/data/pedestrians.mkv", false, false),
-          ("central/data/muniLeft.mkv", false, false),
-          ("central/data/muniRight.mkv", false, false),
-          ("central/data/nightCar.mkv", false, false)))
+          ("johnLeaving.mkv", false, true),
+          ("johnArriving.mkv", true, true),
+          ("rhiannonArriving.mkv", false, true),
+          ("rhiannonLeaving.mkv", false, true),
+          ("pedestrians.mkv", false, false),
+          ("muniLeft.mkv", false, false),
+          ("muniRight.mkv", false, false),
+          ("nightCar.mkv", false, false)))
       {
         case (fileName, faceExpected, visitorExpected) =>
           "in file " + fileName >> {
             {
-              val input = new CameraFileInput(new File(fileName))
+              val input = new CameraFileInput(getVideoFile(fileName))
               val sentinel = new CameraSentinel(
                 input, CameraNullView, settings)
               sentinel.enableVisitorDetection(false)
@@ -88,7 +91,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(new File("central/data/muniRight.mkv"))
+      val input = new CameraFileInput(getVideoFile("muniRight.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
@@ -116,7 +119,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(new File("central/data/johnArriving.mkv"))
+      val input = new CameraFileInput(getVideoFile("johnArriving.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording

@@ -14,7 +14,7 @@
 // limitations under the License.
 package softrains.intercom
 
-import java.io._
+import softrains.base._
 
 import com.bitsinharmony.recognito._
 
@@ -22,8 +22,8 @@ import org.specs2.mutable._
 
 class RecognitoSpec extends Specification
 {
-  private def getAudioResource(resource : String) =
-    new File(getClass.getResource("/audio/" + resource).getPath)
+  private def getAudioFile(resource : String) =
+    getResourceFile("/audio/" + resource)
 
   private def printResults(results : java.util.List[MatchResult[String]])
   {
@@ -47,23 +47,23 @@ class RecognitoSpec extends Specification
         Thread.currentThread.setContextClassLoader(cl)
         val recognito = new Recognito[String](22050.0f)
         recognito.createVoicePrint(
-          "Allison", getAudioResource("allison-train.wav"))
+          "Allison", getAudioFile("allison-train.wav"))
         recognito.createVoicePrint(
-          "Lisa", getAudioResource("lisa-train.wav"))
+          "Lisa", getAudioFile("lisa-train.wav"))
         recognito.createVoicePrint(
-          "Michael", getAudioResource("michael-train.wav"))
+          "Michael", getAudioFile("michael-train.wav"))
         val allisonResults =
-          recognito.identify(getAudioResource("allison-test.wav"))
+          recognito.identify(getAudioFile("allison-test.wav"))
         allisonResults.get(0).getKey must be equalTo("Allison")
         allisonResults.get(0).getLikelihoodRatio must be equalTo(62)
         printResults(allisonResults)
         val lisaResults =
-          recognito.identify(getAudioResource("lisa-test.wav"))
+          recognito.identify(getAudioFile("lisa-test.wav"))
         lisaResults.get(0).getKey must be equalTo("Lisa")
         lisaResults.get(0).getLikelihoodRatio must be equalTo(45)
         printResults(lisaResults)
         val michaelResults =
-          recognito.identify(getAudioResource("michael-test.wav"))
+          recognito.identify(getAudioFile("michael-test.wav"))
         printResults(michaelResults)
         michaelResults.get(0).getKey must be equalTo("Michael")
         michaelResults.get(0).getLikelihoodRatio must be equalTo(89)

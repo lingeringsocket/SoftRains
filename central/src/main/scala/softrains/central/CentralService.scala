@@ -92,8 +92,8 @@ class CentralService(
   def runCamera()
   {
     db.query[CameraFeed].fetchOne.foreach(feed => {
-      val view = new CameraDesktopView(feed)
-      val input = new CameraFeedInput(feed)
+      val view = new CameraDesktopView(feed.name)
+      val input = new CameraFeedInput(feed.url)
       val sentinel = new CameraSentinel(input, view, settings)
       sentinel.enableVisitorDetection(true)
       sentinel.enableMotionRecording

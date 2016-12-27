@@ -17,8 +17,6 @@ package softrains.central
 import softrains.base._
 import softrains.network._
 
-import scala.io.Source
-
 import org.joda.time._
 
 trait DateTimeOrderingImplicit
@@ -76,10 +74,6 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
 
   protected def getExceptionCount =
     central.db.query[ExceptionReport].fetch.size
-
-  private def readResource(resource : String) =
-    Source.fromFile(getClass.getResource(resource).getPath).
-      getLines.mkString("\n")
 
   "Central" should
   {
