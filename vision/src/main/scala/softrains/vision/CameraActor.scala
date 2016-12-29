@@ -45,8 +45,7 @@ object CameraActor
   final case class SentinelData(
     sentinel : CameraSentinel,
     faceDetectedMsg : SoftRainsMsg,
-    listener : ActorRef,
-    cancellable : Cancellable) extends Data
+    listener : ActorRef) extends Data
 }
 import CameraActor._
 
@@ -63,11 +62,9 @@ class CameraActor extends LoggingFSM[State, Data]
       val sentinel = new CameraSentinel(input, view, settings)
       sentinel.enableFaceDetection(false)
       sentinel.startAnalyzer
-      val cancellable = context.system.scheduler.schedule(
-        frameInterval, frameInterval,
-        self, AnalyzeFrameMsg)
+      self ! AnalyzeFrameMsg
       goto(Active) using SentinelData(
-        sentinel, faceDetectedMsg, sender, cancellable)
+        sentinel, faceDetectedMsg, sender)
     }
     case Event(AnalyzeFrameMsg, _) => {
       stay
@@ -76,16 +73,17 @@ class CameraActor extends LoggingFSM[State, Data]
 
   when(Active) {
     case Event(AnalyzeFrameMsg,
-      SentinelData(sentinel, faceDetectedMsg, listener, _)) =>
+      SentinelData(sentinel, faceDetectedMsg, listener)) =>
     {
       sentinel.analyzeFrame
       if (sentinel.wasFaceDetected) {
         listener ! faceDetectedMsg
       }
+      context.system.scheduler.scheduleOnce(
+        frameInterval, self, AnalyzeFrameMsg)
       stay
     }
-    case Event(StopSentinelMsg, SentinelData(sentinel, _, _, cancellable)) => {
-      cancellable.cancel
+    case Event(StopSentinelMsg, SentinelData(sentinel, _, _)) => {
       sentinel.stopAnalyzer
       sender ! SentinelStoppedMsg
       goto(Inactive) using Empty
