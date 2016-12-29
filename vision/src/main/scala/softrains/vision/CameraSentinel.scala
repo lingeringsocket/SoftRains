@@ -134,11 +134,23 @@ class CameraFeedInput(feedUrl : String)
 class CameraLocalInput
     extends CameraInput
 {
+  override def startGrabber() =
+  {
+    super.startGrabber
+    stopGrabber
+  }
+
+  override def nextFrame() : Option[CvFrame] =
+  {
+    super.startGrabber
+    val frame = super.nextFrame
+    stopGrabber
+    frame
+  }
+
   override protected def newGrabber =
   {
     val grabber = new OpenCVFrameGrabber(0)
-    grabber.setBitsPerPixel(CV_8U)
-    grabber.setImageMode(FrameGrabber.ImageMode.COLOR)
     grabber
   }
 }
