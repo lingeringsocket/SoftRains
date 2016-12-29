@@ -95,7 +95,8 @@ class CentralService(
       val view = new CameraDesktopView(feed.name)
       val input = new CameraFeedInput(feed.url)
       val sentinel = new CameraSentinel(input, view, settings)
-      sentinel.enableVisitorDetection(true)
+      sentinel.enableFaceDetection(true)
+      sentinel.enableVisitorDetection
       sentinel.enableMotionRecording
       sentinel.run
     })

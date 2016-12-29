@@ -77,7 +77,8 @@ class CameraSentinelSpec extends Specification
               val input = new CameraFileInput(getVideoFile(fileName))
               val sentinel = new CameraSentinel(
                 input, CameraNullView, settings)
-              sentinel.enableVisitorDetection(false)
+              sentinel.enableVisitorDetection
+              sentinel.enableFaceDetection(false)
               sentinel.run
               sentinel.wasFaceDetected must be equalTo faceExpected
               sentinel.wasVisitorDetected must be equalTo visitorExpected
@@ -95,7 +96,8 @@ class CameraSentinelSpec extends Specification
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
-      sentinel.enableVisitorDetection(true)
+      sentinel.enableFaceDetection(true)
+      sentinel.enableVisitorDetection
       sentinel.run
       sentinel.wasVisitorDetected must be equalTo false
       sentinel.wasFaceDetected must be equalTo false
@@ -123,7 +125,8 @@ class CameraSentinelSpec extends Specification
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
-      sentinel.enableVisitorDetection(true)
+      sentinel.enableFaceDetection(true)
+      sentinel.enableVisitorDetection
       sentinel.run
       sentinel.wasVisitorDetected must be equalTo true
       sentinel.wasFaceDetected must be equalTo true

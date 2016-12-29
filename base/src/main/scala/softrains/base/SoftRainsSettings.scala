@@ -44,6 +44,7 @@ class SoftRainsSettings(rootConf : Config)
     val central = subConf.getString("central")
     val intercom = subConf.getString("intercom")
     val echo = subConf.getString("echo")
+    val camera = subConf.getString("camera")
   }
 
   object Openhab
@@ -111,6 +112,7 @@ class SoftRainsSettings(rootConf : Config)
   object Visitors
   {
     val subConf = conf.getConfig("visitors")
+    val frameInterval = getMillis(subConf, "frame-interval")
     val blobMergeDistance = subConf.getDouble("blob-merge-distance")
     val blobMinSize = subConf.getDouble("blob-min-size")
     val bodyMinSize = subConf.getDouble("body-min-size")
