@@ -14,6 +14,9 @@ lazy val intercom = project.dependsOn(base % "test->test;compile->compile")
 
 lazy val vision = project.dependsOn(base % "test->test;compile->compile")
 
-lazy val central = project.dependsOn(
+lazy val kiosk = project.dependsOn(
   intercom % "test->test;compile->compile",
   vision % "test->test;compile->compile")
+
+lazy val central = project.dependsOn(
+  intercom % "test->test;compile->compile")

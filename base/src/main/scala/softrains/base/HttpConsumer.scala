@@ -12,7 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package softrains.network
+package softrains.base
 
 import akka.actor._
 import akka.http.scaladsl._

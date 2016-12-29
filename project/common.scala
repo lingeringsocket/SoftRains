@@ -57,6 +57,7 @@ object Common {
     "com.typesafe.akka" %% "akka-actor" % "2.4.14",
     "com.typesafe.akka" %% "akka-slf4j" % "2.4.14",
     "com.typesafe.akka" %% "akka-remote" % "2.4.14" exclude("io.netty", "netty"),
+    "com.typesafe.akka" %% "akka-http" % "10.0.0",
     "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test")
 
   def javacvDeps = Seq(

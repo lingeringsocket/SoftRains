@@ -18,7 +18,6 @@ import softrains.base._
 import softrains.conversation._
 import softrains.intercom._
 import softrains.network._
-import softrains.vision._
 
 import com.typesafe.config._
 
@@ -89,6 +88,7 @@ class CentralService(
     }
   }
 
+  /*
   def runCamera()
   {
     db.query[CameraFeed].fetchOne.foreach(feed => {
@@ -101,6 +101,7 @@ class CentralService(
       sentinel.run
     })
   }
+   */
 
   private def intercomActorTimeout =
     duration.FiniteDuration(3, java.util.concurrent.TimeUnit.SECONDS)
