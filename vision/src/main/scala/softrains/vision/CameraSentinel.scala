@@ -482,6 +482,7 @@ class CameraSentinel(
               }
             }
           } else if (detectFaces) {
+            faceDetected = false
             val region = new CvRect(0, 0, img.width, img.height)
             detectFacesInRegion(img, gray, region, blobMinPixels.toInt)
           }
