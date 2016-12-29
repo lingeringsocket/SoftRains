@@ -26,7 +26,7 @@ class CameraActorSpec extends AkkaActorSpecification
 
   private def getVideoFile(resource : String) =
     getResourceFile("/video/" + resource)
-  
+
   "CameraActor" should
   {
     "detect face" in new AkkaActorExample
