@@ -134,18 +134,11 @@ class CameraFeedInput(feedUrl : String)
 class CameraLocalInput
     extends CameraInput
 {
-  override def startGrabber() =
+  override def nextFrame() =
   {
-    super.startGrabber
     stopGrabber
-  }
-
-  override def nextFrame() : Option[CvFrame] =
-  {
-    super.startGrabber
-    val frame = super.nextFrame
-    stopGrabber
-    frame
+    startGrabber
+    super.nextFrame
   }
 
   override protected def newGrabber =
