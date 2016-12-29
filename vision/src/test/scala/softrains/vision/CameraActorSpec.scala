@@ -18,6 +18,8 @@ import softrains.base._
 
 import akka.actor._
 
+import scala.concurrent.duration._
+
 class CameraActorSpec extends AkkaActorSpecification
 {
   import CameraActor._
@@ -29,12 +31,13 @@ class CameraActorSpec extends AkkaActorSpecification
   {
     "detect face" in new AkkaActorExample
     {
+      val timeout = 10.seconds
       val input = new CameraFileInput(getVideoFile("johnArriving.mkv"))
       val actor = system.actorOf(Props(classOf[CameraActor]))
       actor ! StartSentinelMsg(input, CameraNullView, FaceDetectedMsg)
-      expectMsg(FaceDetectedMsg)
+      expectMsg(timeout, FaceDetectedMsg)
       actor ! StopSentinelMsg
-      fishForMessage() {
+      fishForMessage(timeout) {
         msg : Any => msg match {
           case SentinelStoppedMsg => true
           case _ => false
