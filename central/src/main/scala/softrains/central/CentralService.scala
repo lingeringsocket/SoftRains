@@ -104,7 +104,7 @@ class CentralService(
    */
 
   private def intercomActorTimeout =
-    duration.FiniteDuration(3, java.util.concurrent.TimeUnit.SECONDS)
+    duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
 
   private def getIntercomActor =
   {

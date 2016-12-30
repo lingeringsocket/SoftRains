@@ -138,6 +138,12 @@ class SoftRainsSettings(rootConf : Config)
     val urlMap = readMap(subConf, "urls")
   }
 
+  object Kiosk
+  {
+    val subConf = conf.getConfig("kiosk")
+    val cameraUrl = subConf.getString("camera-url")
+  }
+
   private def readMap(conf : Config, key : String) : Map[String, String] =
   {
     val list = conf.getObjectList(key).asScala

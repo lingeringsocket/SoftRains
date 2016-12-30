@@ -285,7 +285,7 @@ class ChristmasGreeting extends ConversationTopic
         IntercomActor.PartnerUtteranceMsg(
           "I am a talking Christmas tree!"))
     } else {
-      if (echo == "goodbye") {
+      if ((echo == "goodbye") || (echo == "good bye")) {
         done = true
         Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
       } else if (echo.contains("merry christmas")) {

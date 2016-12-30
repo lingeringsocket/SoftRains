@@ -162,7 +162,14 @@ class WatsonActor extends Actor
       val teeOutputStream = new TeeOutputStream(
         pipedOutputStream, new FileOutputStream(rawFile))
       val pipeFuture = Future {
-        AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
+        val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
+        val old = Thread.currentThread.getContextClassLoader
+        try {
+          Thread.currentThread.setContextClassLoader(cl)
+          AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
+        } finally {
+          Thread.currentThread.setContextClassLoader(old)
+        }
       }(ExecutionContext.Implicits.global)
       val audio = AudioSystem.getAudioInputStream(pipedInputStream)
       val options = (new RecognizeOptions.Builder).
@@ -199,7 +206,7 @@ class WatsonActor extends Actor
             disconnectPromise.success(null)
           }
         })
-      val duration = FiniteDuration(300, java.util.concurrent.TimeUnit.SECONDS)
+      val duration = FiniteDuration(30, java.util.concurrent.TimeUnit.SECONDS)
       var timeout = false
       try {
         Await.ready(disconnectFuture, duration)
