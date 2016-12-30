@@ -40,7 +40,8 @@ object KioskApp extends App
     system.actorOf(Props(classOf[CameraActor]), cameraSpec)
   val detectedActor =
     system.actorOf(Props(classOf[FaceDetectedUrlActor]), "faceDetectedActor")
-  val input = new CameraLocalInput
+  // FIXME:  make configurable
+  val input = new CameraFeedInput("http://127.0.0.1:8081")
   val view = CameraNullView
   cameraActor.tell(CameraActor.StartSentinelMsg(input, view), detectedActor)
   println("Akka listening, press RETURN to stop...")
