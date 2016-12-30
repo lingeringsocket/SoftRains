@@ -60,7 +60,7 @@ class CameraActor extends LoggingFSM[State, Data]
   when(Inactive) {
     case Event(StartSentinelMsg(input, view, faceDetectedMsg), _) => {
       val sentinel = new CameraSentinel(input, view, settings)
-      sentinel.enableFaceDetection(false)
+      sentinel.enableFaceDetection(true)
       sentinel.startAnalyzer
       self ! AnalyzeFrameMsg
       goto(Active) using SentinelData(

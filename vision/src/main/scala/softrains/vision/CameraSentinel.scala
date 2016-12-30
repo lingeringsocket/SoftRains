@@ -260,9 +260,9 @@ class CameraSentinel(
 
   def wasFaceDetected = faceDetected
 
-  private def recordMotion = !recordingDirOpt.isEmpty
+  private var recordMotion = false
 
-  def enableMotionRecording()
+  private def createDirs()
   {
     val recordingDir = settings.Files.videoPath
     if (!recordingDir.isDirectory) {
@@ -281,10 +281,17 @@ class CameraSentinel(
     }
   }
 
+  def enableMotionRecording()
+  {
+    recordMotion = true
+    createDirs
+  }
+
   def enableFaceDetection(save : Boolean)
   {
     detectFaces = true
     saveFaces = save
+    createDirs
   }
 
   def enableVisitorDetection()
