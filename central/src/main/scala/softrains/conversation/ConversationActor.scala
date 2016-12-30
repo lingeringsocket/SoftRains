@@ -90,6 +90,17 @@ class ConversationActor extends LoggingFSM[State, Data]
     }
   }
 
+  onTransition {
+    case Paired -> Inactive => {
+      if (!settings.Test.active) {
+        val stateUrl = settings.Openhab.url + "/rest/items/facetime/state"
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(stateUrl, "OFF") {}
+        httpConsumer.ensureSuccess
+      }
+    }
+  }
+
   when(Paired) {
     case Event(SpeakerSoundFinishedMsg, ConvoData(topic)) => {
       if (topic.isInProgress) {
