@@ -245,6 +245,8 @@ class CameraSentinel(
 
   private var detectFaces = false
 
+  private var suppressRecognition = false
+
   private var saveFaces = false
 
   private var detectVisitors = false
@@ -578,6 +580,8 @@ class CameraSentinel(
       if (!faces.isEmpty) {
         visitorDetected = true
         faceDetected = true
+      } else {
+        suppressRecognition = false
       }
       if (saveFaces) {
         faces.foreach(
@@ -593,15 +597,19 @@ class CameraSentinel(
       cvSetImageROI(img, region)
       faces.foreach(face => {
         var color = AbstractCvScalar.BLUE
-        faceRecognizerOpt match {
-          case Some(faceRecognizer) => {
-            cvSetImageROI(gray, nestRect(region, face))
-            cvResize(gray, cropped)
-            val predicted = faceRecognizer.predict(new Mat(cropped))
-            lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")
-            cvResetImageROI(gray)
+        if (!suppressRecognition) {
+          faceRecognizerOpt match {
+            case Some(faceRecognizer) => {
+              cvSetImageROI(gray, nestRect(region, face))
+              cvResize(gray, cropped)
+              val predicted = faceRecognizer.predict(new Mat(cropped))
+              lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")
+              cvResetImageROI(gray)
+            }
+            case _ =>
           }
-          case _ =>
+        } else {
+          suppressRecognition = true
         }
         highlightRectangle(
           img, face, color)
