@@ -28,14 +28,12 @@ object CameraActor
   // received messages
   final case class StartSentinelMsg(
     input : CameraInput,
-    view : CameraView,
-    faceDetectedMsg : SoftRainsMsg = FaceDetectedMsg) extends SoftRainsMsg
+    view : CameraView) extends SoftRainsMsg
   case object AnalyzeFrameMsg extends SoftRainsMsg
   case object StopSentinelMsg extends SoftRainsMsg
 
   // sent messages
-  // dynamic based on input to StartSentinelMsg
-  case object FaceDetectedMsg extends SoftRainsMsg
+  final case class FaceDetectedMsg(name : String) extends SoftRainsMsg
   case object SentinelStoppedMsg extends SoftRainsMsg
 
   case object Inactive extends State
@@ -58,13 +56,13 @@ class CameraActor extends LoggingFSM[State, Data]
   startWith(Inactive, Empty)
 
   when(Inactive) {
-    case Event(StartSentinelMsg(input, view, faceDetectedMsg), _) => {
+    case Event(StartSentinelMsg(input, view), _) => {
       val sentinel = new CameraSentinel(input, view, settings)
       sentinel.enableFaceDetection(true)
       sentinel.startAnalyzer
       self ! AnalyzeFrameMsg
       goto(Active) using SentinelData(
-        sentinel, faceDetectedMsg, sender)
+        sentinel, FaceDetectedMsg(sentinel.getLastFace), sender)
     }
     case Event(AnalyzeFrameMsg, _) => {
       stay

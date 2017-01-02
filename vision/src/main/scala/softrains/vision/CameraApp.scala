@@ -48,8 +48,8 @@ class FaceDetectedActor extends Actor
 {
   def receive =
   {
-    case CameraActor.FaceDetectedMsg => {
-      println("Face detected!")
+    case CameraActor.FaceDetectedMsg(name) => {
+      println("Face " + name + " detected!")
     }
   }
 }

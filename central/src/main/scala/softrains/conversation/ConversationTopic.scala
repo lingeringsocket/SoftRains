@@ -267,7 +267,7 @@ class GenericGreeting
   }
 }
 
-class ChristmasGreeting extends ConversationTopic
+class ChristmasGreeting(name : String) extends ConversationTopic
 {
   private var done = false
   private var echo = ""
@@ -283,13 +283,19 @@ class ChristmasGreeting extends ConversationTopic
     if (echo.isEmpty) {
       Some(
         IntercomActor.PartnerUtteranceMsg(
-          "I am a talking Christmas tree!"))
+          "Hello, " + name + "!"))
     } else {
       if ((echo == "goodbye") || (echo == "good bye")) {
         done = true
         Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
-      } else if (echo.contains("merry christmas")) {
+      } else if (echo.contains("thank you")) {
+        Some(IntercomActor.PartnerUtteranceMsg("You are very welcome!"))
+      } else if (echo.contains("motor function")) {
+        Some(IntercomActor.PartnerUtteranceMsg("Okay."))
+      } else if (echo.contains("christmas")) {
         Some(IntercomActor.StartAudioFileMsg("JingleBells.mp3", true))
+      } else if (echo.contains("new year")) {
+        Some(IntercomActor.StartAudioFileMsg("AuldLangSyne.mp3", true))
       } else if (echo.contains("story")) {
         Some(IntercomActor.StartAudioFileMsg("nicholas.wav", false))
       } else if (echo.contains("hodor") || echo.contains("hold the door")) {

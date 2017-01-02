@@ -17,6 +17,7 @@ package softrains.vision
 import softrains.base._
 
 import java.io._
+import java.nio._
 import java.net._
 import java.nio.file._
 import java.text._
@@ -30,9 +31,11 @@ import javax.swing._
 import org.bytedeco.javacpp.opencv_imgproc._
 import org.bytedeco.javacpp.opencv_imgcodecs._
 import org.bytedeco.javacpp.helper.opencv_core._
+import org.bytedeco.javacpp.opencv_face._
 import org.bytedeco.javacpp.opencv_video._
 import org.bytedeco.javacpp.opencv_core._
 import org.bytedeco.javacpp.opencv_objdetect._
+import org.bytedeco.javacpp.opencv_imgcodecs._
 import org.bytedeco.javacpp.avutil._
 import org.bytedeco.javacpp._
 import org.bytedeco.javacv._
@@ -246,6 +249,12 @@ class CameraSentinel(
 
   private var detectVisitors = false
 
+  private var faceRecognizerOpt : Option[FaceRecognizer] = None
+
+  private val faceLabels = new mutable.HashMap[String, Int]
+
+  private var faceLabelsInv : mutable.Map[Int, String] = null
+
   private var proximityDetected = false
 
   private var visitorDetected = false
@@ -261,6 +270,10 @@ class CameraSentinel(
   def wasFaceDetected = faceDetected
 
   private var recordMotion = false
+
+  private var lastFace = ""
+
+  def getLastFace = lastFace
 
   private def createDirs()
   {
@@ -292,6 +305,9 @@ class CameraSentinel(
     detectFaces = true
     saveFaces = save
     createDirs
+    if (!settings.Visitors.subConf.getString("training-path").isEmpty) {
+      trainFaceRecognition
+    }
   }
 
   def enableVisitorDetection()
@@ -304,6 +320,53 @@ class CameraSentinel(
     input.stopGrabber
     view.quit
     recorder.quit
+  }
+
+  private def trainFaceRecognition()
+  {
+    val root = settings.Visitors.trainingPath
+    val imgFilter = new FilenameFilter {
+      override def accept(dir : File, nameOrig : String) =
+      {
+        val name = nameOrig.toLowerCase
+        name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png")
+      }
+    }
+
+    val imageFiles = root.listFiles(imgFilter)
+    val images = new MatVector(2*imageFiles.length)
+    val labels = new Mat(2*imageFiles.length, 1, CV_32SC1)
+    val labelsBuf = labels.createBuffer[IntBuffer]
+
+    var counter = 0
+
+    for (image <- imageFiles) {
+      val img = imread(image.getAbsolutePath, CV_LOAD_IMAGE_GRAYSCALE)
+      val labelString = image.getName.split("\\-")(0)
+      val labelOpt = faceLabels.get(labelString)
+      val label = labelOpt match {
+        case Some(l) => l
+        case _ => {
+          val newLabel = faceLabels.size
+          faceLabels.put(labelString, newLabel)
+          newLabel
+        }
+      }
+      images.put(counter, img)
+      labelsBuf.put(counter, label)
+      counter += 1
+
+      val copy = new IplImage(img).clone
+      cvFlip(copy, copy, 1)
+      images.put(counter, new Mat(copy))
+      labelsBuf.put(counter, label)
+      counter += 1
+    }
+    faceLabelsInv = faceLabels.map(_.swap)
+
+    val faceRecognizer = createLBPHFaceRecognizer
+    faceRecognizer.train(images, labels)
+    faceRecognizerOpt = Some(faceRecognizer)
   }
 
   private def loadClassifier(classifierName : String) =
@@ -391,6 +454,7 @@ class CameraSentinel(
     val bodyStorage = AbstractCvMemStorage.create
     val contourStorage = AbstractCvMemStorage.create
     val faceStorage = AbstractCvMemStorage.create
+    val cropped = AbstractIplImage.create(new CvSize(100, 100), 8, 1)
     var diffOpt : Option[IplImage] = None
     var grayOpt : Option[IplImage] = None
 
@@ -483,6 +547,7 @@ class CameraSentinel(
             }
           } else if (detectFaces) {
             faceDetected = false
+            lastFace = ""
             val region = new CvRect(0, 0, img.width, img.height)
             detectFacesInRegion(img, gray, region, blobMinPixels.toInt)
           }
@@ -522,15 +587,27 @@ class CameraSentinel(
         )
       }
       cvSetImageROI(img, region)
-      faces.foreach(
-        face => highlightRectangle(
-          img, face, AbstractCvScalar.BLUE)
-      )
+      faces.foreach(face => {
+        var color = AbstractCvScalar.BLUE
+        faceRecognizerOpt match {
+          case Some(faceRecognizer) => {
+            cvSetImageROI(gray, nestRect(region, face))
+            cvResize(gray, cropped)
+            val predicted = faceRecognizer.predict(new Mat(cropped))
+            lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")
+            cvResetImageROI(gray)
+          }
+          case _ =>
+        }
+        highlightRectangle(
+          img, face, color)
+      })
       cvResetImageROI(img)
     }
 
     def release()
     {
+      cropped.release
       faceStorage.release
       bodyStorage.release
       contourStorage.release
@@ -549,6 +626,7 @@ class CameraSentinel(
     }
     recorder.enableRecording(None)
     recorder.quit
+    lastFace = ""
     faceDetected = false
     visitorDetected = false
     proximityDetected = false

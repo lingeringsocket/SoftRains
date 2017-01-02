@@ -272,10 +272,14 @@ class CentralService(
 
   private def startGreet()
   {
-    val topic = new ChristmasGreeting
-    conversationActor ! ConversationActor.ActivateMsg(
-      topic,
-      getIntercomActor)
+    val httpConsumer = new HttpConsumer(getActorSystem)
+    val nameUrl = settings.Openhab.url + "/rest/items/face_name/state"
+    httpConsumer.fetchString(nameUrl) { name =>
+      val topic = new ChristmasGreeting(name)
+      conversationActor ! ConversationActor.ActivateMsg(
+        topic,
+        getIntercomActor)
+    }
   }
 
   private def startIdentify()

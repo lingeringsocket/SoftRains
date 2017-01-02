@@ -56,10 +56,12 @@ class FaceDetectedUrlActor extends Actor
 
   def receive =
   {
-    case CameraActor.FaceDetectedMsg => {
-      val stateUrl = settings.Openhab.url + "/rest/items/facetime/state"
+    case CameraActor.FaceDetectedMsg(name) => {
       val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(stateUrl, "ON") {}
+      val switchUrl = settings.Openhab.url + "/rest/items/facetime/state"
+      val nameUrl = settings.Openhab.url + "/rest/items/face_name/state"
+      httpConsumer.putString(switchUrl, "ON") {}
+      httpConsumer.putString(nameUrl, name) {}
       httpConsumer.ensureSuccess
     }
   }
