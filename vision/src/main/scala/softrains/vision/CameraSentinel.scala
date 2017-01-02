@@ -367,6 +367,10 @@ class CameraSentinel(
     val faceRecognizer = createLBPHFaceRecognizer
     faceRecognizer.train(images, labels)
     faceRecognizerOpt = Some(faceRecognizer)
+
+    for (i <- 0 until images.size.toInt) {
+      images.get(i).release
+    }
   }
 
   private def loadClassifier(classifierName : String) =

@@ -84,7 +84,7 @@ class WatsonActor extends Actor
 
   private var personCount = 0
 
-  private var first = false
+  private var first = true
 
   override def preStart()
   {
@@ -116,7 +116,7 @@ class WatsonActor extends Actor
       log.info("Say '" + utterance + "' using voice " + voice)
       try {
         if (first) {
-          say("Hello there!", voice, false)
+          say("Oh!", voice, false)
           first = false
         }
         say(utterance, voice, true)
