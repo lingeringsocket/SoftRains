@@ -42,7 +42,6 @@ object CameraActor
   case object Empty extends Data
   final case class SentinelData(
     sentinel : CameraSentinel,
-    faceDetectedMsg : SoftRainsMsg,
     listener : ActorRef) extends Data
 }
 import CameraActor._
@@ -62,7 +61,7 @@ class CameraActor extends LoggingFSM[State, Data]
       sentinel.startAnalyzer
       self ! AnalyzeFrameMsg
       goto(Active) using SentinelData(
-        sentinel, FaceDetectedMsg(sentinel.getLastFace), sender)
+        sentinel, sender)
     }
     case Event(AnalyzeFrameMsg, _) => {
       stay
@@ -71,17 +70,17 @@ class CameraActor extends LoggingFSM[State, Data]
 
   when(Active) {
     case Event(AnalyzeFrameMsg,
-      SentinelData(sentinel, faceDetectedMsg, listener)) =>
+      SentinelData(sentinel, listener)) =>
     {
       sentinel.analyzeFrame
       if (sentinel.wasFaceDetected) {
-        listener ! faceDetectedMsg
+        listener ! FaceDetectedMsg(sentinel.getLastFace)
       }
       context.system.scheduler.scheduleOnce(
         frameInterval, self, AnalyzeFrameMsg)
       stay
     }
-    case Event(StopSentinelMsg, SentinelData(sentinel, _, _)) => {
+    case Event(StopSentinelMsg, SentinelData(sentinel, _)) => {
       sentinel.stopAnalyzer
       sender ! SentinelStoppedMsg
       goto(Inactive) using Empty

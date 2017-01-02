@@ -84,7 +84,7 @@ class WatsonActor extends Actor
 
   private var personCount = 0
 
-  private var first = true
+  private var first = false
 
   override def preStart()
   {
