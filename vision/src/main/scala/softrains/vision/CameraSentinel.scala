@@ -302,6 +302,12 @@ class CameraSentinel(
     createDirs
   }
 
+  def disableFaceDetection()
+  {
+    detectFaces = false
+    faceDetected = false
+  }
+
   def enableFaceDetection(save : Boolean)
   {
     detectFaces = true

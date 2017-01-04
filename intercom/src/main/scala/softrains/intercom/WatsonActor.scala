@@ -53,11 +53,9 @@ object WatsonActor
 {
   // received messages
   final case class SpeechListenMsg(
-    partner : ActorRef,
     newPersonName : String = "")
       extends SoftRainsMsg
   final case class SpeechSayMsg(
-    partner : ActorRef,
     utterance : String, voice : String)
       extends SoftRainsMsg
 
@@ -84,8 +82,6 @@ class WatsonActor extends Actor
 
   private var personCount = 0
 
-  private var first = true
-
   override def preStart()
   {
     tts.setUsernameAndPassword(
@@ -102,26 +98,22 @@ class WatsonActor extends Actor
 
   def receive =
   {
-    case SpeechListenMsg(partner, newPersonName) => {
+    case SpeechListenMsg(newPersonName) => {
       val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
       val old = Thread.currentThread.getContextClassLoader
       try {
         Thread.currentThread.setContextClassLoader(cl)
-        listen(partner, newPersonName)
+        listen(newPersonName)
       } finally {
         Thread.currentThread.setContextClassLoader(old)
       }
     }
-    case SpeechSayMsg(partner, utterance, voice) => {
+    case SpeechSayMsg(utterance, voice) => {
       log.info("Say '" + utterance + "' using voice " + voice)
       try {
-        if (first) {
-          say("Oh!", voice, false)
-          first = false
-        }
         say(utterance, voice, true)
       } finally {
-        partner.tell(IntercomActor.SpeakerSoundFinishedMsg, sender)
+        sender ! IntercomActor.SpeakerSoundFinishedMsg
       }
       log.info("Done speaking")
     }
@@ -141,7 +133,7 @@ class WatsonActor extends Actor
     }
   }
 
-  private def listen(partner : ActorRef, newPersonName : String)
+  private def listen(newPersonName : String)
   {
     log.info("Listening...")
     var result : AnyRef = IntercomActor.SilenceMsg
@@ -244,7 +236,7 @@ class WatsonActor extends Actor
       line.stop
       line.close
       log.info("Done listening.")
-      partner.tell(result, sender)
+      sender ! result
     }
   }
 }

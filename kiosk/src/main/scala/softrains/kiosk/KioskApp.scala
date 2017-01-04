@@ -15,8 +15,6 @@
 package softrains.kiosk
 
 import softrains.base._
-import softrains.vision._
-import softrains.intercom._
 
 import akka.actor._
 
@@ -30,39 +28,13 @@ object KioskApp extends App
   val config = ConfigFactory.load
   val settings = SoftRainsSettings(config)
   val system = ActorSystem("SoftRainsIntercom", config)
-  val cameraSpec = settings.Actors.camera
-  assert (!cameraSpec.isEmpty)
-  val intercomSpec = settings.Actors.intercom
-  assert (!intercomSpec.isEmpty)
-  val intercomActor =
-    system.actorOf(Props(classOf[IntercomActor]), intercomSpec)
-  val cameraActor =
-    system.actorOf(Props(classOf[CameraActor]), cameraSpec)
-  val detectedActor =
-    system.actorOf(Props(classOf[FaceDetectedUrlActor]), "faceDetectedActor")
-  val input = new CameraFeedInput(settings.Kiosk.cameraUrl)
-  val view = CameraNullView
-  cameraActor.tell(CameraActor.StartSentinelMsg(input, view), detectedActor)
+  val kioskActor =
+    system.actorOf(Props(classOf[KioskActor]), "kioskActor")
+
   println("Akka listening, press RETURN to stop...")
   StdIn.readLine
-  cameraActor ! CameraActor.StopSentinelMsg
+  kioskActor ! PoisonPill
+
   system.terminate
   Await.result(system.whenTerminated, duration.Duration.Inf)
-}
-
-class FaceDetectedUrlActor extends Actor
-{
-  private val settings = SoftRainsActorSettings(context)
-
-  def receive =
-  {
-    case CameraActor.FaceDetectedMsg(name) => {
-      val httpConsumer = new HttpConsumer(context.system)
-      val switchUrl = settings.Openhab.url + "/rest/items/facetime/state"
-      val nameUrl = settings.Openhab.url + "/rest/items/face_name/state"
-      httpConsumer.putString(switchUrl, "ON") {}
-      httpConsumer.putString(nameUrl, name) {}
-      httpConsumer.ensureSuccess
-    }
-  }
 }

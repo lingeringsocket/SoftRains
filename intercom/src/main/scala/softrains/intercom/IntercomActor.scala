@@ -62,7 +62,7 @@ object IntercomActor
   case object StopAudioFileMsg
       extends SpeakerSoundMsg
 
-  // sent messages
+  // sent messages (to partner)
   case object BusyMsg
       extends PeripheralMsg
   final case class ProtocolErrorMsg(error : String)
@@ -71,14 +71,26 @@ object IntercomActor
       extends PeripheralMsg
   case object PreemptionDisconnectMsg
       extends PeripheralMsg
-  final case class PersonUtteranceMsg(utterance : String, personName : String)
-      extends PeripheralMsg
-  case object SpeakerSoundFinishedMsg
-      extends PeripheralMsg
-  case object SilenceMsg
-      extends PeripheralMsg
   final case class UptimeResponseMsg(seconds : Int)
       extends PeripheralMsg
+
+  // sent messages (to parent)
+  case object UnpairedMsg
+      extends PeripheralMsg
+  case object ListeningStartedMsg
+      extends PeripheralMsg
+  case object ListeningDoneMsg
+      extends PeripheralMsg
+
+  // forwarded messages (from watson to partner)
+  trait WatsonCompletionMsg extends PeripheralMsg
+  trait WatsonHeardMsg extends WatsonCompletionMsg
+  final case class PersonUtteranceMsg(utterance : String, personName : String)
+      extends WatsonHeardMsg
+  case object SilenceMsg
+      extends WatsonHeardMsg
+  case object SpeakerSoundFinishedMsg
+      extends WatsonCompletionMsg
 
   case object Active extends State
 
@@ -140,6 +152,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
     case Event(UnpairMsg, Partner(partner, _, bg)) => {
       if (sender == partner) {
+        context.parent ! UnpairedMsg
         stay using Partner(unpaired, VOICE_NONE, bg)
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR)
@@ -150,7 +163,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       if (sender == partner) {
         watsonOpt match {
           case Some(watson) => {
-            watson ! WatsonActor.SpeechSayMsg(partner, utterance, voice)
+            watson ! WatsonActor.SpeechSayMsg(utterance, voice)
           }
           case _ => {
             log.info("Unable to say '" + utterance + "' using voice " + voice)
@@ -165,9 +178,10 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
     case Event(PartnerListenMsg(newPersonName), Partner(partner, _, _)) => {
       if (sender == partner) {
+        context.parent ! ListeningStartedMsg
         watsonOpt match {
           case Some(watson) => {
-            watson ! WatsonActor.SpeechListenMsg(partner, newPersonName)
+            watson ! WatsonActor.SpeechListenMsg(newPersonName)
           }
           case _ => {
             partner ! SilenceMsg
@@ -231,6 +245,17 @@ class IntercomActor extends LoggingFSM[State, Data]
           stay
         }
       }
+    }
+    case Event(msg : WatsonCompletionMsg, Partner(partner, _, _)) => {
+      msg match {
+        case heardMsg : WatsonHeardMsg => {
+          context.parent ! ListeningDoneMsg
+        }
+        case _ =>
+      }
+      // forward it on to partner
+      partner ! msg
+      stay
     }
   }
 

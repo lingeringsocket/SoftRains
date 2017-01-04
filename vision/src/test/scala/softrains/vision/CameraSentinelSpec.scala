@@ -144,5 +144,24 @@ class CameraSentinelSpec extends Specification
       val faceDir = new File(dir, faces)
       faceDir.list must have size(2)
     }
+
+    "allow face detection to be enabled and disabled" in
+    {
+      val input = new CameraFileInput(getVideoFile("johnArriving.mkv"))
+      val sentinel = new CameraSentinel(
+        input, CameraNullView, settings)
+      sentinel.enableFaceDetection(false)
+      sentinel.startAnalyzer
+      var faceCount = 0
+      while (!input.isClosed) {
+        sentinel.analyzeFrame
+        if (sentinel.wasFaceDetected) {
+          faceCount += 1
+          sentinel.disableFaceDetection
+        }
+      }
+      sentinel.stopAnalyzer
+      faceCount must be equalTo 1
+    }
   }
 }
