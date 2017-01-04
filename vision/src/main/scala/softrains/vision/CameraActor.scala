@@ -31,7 +31,8 @@ object CameraActor
     view : CameraView) extends SoftRainsMsg
   case object AnalyzeFrameMsg extends SoftRainsMsg
   case object StopSentinelMsg extends SoftRainsMsg
-  final case class ControlFaceDetectionMsg(enable : Boolean) extends SoftRainsMsg
+  final case class ControlFaceDetectionMsg(enable : Boolean)
+      extends SoftRainsMsg
 
   // sent messages
   final case class FaceDetectedMsg(name : String) extends SoftRainsMsg
