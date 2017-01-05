@@ -117,10 +117,11 @@ class IntercomActor extends LoggingFSM[State, Data]
   override def preStart()
   {
     if (isWatsonEnabled) {
-      watsonOpt = Some(context.actorOf(
-        Props(classOf[WatsonActor]), "watsonActor"))
+      val watsonActor = context.actorOf(
+        Props(classOf[WatsonActor]), "watsonActor")
+      watsonActor ! WatsonActor.SpeechSayMsg("System activated!", VOICE_NONE)
+      watsonOpt = Some(watsonActor)
     }
-    self.tell(PartnerUtteranceMsg("Good to go!"), unpaired)
     log.info("IntercomActor started")
   }
 
