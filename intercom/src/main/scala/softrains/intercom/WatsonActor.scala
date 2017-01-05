@@ -183,12 +183,20 @@ class WatsonActor extends Actor
           override def onTranscription(speechResults : SpeechResults)
           {
             audio.close
-            val transcript =
-              speechResults.getResults.get(speechResults.getResultIndex)
-            val utterance = transcript.getAlternatives.get(0).getTranscript.trim
-            log.info("Heard:  " + utterance)
-            result = IntercomActor.PersonUtteranceMsg(utterance, newPersonName)
-            speechPromise.success(speechResults)
+            try {
+              val transcript =
+                speechResults.getResults.get(speechResults.getResultIndex)
+              val utterance =
+                transcript.getAlternatives.get(0).getTranscript.trim
+              log.info("Heard:  " + utterance)
+              result = IntercomActor.PersonUtteranceMsg(
+                utterance, newPersonName)
+              speechPromise.success(speechResults)
+            } catch {
+              case ex : Throwable => {
+                speechPromise.failure(ex)
+              }
+            }
           }
 
           override def onError(e : Exception)

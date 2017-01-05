@@ -456,7 +456,9 @@ class CameraSentinel(
   def analyzeFrame()
   {
     assert(!frameAnalyzerOpt.isEmpty)
-    frameAnalyzerOpt.foreach(_.analyzeFrame)
+    if (detectVisitors || detectFaces || recordMotion || settings.Test.active) {
+      frameAnalyzerOpt.foreach(_.analyzeFrame)
+    }
   }
 
   private class FrameAnalyzer
