@@ -119,10 +119,11 @@ class ConversationActor extends LoggingFSM[State, Data]
               }
               case _ =>
             }
+            stay
           } else {
             sender ! UnpairMsg
+            goto(Inactive) using Empty
           }
-          stay
         }
         case _ => {
           sender ! UnpairMsg
