@@ -120,6 +120,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       watsonOpt = Some(context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor"))
     }
+    self.tell(PartnerUtteranceMsg("Good to go!"), unpaired)
     log.info("IntercomActor started")
   }
 

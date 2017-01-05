@@ -82,8 +82,6 @@ class WatsonActor extends Actor
 
   private var personCount = 0
 
-  private var first = true
-
   override def preStart()
   {
     tts.setUsernameAndPassword(
@@ -113,10 +111,6 @@ class WatsonActor extends Actor
     case SpeechSayMsg(utterance, voice) => {
       log.info("Say '" + utterance + "' using voice " + voice)
       try {
-        if (first) {
-          say ("Oh!", voice, false)
-          first = false
-        }
         say(utterance, voice, true)
       } finally {
         sender ! IntercomActor.SpeakerSoundFinishedMsg
