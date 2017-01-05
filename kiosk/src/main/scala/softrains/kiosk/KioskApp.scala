@@ -27,7 +27,7 @@ object KioskApp extends App
 {
   val config = ConfigFactory.load
   val settings = SoftRainsSettings(config)
-  val system = ActorSystem("SoftRainsIntercom", config)
+  val system = ActorSystem("SoftRainsKiosk", config)
   val kioskActor =
     system.actorOf(Props(classOf[KioskActor]), "kioskActor")
 
