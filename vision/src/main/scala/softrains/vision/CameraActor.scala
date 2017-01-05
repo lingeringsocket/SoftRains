@@ -56,6 +56,16 @@ class CameraActor extends LoggingFSM[State, Data]
 
   startWith(Inactive, Empty)
 
+  override def preStart()
+  {
+    log.info("CameraActor started")
+  }
+
+  override def postStop()
+  {
+    log.info("CameraActor stopped")
+  }
+
   when(Inactive) {
     case Event(StartSentinelMsg(input, view), _) => {
       val sentinel = new CameraSentinel(input, view, settings)

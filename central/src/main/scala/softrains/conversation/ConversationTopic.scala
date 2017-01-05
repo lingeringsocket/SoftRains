@@ -283,7 +283,7 @@ class ChristmasGreeting(name : String) extends ConversationTopic
     if (echo.isEmpty) {
       Some(
         IntercomActor.PartnerUtteranceMsg(
-          "Oh!  Hello, " + name + "!"))
+          "Hello, " + name + "!"))
     } else {
       if ((echo == "goodbye") || (echo == "good bye")) {
         done = true
