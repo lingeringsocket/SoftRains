@@ -260,7 +260,9 @@ class IntercomActor extends LoggingFSM[State, Data]
         case _ =>
       }
       // forward it on to partner
-      partner ! msg
+      if (partner != unpaired) {
+        partner ! msg
+      }
       stay
     }
   }
