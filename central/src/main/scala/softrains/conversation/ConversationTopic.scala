@@ -33,7 +33,7 @@ abstract class ConversationTopic
   protected def delegateToProduceMessage() =
   {
     produceMessage() match {
-      case Some(IntercomActor.PartnerUtteranceMsg(utterance)) =>
+      case Some(IntercomActor.PartnerUtteranceMsg(utterance, voice)) =>
         Some(utterance)
       case _ =>
         None
@@ -293,15 +293,32 @@ class ChristmasGreeting(name : String) extends ConversationTopic
       } else if (echo.contains("motor function")) {
         Some(IntercomActor.PartnerUtteranceMsg("Okay."))
       } else if (echo.contains("christmas")) {
+        done = true
         Some(IntercomActor.StartAudioFileMsg("JingleBells.mp3", true))
       } else if (echo.contains("new year")) {
+        done = true
         Some(IntercomActor.StartAudioFileMsg("AuldLangSyne.mp3", true))
       } else if (echo.contains("story")) {
+        done = true
         Some(IntercomActor.StartAudioFileMsg("nicholas.wav", false))
       } else if (echo.contains("hodor") || echo.contains("hold the door")) {
         Some(IntercomActor.StartAudioFileMsg("hodor.mp3", false))
       } else if ((echo == "ring the bell") || (echo == "big ben")) {
         Some(IntercomActor.DoorbellMsg)
+      } else if (echo.contains("michael")) {
+        Some(IntercomActor.PartnerUtteranceMsg(
+          "Well hello there!", "en-US_MichaelVoice"))
+      } else if (echo.contains("allison")) {
+        Some(IntercomActor.PartnerUtteranceMsg(
+          "At your service!", "en-US_AllisonVoice"))
+      } else if (echo.contains("lisa")) {
+        Some(IntercomActor.PartnerUtteranceMsg(
+          "My name is Lisa and I am a recovering alcoholic.",
+          "en-US_LisaVoice"))
+      } else if (echo.contains("kate")) {
+        Some(IntercomActor.PartnerUtteranceMsg(
+          "Blimey, would you like to try the bangers and mash?",
+          "en-GB_KateVoice"))
       } else if (echo.contains("stop") || echo.contains("quiet") ||
         echo.contains("silen"))
       {

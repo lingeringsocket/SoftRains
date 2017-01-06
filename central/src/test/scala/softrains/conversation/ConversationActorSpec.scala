@@ -33,7 +33,7 @@ class ConversationActorSpec extends AkkaActorSpecification
       val typhlosion = new HomeResident("Typhlosion")
       val greeting = new DailyGreeting(typhlosion)
       actor ! ActivateMsg(greeting, self)
-      expectMsg(PairRequestMsg(voiceName))
+      expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
       expectMsg(PartnerUtteranceMsg("Good morning, Typhlosion!"))
       actor ! SpeakerSoundFinishedMsg

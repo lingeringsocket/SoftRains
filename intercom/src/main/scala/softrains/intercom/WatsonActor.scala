@@ -130,7 +130,7 @@ class WatsonActor extends Actor
       (settings.Speaker.command #< file).!
     } else {
       val stream = tts.synthesize(
-        utterance, Voice.EN_ALLISON, WatsonAudioFormat.WAV)
+        utterance, Voice.getByName(voice), WatsonAudioFormat.WAV)
       val in = WaveUtils.reWriteWaveHeader(stream.execute)
       ((("tee " + file) #| settings.Speaker.command) #< in).!
     }

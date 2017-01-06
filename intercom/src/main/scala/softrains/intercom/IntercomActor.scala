@@ -34,18 +34,18 @@ object IntercomActor
 
   val PROTOCOL_RING_WHILE_PAIRED = "cannot ring phone while paired"
 
-  val VOICE_NONE = "none"
+  val VOICE_DEFAULT = "en-US_AllisonVoice"
 
   sealed trait State
   sealed trait Data
 
   // received messages
   trait SpeakerSoundMsg extends PeripheralMsg
-  final case class PairRequestMsg(voice : String)
+  case object PairRequestMsg
       extends PeripheralMsg
-  final case class PairPreemptMsg(voice : String)
+  case object PairPreemptMsg
       extends PeripheralMsg
-  final case class PartnerUtteranceMsg(utterance : String)
+  final case class PartnerUtteranceMsg(utterance : String, voice : String = "")
       extends SpeakerSoundMsg
   final case class PartnerListenMsg(newPersonName : String = "")
       extends PeripheralMsg
@@ -119,7 +119,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     if (isWatsonEnabled) {
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")
-      watsonActor ! WatsonActor.SpeechSayMsg("System activated!", VOICE_NONE)
+      watsonActor ! WatsonActor.SpeechSayMsg("Yabba Dabba Doo!", VOICE_DEFAULT)
       watsonOpt = Some(watsonActor)
     }
     log.info("IntercomActor started")
@@ -130,7 +130,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     log.info("IntercomActor stopped")
   }
 
-  startWith(Active, Partner(unpaired, VOICE_NONE))
+  startWith(Active, Partner(unpaired, VOICE_DEFAULT))
 
   when(Active) {
     case Event(UptimeRequestMsg, _) => {
@@ -139,7 +139,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       sender ! UptimeResponseMsg(diff.getSeconds)
       stay
     }
-    case Event(PairRequestMsg(voice), Partner(oldPartner, _, bg)) => {
+    case Event(PairRequestMsg, Partner(oldPartner, voice, bg)) => {
       if (sender == oldPartner) {
         oldPartner ! ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED)
         stay
@@ -151,24 +151,33 @@ class IntercomActor extends LoggingFSM[State, Data]
         stay
       }
     }
-    case Event(PairPreemptMsg(voice), Partner(oldPartner, _, bg)) => {
+    case Event(PairPreemptMsg, Partner(oldPartner, voice, bg)) => {
       if (oldPartner != unpaired) {
         oldPartner ! PreemptionDisconnectMsg
       }
       sender ! PairAcceptedMsg
       stay using Partner(sender, voice, bg)
     }
-    case Event(UnpairMsg, Partner(partner, _, bg)) => {
+    case Event(UnpairMsg, Partner(partner, voice, bg)) => {
       if (sender == partner) {
         context.parent ! UnpairedMsg
-        stay using Partner(unpaired, VOICE_NONE, bg)
+        stay using Partner(unpaired, voice, bg)
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR)
         stay
       }
     }
-    case Event(PartnerUtteranceMsg(utterance), Partner(partner, voice, _)) => {
+    case Event(PartnerUtteranceMsg(utterance, newVoice),
+      Partner(partner, oldVoice, bg)) =>
+    {
       if (sender == partner) {
+        val voice = {
+          if (newVoice.isEmpty) {
+            oldVoice
+          } else {
+            newVoice
+          }
+        }
         watsonOpt match {
           case Some(watson) => {
             watson ! WatsonActor.SpeechSayMsg(utterance, voice)
@@ -178,7 +187,7 @@ class IntercomActor extends LoggingFSM[State, Data]
             partner ! SpeakerSoundFinishedMsg
           }
         }
-        stay
+        stay using Partner(partner, voice, bg)
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR)
         stay

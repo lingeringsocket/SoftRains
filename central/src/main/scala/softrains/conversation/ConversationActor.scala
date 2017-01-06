@@ -21,9 +21,6 @@ import akka.actor._
 
 object ConversationActor
 {
-  // TODO: parameterize
-  val voiceName = "SoftRains"
-
   // received messages
   final case class ActivateMsg(
     topic : ConversationTopic, channel : ActorRef)
@@ -58,7 +55,7 @@ class ConversationActor extends LoggingFSM[State, Data]
 
   when(Inactive) {
     case Event(ActivateMsg(topic, channel), _) => {
-      channel ! PairRequestMsg(voiceName)
+      channel ! PairRequestMsg
       goto(Pairing) using PairingData(topic, channel)
     }
   }
@@ -67,7 +64,7 @@ class ConversationActor extends LoggingFSM[State, Data]
     case Event(BusyMsg, PairingData(topic, channel)) => {
       topic.getPriority match {
         case EMERGENCY => {
-          channel ! PairPreemptMsg(voiceName)
+          channel ! PairPreemptMsg
           goto(Preempting)
         }
         // TODO retry for ASAP?

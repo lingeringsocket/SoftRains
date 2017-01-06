@@ -28,10 +28,6 @@ class IntercomActorSpec extends AkkaActorSpecification
 
   import IntercomActor._
 
-  private val voice = "charlie the unicorn"
-
-  private val voice2 = "magical liopleurodon"
-
   "IntercomActor" should
   {
     "encounter protocol errors" in new AkkaActorExample
@@ -47,10 +43,10 @@ class IntercomActorSpec extends AkkaActorSpecification
       actor ! PartnerListenMsg()
       expectMsg(ProtocolErrorMsg(PROTOCOL_LISTEN_WITHOUT_PAIR))
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(PairAcceptedMsg)
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED))
 
       actor ! RingtoneMsg
@@ -67,7 +63,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       actor ! DoorbellMsg
       expectMsg(SpeakerSoundFinishedMsg)
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(PairAcceptedMsg)
 
       actor ! PartnerUtteranceMsg("hello")
@@ -87,13 +83,13 @@ class IntercomActorSpec extends AkkaActorSpecification
       val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       val probe = TestProbe()
-      actor.tell(PairRequestMsg(voice2), probe.ref)
+      actor.tell(PairRequestMsg, probe.ref)
       probe.expectMsg(PairAcceptedMsg)
 
       actor ! RingtoneMsg
       expectMsg(BusyMsg)
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(BusyMsg)
 
       actor ! DoorbellMsg
@@ -110,7 +106,7 @@ class IntercomActorSpec extends AkkaActorSpecification
 
       actor.tell(UnpairMsg, probe.ref)
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(PairAcceptedMsg)
     }
 
@@ -119,13 +115,13 @@ class IntercomActorSpec extends AkkaActorSpecification
       val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       val probe = TestProbe()
-      actor.tell(PairRequestMsg(voice2), probe.ref)
+      actor.tell(PairRequestMsg, probe.ref)
       probe.expectMsg(PairAcceptedMsg)
 
-      actor ! PairRequestMsg(voice)
+      actor ! PairRequestMsg
       expectMsg(BusyMsg)
 
-      actor ! PairPreemptMsg(voice)
+      actor ! PairPreemptMsg
       expectMsg(PairAcceptedMsg)
 
       probe.expectMsg(PreemptionDisconnectMsg)
