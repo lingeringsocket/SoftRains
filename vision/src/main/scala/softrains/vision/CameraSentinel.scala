@@ -231,6 +231,7 @@ class CameraSentinel(
   input : CameraInput, view : CameraView, settings : SoftRainsSettings)
     extends RecordingProducer
 {
+  // workaround, may be able to eliminate after upgrade to javacv 1.3
   Loader.load(classOf[opencv_objdetect])
 
   private val recorder = new VideoRecorder
