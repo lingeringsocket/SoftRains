@@ -125,7 +125,9 @@ class WatsonActor extends Actor
   private def say(utterance : String, voice : String, cache : Boolean)
   {
     val file = new File(
-      audioDir, "tts-" + URLEncoder.encode(utterance, "UTF-8") + ".wav")
+      audioDir,
+      "tts-" + voice +
+        "-" + URLEncoder.encode(utterance, "UTF-8") + ".wav")
     if (cache && file.isFile) {
       (settings.Speaker.command #< file).!
     } else {
