@@ -59,7 +59,7 @@ class KioskActor extends Actor
 
   def receive =
   {
-    case CameraActor.FaceDetectedMsg(name) => {
+    case CameraActor.FaceDetectedMsg(name, confidence) => {
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(modeUrl, "ON") {}
       httpConsumer.putString(faceNameUrl, name) {}

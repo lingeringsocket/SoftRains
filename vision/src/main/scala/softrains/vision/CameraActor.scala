@@ -35,7 +35,8 @@ object CameraActor
       extends SoftRainsMsg
 
   // sent messages
-  final case class FaceDetectedMsg(name : String) extends SoftRainsMsg
+  final case class FaceDetectedMsg(name : String, confidence : Double)
+      extends SoftRainsMsg
   case object SentinelStoppedMsg extends SoftRainsMsg
 
   case object Inactive extends State
@@ -87,7 +88,8 @@ class CameraActor extends LoggingFSM[State, Data]
       sentinel.analyzeFrame
       if (sentinel.wasFaceDetected) {
         sentinel.disableFaceDetection
-        listener ! FaceDetectedMsg(sentinel.getLastFace)
+        listener ! FaceDetectedMsg(
+          sentinel.getLastFace, sentinel.getFaceConfidence)
       }
       context.system.scheduler.scheduleOnce(
         frameInterval, self, AnalyzeFrameMsg)

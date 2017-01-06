@@ -74,7 +74,7 @@ class CameraSentinelSpec extends Specification
         case (fileName, faceExpected, visitorExpected) =>
           "in file " + fileName >> {
             {
-              val input = new CameraFileInput(getVideoFile(fileName))
+              val input = new VideoFileInput(getVideoFile(fileName))
               val sentinel = new CameraSentinel(
                 input, CameraNullView, settings)
               sentinel.enableVisitorDetection
@@ -92,7 +92,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(getVideoFile("muniRight.mkv"))
+      val input = new VideoFileInput(getVideoFile("muniRight.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
@@ -121,7 +121,7 @@ class CameraSentinelSpec extends Specification
       cleanVideoFiles
       val dir = settings.Files.videoPath
       dir.isDirectory must beFalse
-      val input = new CameraFileInput(getVideoFile("johnArriving.mkv"))
+      val input = new VideoFileInput(getVideoFile("johnArriving.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableMotionRecording
@@ -147,7 +147,7 @@ class CameraSentinelSpec extends Specification
 
     "allow face detection to be enabled and disabled" in
     {
-      val input = new CameraFileInput(getVideoFile("johnArriving.mkv"))
+      val input = new VideoFileInput(getVideoFile("johnArriving.mkv"))
       val sentinel = new CameraSentinel(
         input, CameraNullView, settings)
       sentinel.enableFaceDetection(false)
@@ -156,12 +156,30 @@ class CameraSentinelSpec extends Specification
       while (!input.isClosed) {
         sentinel.analyzeFrame
         if (sentinel.wasFaceDetected) {
+          sentinel.getLastFace must be equalTo "john"
+          sentinel.getFaceConfidence must be closeTo 106.0 +/- 2.0
           faceCount += 1
           sentinel.disableFaceDetection
         }
       }
       sentinel.stopAnalyzer
       faceCount must be equalTo 1
+    }
+
+    "do not detect ghost face even with pareidolia" in
+    {
+      val input = new VideoFileInput(getVideoFile("ghostface.mkv"))
+      val sentinel = new CameraSentinel(
+        input, CameraNullView, settings)
+      sentinel.enableFaceDetection(false)
+      sentinel.inducePareidolia
+      sentinel.startAnalyzer
+      try {
+        sentinel.analyzeFrame
+        sentinel.wasFaceDetected must beFalse
+      } finally {
+        sentinel.stopAnalyzer
+      }
     }
   }
 }

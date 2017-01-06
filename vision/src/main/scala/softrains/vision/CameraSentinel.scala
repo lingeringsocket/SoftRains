@@ -104,7 +104,7 @@ trait CameraInput
   def isClosed() = closed
 }
 
-class CameraFileInput(file : File)
+class VideoFileInput(file : File)
     extends CameraInput
 {
   override protected def newGrabber =
@@ -245,11 +245,11 @@ class CameraSentinel(
 
   private var detectFaces = false
 
-  private var suppressRecognition = false
-
   private var saveFaces = false
 
   private var detectVisitors = false
+
+  private var pareidolia = false
 
   private var faceRecognizerOpt : Option[FaceRecognizer] = None
 
@@ -275,7 +275,11 @@ class CameraSentinel(
 
   private var lastFace = ""
 
+  private var faceConfidence = 0.0
+
   def getLastFace = lastFace
+
+  def getFaceConfidence = faceConfidence
 
   private def createDirs()
   {
@@ -306,6 +310,11 @@ class CameraSentinel(
   {
     detectFaces = false
     faceDetected = false
+  }
+
+  def inducePareidolia()
+  {
+    pareidolia = true
   }
 
   def enableFaceDetection(save : Boolean)
@@ -582,15 +591,40 @@ class CameraSentinel(
       img : IplImage, gray : IplImage, region : CvRect, blobMinPixels : Int)
     {
       cvSetImageROI(gray, region)
-      val faces = applyClassifier(
+      var faces = applyClassifier(
         faceClassifier, faceStorage, gray, blobMinPixels)
+      if (pareidolia && faces.isEmpty) {
+        faces = Seq(region)
+      }
       cvResetImageROI(gray)
+
+      faceRecognizerOpt match {
+        case Some(faceRecognizer) => {
+          faces = faces.filter(face => {
+            cvSetImageROI(gray, nestRect(region, face))
+            cvResize(gray, cropped)
+            val pLabel = new IntPointer(1L)
+            val pConfidence = new DoublePointer(1L)
+            faceRecognizer.predict(new Mat(cropped), pLabel, pConfidence)
+            val predicted = pLabel.get
+            faceConfidence = pConfidence.get
+            cvResetImageROI(gray)
+            if (faceConfidence > 150.0) {
+              false
+            } else {
+              lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")
+              true
+            }
+          })
+        }
+        case _ =>
+      }
+
       if (!faces.isEmpty) {
         visitorDetected = true
         faceDetected = true
-      } else {
-        suppressRecognition = false
       }
+
       if (saveFaces) {
         faces.foreach(
           face => {
@@ -602,23 +636,10 @@ class CameraSentinel(
           }
         )
       }
+
       cvSetImageROI(img, region)
       faces.foreach(face => {
-        var color = AbstractCvScalar.BLUE
-        if (!suppressRecognition) {
-          faceRecognizerOpt match {
-            case Some(faceRecognizer) => {
-              cvSetImageROI(gray, nestRect(region, face))
-              cvResize(gray, cropped)
-              val predicted = faceRecognizer.predict(new Mat(cropped))
-              lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")
-              cvResetImageROI(gray)
-            }
-            case _ =>
-          }
-        } else {
-          suppressRecognition = true
-        }
+        val color = AbstractCvScalar.BLUE
         highlightRectangle(
           img, face, color)
       })
