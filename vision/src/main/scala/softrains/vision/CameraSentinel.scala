@@ -231,6 +231,8 @@ class CameraSentinel(
   input : CameraInput, view : CameraView, settings : SoftRainsSettings)
     extends RecordingProducer
 {
+  Loader.load(classOf[opencv_objdetect])
+
   private val recorder = new VideoRecorder
 
   private val bgSubtractor = createBackgroundSubtractorMOG2(200, 130, false)
