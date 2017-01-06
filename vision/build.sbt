@@ -1,3 +1,5 @@
+import com.typesafe.sbt.SbtStartScript
+
 name := "SoftRainsVision"
 
 organization := Common.organization
@@ -37,3 +39,5 @@ libraryDependencies ++= Common.specs2Deps
 libraryDependencies ++= Common.akkaDeps
 
 parallelExecution in Test := false
+
+SbtStartScript.startScriptForClassesSettings

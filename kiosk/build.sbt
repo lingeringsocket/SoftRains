@@ -1,3 +1,5 @@
+import com.typesafe.sbt.SbtStartScript
+
 name := "SoftRainsKiosk"
 
 organization := Common.organization
@@ -15,3 +17,5 @@ maxErrors := Common.maxErrors
 traceLevel := Common.traceLevel
 
 scalastyleFailOnError := true
+
+SbtStartScript.startScriptForClassesSettings
