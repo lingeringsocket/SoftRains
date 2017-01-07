@@ -61,9 +61,23 @@ case class ExceptionReport(
   message : String
 ) extends CentralDbEntity
 
+case class ConversationTranscript(
+  startTime : DateTime,
+  endTime : Option[DateTime] = None
+) extends CentralDbEntity
+
+case class ConversationUtterance(
+  transcript : ConversationTranscript,
+  startTime : DateTime,
+  person : String,
+  text : String
+) extends CentralDbEntity
+
 class CentralDb(settings : SoftRainsSettings) extends Instance (
   entities = Set(
     Entity[ExceptionReport](),
+    Entity[ConversationTranscript](),
+    Entity[ConversationUtterance](),
     Entity[CameraFeed](unique = Set() + Seq("name")),
     Entity[HomeResident](unique = Set() + Seq("name")),
     Entity[HomePresence](),

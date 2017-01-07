@@ -15,6 +15,7 @@
 package softrains.conversation
 
 import softrains.base._
+import softrains.central._
 import softrains.intercom._
 
 import akka.actor._
@@ -45,13 +46,24 @@ object ConversationActor
 import ConversationActor._
 import CommunicationPriority._
 
-class ConversationActor extends LoggingFSM[State, Data]
+class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 {
   import IntercomActor._
 
   private val settings = SoftRainsActorSettings(context)
 
+  private var currentTranscript : Option[ConversationTranscript] = None
+
   startWith(Inactive, Empty)
+
+  onTransition {
+    case Paired -> Inactive => {
+      currentTranscript.foreach(transcript => {
+        db.save(transcript.copy(endTime = Some(readClockTime)))
+      })
+      currentTranscript = None
+    }
+  }
 
   when(Inactive) {
     case Event(ActivateMsg(topic, channel), _) => {
@@ -105,9 +117,24 @@ class ConversationActor extends LoggingFSM[State, Data]
     case Event(PersonUtteranceMsg(utterance, personName),
       ConvoData(topic)) =>
     {
+      // FIXME: pass real start time of utterance as part of
+      // PersonUtteranceMsg, making sure clocks are synchronized
+      currentTranscript.foreach(transcript =>
+        db.save(ConversationUtterance(
+          transcript, readClockTime, personName, utterance)))
       topic.consumeUtterance(utterance, personName)
       topic.produceMessage match {
         case Some(reply) => {
+          // FIXME:  use correct voice name
+          currentTranscript.foreach(transcript =>
+            reply match {
+              case PartnerUtteranceMsg(utterance, _) => {
+                db.save(ConversationUtterance(
+                  transcript, readClockTime, "SoftRains", utterance))
+              }
+              case _ =>
+            }
+          )
           sender ! reply
           if (topic.isInProgress) {
             reply match {
@@ -137,7 +164,19 @@ class ConversationActor extends LoggingFSM[State, Data]
   private def startConversation(
     topic : ConversationTopic, channel : ActorRef)
   {
-    topic.produceMessage.foreach(channel ! _)
+    val startTime = readClockTime
+    val transcript = db.save(ConversationTranscript(startTime))
+    currentTranscript = Some(transcript)
+    topic.produceMessage.foreach({ msg =>
+      msg match {
+        case PartnerUtteranceMsg(utterance, _) => {
+          db.save(ConversationUtterance(
+            transcript, startTime, "SoftRains", utterance))
+        }
+        case _ =>
+      }
+      channel ! msg
+    })
   }
 
   initialize()

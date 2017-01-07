@@ -285,7 +285,7 @@ class ChristmasGreeting(name : String) extends ConversationTopic
         IntercomActor.PartnerUtteranceMsg(
           "Oh! " + name + ", hello!"))
     } else {
-      if ((echo == "goodbye") || (echo == "good bye")) {
+      if ((echo.contains("goodbye")) || (echo.contains("good bye"))) {
         done = true
         Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
       } else if (echo.contains("thank you")) {
@@ -431,12 +431,4 @@ class WarningTopic(warning : String) extends NotificationTopic
   override def getPriority() = ASAP
 
   override protected def getNotification() = warning
-}
-
-class FireAlarm(resident : HomeResident) extends NotificationTopic
-{
-  override def getPriority() = EMERGENCY
-
-  override protected def getNotification() =
-    "O M G " + resident.name + ", the house is on fire!"
 }

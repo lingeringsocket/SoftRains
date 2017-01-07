@@ -134,7 +134,7 @@ class CentralService(
         intercomActorLocal = Some(system.actorOf(props, intercomSpec))
       }
       val echoSpec = settings.Actors.echo
-      val conversationProps = Props(classOf[ConversationActor])
+      val conversationProps = Props(classOf[ConversationActor], db)
       val conversationSpec = {
         if (echoSpec.isEmpty) {
           "conversationActor"

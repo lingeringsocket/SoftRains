@@ -20,25 +20,79 @@ import softrains.intercom._
 
 import akka.actor._
 
-class ConversationActorSpec extends AkkaActorSpecification
+import scala.collection._
+
+class ConversationActorSpec
+    extends AkkaActorSpecification with DateTimeOrderingImplicit
 {
   import ConversationActor._
   import IntercomActor._
+
+  // database state is shared, so we need isolation
+  sequential
+
+  private val typhlosion = new HomeResident("Typhlosion")
 
   "ConversationActor" should
   {
     "have a one-way conversation" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[ConversationActor]))
-      val typhlosion = new HomeResident("Typhlosion")
+      val utterance0 = "Good morning, Typhlosion!"
+      val db = new CentralDb(settings)
+      val actor = system.actorOf(Props(classOf[ConversationActor], db))
       val greeting = new DailyGreeting(typhlosion)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg("Good morning, Typhlosion!"))
+      expectMsg(PartnerUtteranceMsg(utterance0))
       actor ! SpeakerSoundFinishedMsg
       expectMsg(UnpairMsg)
+
+      db.query[ConversationTranscript].fetch.size must be equalTo 1
+      db.query[ConversationUtterance].fetch.size must be equalTo 1
+
+      val transcript = db.query[ConversationTranscript].fetchOne.get
+      transcript.endTime must beSome
+      transcript.endTime.get must beGreaterThan(transcript.startTime)
+
+      val utterance = db.query[ConversationUtterance].fetchOne.get
+      utterance.startTime must be equalTo transcript.startTime
+      utterance.person must be equalTo "SoftRains"
+      utterance.text must be equalTo utterance0
+    }
+
+    "have a two-way conversation" in new AkkaActorExample
+    {
+      val utterance0 = "Oh! Typhlosion, hello!"
+      val utterance1 = "Goodbye"
+      val utterance2 = "Have a Happy New Year!"
+
+      val db = new CentralDb(settings)
+      val actor = system.actorOf(Props(classOf[ConversationActor], db))
+      val greeting = new ChristmasGreeting(typhlosion.name)
+      actor ! ActivateMsg(greeting, self)
+      expectMsg(PairRequestMsg)
+      actor ! PairAcceptedMsg
+      expectMsg(PartnerUtteranceMsg(utterance0))
+      actor ! SpeakerSoundFinishedMsg
+      expectMsg(PartnerListenMsg(""))
+      actor ! PersonUtteranceMsg(utterance1, "")
+      expectMsg(PartnerUtteranceMsg(utterance2))
+      expectMsg(UnpairMsg)
+
+      db.query[ConversationTranscript].fetch.size must be equalTo 1
+      db.query[ConversationUtterance].fetch.size must be equalTo 3
+
+      val transcript = db.query[ConversationTranscript].fetchOne.get
+      transcript.endTime must beSome
+      transcript.endTime.get must beGreaterThan(transcript.startTime)
+
+      val utterances =
+        db.query[ConversationUtterance].order("startTime").fetch
+      utterances.map(_.text).toSeq must be equalTo immutable.Seq(
+        utterance0,
+        utterance1,
+        utterance2)
     }
   }
 }
-
