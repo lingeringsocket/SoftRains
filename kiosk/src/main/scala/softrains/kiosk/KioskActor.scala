@@ -60,10 +60,14 @@ class KioskActor extends Actor
   def receive =
   {
     case CameraActor.FaceDetectedMsg(name, confidence) => {
-      val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(modeUrl, "ON") {}
-      httpConsumer.putString(faceNameUrl, name) {}
-      httpConsumer.ensureSuccess
+      val httpConsumer1 = new HttpConsumer(context.system)
+      httpConsumer1.putString(faceNameUrl, name) {}
+      httpConsumer1.ensureSuccess
+
+      // only trigger facetime after the face name has been updated
+      val httpConsumer2 = new HttpConsumer(context.system)
+      httpConsumer2.putString(modeUrl, "ON") {}
+      httpConsumer2.ensureSuccess
     }
     case IntercomActor.UnpairedMsg => {
       context.system.scheduler.scheduleOnce(

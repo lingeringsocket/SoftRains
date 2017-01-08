@@ -400,6 +400,15 @@ class CentralService(
     }
   }
 
+  def findNewDevices(lastTallyTime : DateTime) =
+  {
+    db.fetchWithSql[LanDevice](
+      "select id from lan_device where " +
+        "(select min(start_time) from lan_presence " +
+        "where device$id = lan_device.id) > ?",
+      lastTallyTime)
+  }
+
   private def sendMail(resident : HomeResident, subject : String, body : String)
   {
     import javax.mail._

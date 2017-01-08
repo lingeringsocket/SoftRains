@@ -90,6 +90,8 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
 
     "scan devices" in new AkkaActorExample
     {
+      val startTime = readClockTime
+      central.findNewDevices(startTime).size must be equalTo 0
       central.setActorSystem(system)
       getLanActiveCount must be equalTo 0
       getDeviceCount must be equalTo 2
@@ -99,6 +101,8 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
+      val tallyTime = readClockTime
+      central.findNewDevices(startTime).size must be equalTo 3
       deviceMonitor.setHtml(readResource("/devices2.html"))
       central.scanLan
       getLanActiveCount must be equalTo 4
@@ -109,6 +113,7 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
       getLanActiveCount must be equalTo 3
       getDeviceCount must be equalTo 4
       getHomeActiveCount must be equalTo 1
+      central.findNewDevices(tallyTime).size must be equalTo 1
     }
 
     "handle scan failure" in new AkkaActorExample
