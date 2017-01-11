@@ -47,9 +47,12 @@ class KioskActor extends Actor
 
   override def preStart()
   {
-    val input = new CameraFeedInput(settings.Kiosk.cameraUrl)
-    val view = CameraNullView
-    cameraActor ! CameraActor.StartSentinelMsg(input, view)
+    val cameraUrl = settings.Kiosk.cameraUrl
+    if (!cameraUrl.isEmpty) {
+      val input = new CameraFeedInput(cameraUrl)
+      val view = CameraNullView
+      cameraActor ! CameraActor.StartSentinelMsg(input, view)
+    }
   }
 
   override def postStop()
@@ -57,9 +60,16 @@ class KioskActor extends Actor
     cameraActor ! CameraActor.StopSentinelMsg
   }
 
+  private def maybeNotify[T](eval : => T) =
+  {
+    if (!settings.Openhab.url.isEmpty) {
+      eval
+    }
+  }
+
   def receive =
   {
-    case CameraActor.FaceDetectedMsg(name, confidence) => {
+    case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
       val httpConsumer1 = new HttpConsumer(context.system)
       httpConsumer1.putString(faceNameUrl, name) {}
       httpConsumer1.ensureSuccess
@@ -73,19 +83,24 @@ class KioskActor extends Actor
       context.system.scheduler.scheduleOnce(
         10.seconds, cameraActor,
         CameraActor.ControlFaceDetectionMsg(true))
-      val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(modeUrl, "OFF") {}
-      httpConsumer.ensureSuccess
+      maybeNotify {
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(modeUrl, "OFF") {}
+        httpConsumer.ensureSuccess
+      }
     }
-    case IntercomActor.ListeningStartedMsg => {
+    case IntercomActor.ListeningStartedMsg => maybeNotify {
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(modeUrl, "LISTENING") {}
       httpConsumer.ensureSuccess
     }
-    case IntercomActor.ListeningDoneMsg => {
+    case IntercomActor.ListeningDoneMsg => maybeNotify {
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(modeUrl, "ON") {}
       httpConsumer.ensureSuccess
+    }
+    case enableAlexaMsg : IntercomActor.InitializeAlexaMsg => {
+      intercomActor ! enableAlexaMsg
     }
   }
 }

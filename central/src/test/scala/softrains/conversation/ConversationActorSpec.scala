@@ -19,6 +19,7 @@ import softrains.central._
 import softrains.intercom._
 
 import akka.actor._
+import akka.testkit._
 
 import scala.collection._
 
@@ -39,7 +40,9 @@ class ConversationActorSpec
     {
       val utterance0 = "Good morning, Typhlosion!"
       val db = new CentralDb(settings)
-      val actor = system.actorOf(Props(classOf[ConversationActor], db))
+
+      // use TestActorRef for synchronous end transition
+      val actor = TestActorRef(new ConversationActor(db))
       val greeting = new DailyGreeting(typhlosion)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)

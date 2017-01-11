@@ -20,3 +20,9 @@ lazy val kiosk = project.dependsOn(
 
 lazy val central = project.dependsOn(
   intercom % "test->test;compile->compile")
+
+// optional component, so we don't include it in root
+lazy val alexa = project.dependsOn(kiosk % "test->test;compile->compile")
+
+lazy val root = (project in file(".")).aggregate(
+  base, intercom, vision, kiosk, central)

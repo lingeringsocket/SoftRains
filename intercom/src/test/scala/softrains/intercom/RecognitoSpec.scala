@@ -20,6 +20,21 @@ import com.bitsinharmony.recognito._
 
 import org.specs2.mutable._
 
+object JavaSoundKludge
+{
+  def wrap[T](eval : => T) =
+  {
+    val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
+    val old = Thread.currentThread.getContextClassLoader
+    try {
+      Thread.currentThread.setContextClassLoader(cl)
+      eval
+    } finally {
+      Thread.currentThread.setContextClassLoader(old)
+    }
+  }
+}
+
 class RecognitoSpec extends Specification
 {
   private def getAudioFile(resource : String) =
@@ -41,10 +56,7 @@ class RecognitoSpec extends Specification
   "Recognito" should
   {
     "identify voices" in {
-      val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
-      val old = Thread.currentThread.getContextClassLoader
-      try {
-        Thread.currentThread.setContextClassLoader(cl)
+      JavaSoundKludge.wrap {
         val recognito = new Recognito[String](22050.0f)
         recognito.createVoicePrint(
           "Allison", getAudioFile("allison-train.wav"))
@@ -67,8 +79,6 @@ class RecognitoSpec extends Specification
         printResults(michaelResults)
         michaelResults.get(0).getKey must be equalTo("Michael")
         michaelResults.get(0).getLikelihoodRatio must be equalTo(89)
-      } finally {
-        Thread.currentThread.setContextClassLoader(old)
       }
     }
   }

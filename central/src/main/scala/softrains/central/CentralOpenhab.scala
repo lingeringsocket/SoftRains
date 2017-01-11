@@ -32,6 +32,9 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 
   def checkDoor(itemName : String, spokenName : String)
   {
+    if (settings.Openhab.url.isEmpty) {
+      return
+    }
     val stateUrl = settings.Openhab.url + "/rest/items/" +
       itemName + "/state"
     fetchString(stateUrl) { state =>
@@ -65,7 +68,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 
   def updateResidentPhoneRadio(resident : HomeResident, state : String)
   {
-    if (settings.Test.active) {
+    if (settings.Openhab.url.isEmpty || settings.Test.active) {
       return
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +

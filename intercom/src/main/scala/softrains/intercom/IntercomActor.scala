@@ -53,6 +53,12 @@ object IntercomActor
       extends PeripheralMsg
   case object UptimeRequestMsg
       extends PeripheralMsg
+  final case class InitializeAlexaMsg(alexaActor : ActorRef)
+      extends PeripheralMsg
+  case object WakeAlexaMsg
+      extends SpeakerSoundMsg
+  case object AlexaFinishedMsg
+      extends PeripheralMsg
   case object RingtoneMsg
       extends SpeakerSoundMsg
   case object DoorbellMsg
@@ -77,10 +83,12 @@ object IntercomActor
   // sent messages (to parent)
   case object UnpairedMsg
       extends PeripheralMsg
+  trait ListeningNotificationMsg
+      extends PeripheralMsg
   case object ListeningStartedMsg
-      extends PeripheralMsg
+      extends ListeningNotificationMsg
   case object ListeningDoneMsg
-      extends PeripheralMsg
+      extends ListeningNotificationMsg
 
   // forwarded messages (from watson to partner)
   trait WatsonCompletionMsg extends PeripheralMsg
@@ -111,6 +119,8 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   private var watsonOpt : Option[ActorRef] = None
 
+  private var alexaOpt : Option[ActorRef] = None
+
   private def isWatsonEnabled =
     !settings.WatsonTts.user.isEmpty && !settings.WatsonStt.user.isEmpty
 
@@ -132,7 +142,24 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   startWith(Active, Partner(unpaired, VOICE_DEFAULT))
 
+  private def watsonSay(utterance : String, voice : String, partner : ActorRef)
+  {
+    watsonOpt match {
+      case Some(watson) => {
+        watson ! WatsonActor.SpeechSayMsg(utterance, voice)
+      }
+      case _ => {
+        log.info("Unable to say '" + utterance + "' using voice " + voice)
+        partner ! SpeakerSoundFinishedMsg
+      }
+    }
+  }
+
   when(Active) {
+    case Event(InitializeAlexaMsg(alexaActor), _) => {
+      alexaOpt = Some(alexaActor)
+      stay
+    }
     case Event(UptimeRequestMsg, _) => {
       val checkTime = readClockTime
       val diff = Seconds.secondsBetween(startTime, checkTime)
@@ -178,15 +205,7 @@ class IntercomActor extends LoggingFSM[State, Data]
             newVoice
           }
         }
-        watsonOpt match {
-          case Some(watson) => {
-            watson ! WatsonActor.SpeechSayMsg(utterance, voice)
-          }
-          case _ => {
-            log.info("Unable to say '" + utterance + "' using voice " + voice)
-            partner ! SpeakerSoundFinishedMsg
-          }
-        }
+        watsonSay(utterance, voice, partner)
         stay using Partner(partner, voice, bg)
       } else {
         sender ! ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR)
@@ -263,9 +282,22 @@ class IntercomActor extends LoggingFSM[State, Data]
         }
       }
     }
+    case Event(WakeAlexaMsg, _) => {
+      alexaOpt.foreach(_ ! WakeAlexaMsg)
+      stay
+    }
+    case Event(AlexaFinishedMsg, Partner(partner, voice, _)) => {
+      watsonSay("Did you enjoy chatting with Alexa?", voice, partner)
+      stay
+    }
+    case Event(msg : ListeningNotificationMsg, _) => {
+      // forward it on to parent
+      context.parent ! msg
+      stay
+    }
     case Event(msg : WatsonCompletionMsg, Partner(partner, _, _)) => {
       msg match {
-        case heardMsg : WatsonHeardMsg => {
+        case _ : WatsonHeardMsg => {
           context.parent ! ListeningDoneMsg
         }
         case _ =>

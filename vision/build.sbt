@@ -1,5 +1,3 @@
-import com.typesafe.sbt.SbtStartScript
-
 name := "SoftRainsVision"
 
 organization := Common.organization
@@ -40,4 +38,4 @@ libraryDependencies ++= Common.akkaDeps
 
 parallelExecution in Test := false
 
-SbtStartScript.startScriptForClassesSettings
+enablePlugins(JavaAppPackaging)

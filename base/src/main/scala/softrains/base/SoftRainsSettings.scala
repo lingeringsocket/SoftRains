@@ -92,6 +92,12 @@ class SoftRainsSettings(rootConf : Config)
     val password = subConf.getString("password")
   }
 
+  object Alexa
+  {
+    val subConf = conf.getConfig("alexa")
+    val confFile = new File(subConf.getString("conf-file")).getAbsoluteFile
+  }
+
   object Speaker
   {
     val subConf = conf.getConfig("speaker")

@@ -1,4 +1,4 @@
-name := "SoftRainsKiosk"
+name := "SoftRainsAlexa"
 
 organization := Common.organization
 
@@ -16,4 +16,10 @@ traceLevel := Common.traceLevel
 
 scalastyleFailOnError := true
 
+libraryDependencies ++= Seq(
+  "com.amazon.alexa.avs" % "sample-java-client" % "20160207.1"
+)
+
 enablePlugins(JavaAppPackaging)
+
+enablePlugins(JettyAlpn)

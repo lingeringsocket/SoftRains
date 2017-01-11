@@ -101,14 +101,7 @@ class WatsonActor extends Actor
   def receive =
   {
     case SpeechListenMsg(newPersonName) => {
-      val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
-      val old = Thread.currentThread.getContextClassLoader
-      try {
-        Thread.currentThread.setContextClassLoader(cl)
-        listen(newPersonName)
-      } finally {
-        Thread.currentThread.setContextClassLoader(old)
-      }
+      listen(newPersonName)
     }
     case SpeechSayMsg(utterance, voice) => {
       log.info("Say '" + utterance + "' using voice " + voice)
@@ -159,14 +152,7 @@ class WatsonActor extends Actor
       val teeOutputStream = new TeeOutputStream(
         pipedOutputStream, new FileOutputStream(rawFile))
       val pipeFuture = Future {
-        val cl = classOf[javax.sound.sampled.AudioSystem].getClassLoader
-        val old = Thread.currentThread.getContextClassLoader
-        try {
-          Thread.currentThread.setContextClassLoader(cl)
-          AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
-        } finally {
-          Thread.currentThread.setContextClassLoader(old)
-        }
+        AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
       }(ExecutionContext.Implicits.global)
       val audio = AudioSystem.getAudioInputStream(pipedInputStream)
       val options = (new RecognizeOptions.Builder).
