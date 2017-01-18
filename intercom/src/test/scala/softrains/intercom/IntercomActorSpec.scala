@@ -32,10 +32,12 @@ class IntercomActorSpec extends AkkaActorSpecification
   {
     "encounter protocol errors" in new AkkaActorExample
     {
-      val actor = system.actorOf(Props(classOf[IntercomActor]))
+      val parent = TestProbe()
+      val actor = parent.childActorOf(Props(classOf[IntercomActor]))
 
       actor ! UnpairMsg
       expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
+      parent.expectMsg(WokeUpMsg)
 
       actor ! PartnerUtteranceMsg("hello")
       expectMsg(ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR))

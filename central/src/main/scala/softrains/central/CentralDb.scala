@@ -19,6 +19,13 @@ import softrains.base._
 import sorm._
 import org.joda.time._
 
+object CommunicationPriority extends Enumeration
+{
+  type CommunicationPriority = Value
+  val ONLY_IF_NOT_BUSY, ASAP, EMERGENCY = Value
+}
+import CommunicationPriority._
+
 trait CentralDbEntity extends RemoteReady
 {
 }
@@ -71,6 +78,15 @@ case class ConversationUtterance(
   startTime : DateTime,
   person : String,
   text : String
+) extends CentralDbEntity
+
+case class PendingNotification(
+  resident : HomeResident,
+  message : String,
+  priority : CommunicationPriority,
+  creationTime : DateTime,
+  pushTime : Option[DateTime],
+  expirationTime : Option[DateTime]
 ) extends CentralDbEntity
 
 class CentralDb(settings : SoftRainsSettings) extends Instance (

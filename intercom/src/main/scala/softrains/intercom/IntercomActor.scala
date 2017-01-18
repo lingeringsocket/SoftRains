@@ -81,6 +81,10 @@ object IntercomActor
       extends PeripheralMsg
 
   // sent messages (to parent)
+  case object WokeUpMsg
+      extends PeripheralMsg
+  case object FellAsleepMsg
+      extends PeripheralMsg
   case object UnpairedMsg
       extends PeripheralMsg
   trait ListeningNotificationMsg
@@ -100,7 +104,8 @@ object IntercomActor
   case object SpeakerSoundFinishedMsg
       extends WatsonCompletionMsg
 
-  case object Active extends State
+  case object Asleep extends State
+  case object Awake extends State
 
   final case class Partner(
     actorRef : ActorRef, voice : String,
@@ -112,6 +117,8 @@ import IntercomActor._
 class IntercomActor extends LoggingFSM[State, Data]
 {
   private val settings = SoftRainsActorSettings(context)
+
+  private val sleepTimeout = settings.Speaker.sleepTimeout
 
   private val unpaired = ActorRef.noSender
 
@@ -140,7 +147,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     log.info("IntercomActor stopped")
   }
 
-  startWith(Active, Partner(unpaired, VOICE_DEFAULT))
+  startWith(Asleep, Partner(unpaired, VOICE_DEFAULT))
 
   private def watsonSay(utterance : String, voice : String, partner : ActorRef)
   {
@@ -155,7 +162,27 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
   }
 
-  when(Active) {
+  when(Asleep) {
+    case Event(msg, _) => {
+      context.parent ! WokeUpMsg
+      val command = settings.Speaker.wakeCommand
+      if (!command.isEmpty) {
+        command.!
+      }
+      self.forward(msg)
+      goto(Awake)
+    }
+  }
+
+  when(Awake, stateTimeout = sleepTimeout) {
+    case Event(StateTimeout, _) => {
+      context.parent ! FellAsleepMsg
+      val command = settings.Speaker.sleepCommand
+      if (!command.isEmpty) {
+        command.!
+      }
+      goto(Asleep)
+    }
     case Event(InitializeAlexaMsg(alexaActor), _) => {
       alexaOpt = Some(alexaActor)
       stay

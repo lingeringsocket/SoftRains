@@ -106,6 +106,9 @@ class SoftRainsSettings(rootConf : Config)
     val loopFileCommand = subConf.getString("loop-file-command")
     val doorbellCommand = subConf.getString("doorbell-command")
     val ringtoneCommand = subConf.getString("ringtone-command")
+    val sleepCommand = subConf.getString("sleep-command")
+    val wakeCommand = subConf.getString("wake-command")
+    val sleepTimeout = getMillis(subConf, "sleep-timeout")
   }
 
   object Files

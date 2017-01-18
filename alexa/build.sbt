@@ -17,7 +17,7 @@ traceLevel := Common.traceLevel
 scalastyleFailOnError := true
 
 libraryDependencies ++= Seq(
-  "com.amazon.alexa.avs" % "sample-java-client" % "20160207.1"
+  "com.amazon.alexa.avs" % "sample-java-client" % "20160207.0"
 )
 
 enablePlugins(JavaAppPackaging)

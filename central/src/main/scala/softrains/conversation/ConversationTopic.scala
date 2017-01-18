@@ -19,11 +19,6 @@ import softrains.intercom._
 
 import org.joda.time._
 
-object CommunicationPriority extends Enumeration
-{
-  type CommunicationPriority = Value
-  val ONLY_IF_NOT_BUSY, ASAP, EMERGENCY = Value
-}
 import CommunicationPriority._
 
 abstract class ConversationTopic
