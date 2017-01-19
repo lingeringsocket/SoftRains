@@ -60,7 +60,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     if (!getFailure.isEmpty) {
       "I'm having trouble checking the state of the house."
     } else if (results.isEmpty) {
-      "Everything looks good."
+      ""
     } else {
       "Looks like " + results.mkString("  Also, ")
     }

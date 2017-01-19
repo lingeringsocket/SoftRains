@@ -276,6 +276,7 @@ class CentralService(
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
+      topicSource.proposeTopicForPerson(name)
       val intro = {
         if (topicSource.isExhausted) {
           ""
@@ -323,7 +324,10 @@ class CentralService(
         openhab.checkDoor("front_door", "front door")
         openhab.checkDoor("rear_door", "rear door")
         openhab.checkDoor("garage_door", "garage door")
-        topics += new WarningTopic(openhab.retrieveResults)
+        val results = openhab.retrieveResults
+        if (!results.isEmpty) {
+          topics += new WarningTopic(results)
+        }
         iterator = topics.iterator
       }
       if (iterator.hasNext) {
