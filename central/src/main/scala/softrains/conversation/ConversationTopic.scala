@@ -319,7 +319,7 @@ class PassiveTopic(name : String) extends ConversationTopic
       } else if (echo.contains("hodor") || echo.contains("hold the door")) {
         Some(IntercomActor.StartAudioFileMsg("hodor.mp3", false))
       } else if ((echo == "ring the bell") || (echo == "big ben") ||
-        (echo == "ding dong"))
+        (echo == "ding dong") || (echo == "knock knock"))
       {
         Some(IntercomActor.DoorbellMsg)
       } else if (echo.contains("michael")) {
