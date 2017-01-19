@@ -66,13 +66,13 @@ class ConversationActorSpec
 
     "have a two-way conversation" in new AkkaActorExample
     {
-      val utterance0 = "Oh! Typhlosion, hello!"
+      val utterance0 = "So, Typhlosion, what is on your mind?"
       val utterance1 = "Goodbye"
-      val utterance2 = "Have a Happy New Year!"
+      val utterance2 = "Talk to you later!"
 
       val db = new CentralDb(settings)
       val actor = system.actorOf(Props(classOf[ConversationActor], db))
-      val greeting = new ChristmasGreeting(typhlosion.name)
+      val greeting = new PassiveTopic(typhlosion.name)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg

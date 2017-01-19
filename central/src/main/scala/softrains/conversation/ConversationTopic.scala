@@ -70,14 +70,29 @@ class SequentialTopicSource(topics : Seq[ConversationTopic])
   }
 }
 
-class TopicDispatcher(topicSource : ConversationTopicSource)
+class TopicDispatcher(
+  topicSource : ConversationTopicSource,
+  personName : String = "",
+  intro : String = "")
     extends ConversationTopic
 {
   private var done = false
 
-  private var response = "Who goes there?"
+  private var turned = false
 
-  private var currentPerson = ""
+  private var response = {
+    if (personName.isEmpty) {
+      "Who goes there?"
+    } else {
+      if (intro.isEmpty) {
+        "Hello, " + personName + ".  How are you?"
+      } else {
+        intro
+      }
+    }
+  }
+
+  private var currentPerson = personName
 
   private var subTopic : Option[ConversationTopic] = None
 
@@ -99,15 +114,11 @@ class TopicDispatcher(topicSource : ConversationTopicSource)
           if (messageOpt.isEmpty) {
             changeTopic
             if (done) {
-              // FIXME:  turnTheTables instead
               softLanding
             } else {
-              // FIXME:  smoother transition
               subTopic.get.produceUtterance match {
                 case Some(utterance) => {
-                  // FIXME:  smoother transition
-                  Some(IntercomActor.PartnerUtteranceMsg(
-                    "OK, well then.  " + utterance))
+                  Some(IntercomActor.PartnerUtteranceMsg(utterance))
                 }
                 case _ => {
                   softLanding
@@ -116,6 +127,9 @@ class TopicDispatcher(topicSource : ConversationTopicSource)
 
             }
           } else {
+            if (!topic.isInProgress) {
+              changeTopic
+            }
             messageOpt
           }
         }
@@ -135,17 +149,20 @@ class TopicDispatcher(topicSource : ConversationTopicSource)
         subTopic = Some(newTopic)
       }
       case _ => {
-        subTopic = None
-        done = true
+        turnTheTables
       }
     }
   }
 
   private def turnTheTables()
   {
-    // FIXME:  start passive topic
-    response = "Hey, " + currentPerson +
-      ", what can I help you with?"
+    if (turned) {
+      subTopic = None
+      done = true
+    } else {
+      turned = true
+      subTopic = Some(new PassiveTopic(currentPerson))
+    }
   }
 
   private def softLanding() =
@@ -172,8 +189,9 @@ class TopicDispatcher(topicSource : ConversationTopicSource)
               // instead of utterance?
               topic.produceUtterance match {
                 case Some(utterance) => {
-                  // FIXME:  smoother transition
-                  response = "Oh, hello, " + personName + "!  " + utterance
+                  response = {
+                    utterance
+                  }
                 }
                 case _ => {
                   turnTheTables
@@ -262,7 +280,7 @@ class GenericGreeting
   }
 }
 
-class ChristmasGreeting(name : String) extends ConversationTopic
+class PassiveTopic(name : String) extends ConversationTopic
 {
   private var done = false
   private var echo = ""
@@ -278,11 +296,11 @@ class ChristmasGreeting(name : String) extends ConversationTopic
     if (echo.isEmpty) {
       Some(
         IntercomActor.PartnerUtteranceMsg(
-          "Oh! " + name + ", hello!"))
+          "So, " + name + ", what is on your mind?"))
     } else {
       if ((echo.contains("goodbye")) || (echo.contains("good bye"))) {
         done = true
-        Some(IntercomActor.PartnerUtteranceMsg("Have a Happy New Year!"))
+        Some(IntercomActor.PartnerUtteranceMsg("Talk to you later!"))
       } else if (echo.contains("thank you")) {
         Some(IntercomActor.PartnerUtteranceMsg("You are very welcome!"))
       } else if (echo.contains("motor function")) {

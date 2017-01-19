@@ -218,7 +218,7 @@ class CentralService(
       path("greet") {
         get {
           complete({
-            startGreet
+            startConversation
             HttpEntity(contentType, "Salutations!")
           })
         }
@@ -270,14 +270,22 @@ class CentralService(
       getIntercomActor)
   }
 
-  private def startGreet()
+  private def startConversation()
   {
     val httpConsumer = new HttpConsumer(getActorSystem)
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
-      val topic = new ChristmasGreeting(name)
+      val topicSource = new PersonalizedTopicSource
+      val intro = {
+        if (topicSource.isExhausted) {
+          ""
+        } else {
+          "Hello, " + name + ".  I have some updates for you."
+        }
+      }
+      val dispatcher = new TopicDispatcher(topicSource, name, intro)
       conversationActor ! ConversationActor.ActivateMsg(
-        topic,
+        dispatcher,
         getIntercomActor)
     }
     if (openhabUrl.isEmpty) {
@@ -324,15 +332,8 @@ class CentralService(
         None
       }
     }
-  }
 
-  private def startConversation()
-  {
-    val topicSource = new PersonalizedTopicSource
-    val dispatcher = new TopicDispatcher(topicSource)
-    conversationActor ! ConversationActor.ActivateMsg(
-      dispatcher,
-      getIntercomActor)
+    def isExhausted = iterator.isEmpty
   }
 
   def logEvent(msg : String)

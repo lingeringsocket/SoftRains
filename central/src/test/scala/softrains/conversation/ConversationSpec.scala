@@ -33,6 +33,27 @@ class ConversationSpec extends Specification
       greeting.produceUtterance() must be equalTo(None)
     }
 
+    "dispatch known person" in
+    {
+      val personName = "Ash"
+      val topicSource = new SequentialTopicSource(Seq(
+        new WarningTopic("The house is on fire!")
+      ))
+      val dispatcher = new TopicDispatcher(topicSource, personName)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Hello, Ash.  How are you?"))
+      dispatcher.consumeUtterance("Very well, thank you.", personName)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("The house is on fire!"))
+      dispatcher.consumeUtterance("Thanks for letting me know.", personName)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("So, Ash, what is on your mind?"))
+      dispatcher.consumeUtterance("Goodbye", personName)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Talk to you later!"))
+      dispatcher.isInProgress must beFalse
+    }
+
     "dispatch unknown voice" in
     {
       val topicSource = new SequentialTopicSource(Seq.empty)
@@ -58,10 +79,8 @@ class ConversationSpec extends Specification
         Some("Who goes there?"))
       dispatcher.consumeUtterance(
         "Your worst enemy", "Voldemort")
-      // FIXME:  this should not be the end!
       dispatcher.produceUtterance() must be equalTo(
-        Some("Hey, Voldemort, what can I help you with?"))
-      dispatcher.isInProgress must beFalse
+        Some("So, Voldemort, what is on your mind?"))
     }
 
     "dispatch to daily greeting" in
@@ -75,11 +94,10 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "The Ring-bearer", frodo.name)
       dispatcher.produceUtterance() must be equalTo(
-        Some("Oh, hello, Frodo!  Good morning, Frodo!"))
+        Some("Good morning, Frodo!"))
       dispatcher.isInProgress must beTrue
       dispatcher.produceUtterance() must be equalTo(
-        Some("Well, Frodo, it has been nice chatting with you!"))
-      dispatcher.isInProgress must beFalse
+        Some("So, Frodo, what is on your mind?"))
     }
 
     "dispatch to echo loop followed by voice identifier" in
@@ -97,7 +115,7 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "It's me, Bert", bert.name)
       dispatcher.produceUtterance() must be equalTo(
-        Some("Oh, hello, Bert!  Polly wants a cracker!"))
+        Some("Polly wants a cracker!"))
       dispatcher.isInProgress must beTrue
       dispatcher.consumeUtterance("here you go.", bert.name)
       dispatcher.produceUtterance() must be equalTo(
@@ -109,8 +127,7 @@ class ConversationSpec extends Specification
       dispatcher.isInProgress must beTrue
       dispatcher.consumeUtterance("terminate", bert.name)
       dispatcher.produceUtterance() must be equalTo(
-        Some("OK, well then.  " +
-          "Bert, please say, the quick brown fox jumped over the lazy dog."))
+        Some("Bert, please say, the quick brown fox jumped over the lazy dog."))
       dispatcher.isInProgress must beTrue
       dispatcher.consumeUtterance("blah blah blah", bert.name)
       dispatcher.produceUtterance() must be equalTo(
