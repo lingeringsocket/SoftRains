@@ -334,7 +334,7 @@ class PassiveTopic(name : String) extends ConversationTopic
         Some(IntercomActor.PartnerUtteranceMsg(
           "Blimey, would you like to try the bangers and mash?",
           "en-GB_KateVoice"))
-      } else if (echo.contains("alexa")) {
+      } else if (echo.contains("alexa") || echo.contains("amazon")) {
         Some(IntercomActor.WakeAlexaMsg)
       } else if (echo.contains("stop") || echo.contains("quiet") ||
         echo.contains("silen"))

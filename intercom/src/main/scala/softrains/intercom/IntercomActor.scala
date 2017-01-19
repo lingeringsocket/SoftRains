@@ -149,6 +149,15 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   startWith(Asleep, Partner(unpaired, VOICE_DEFAULT))
 
+  // we don't want uptime pings to keep us awake
+  override def receive = ({
+    case UptimeRequestMsg => {
+      val checkTime = readClockTime
+      val diff = Seconds.secondsBetween(startTime, checkTime)
+      sender ! UptimeResponseMsg(diff.getSeconds)
+    }
+  }: Receive) orElse super.receive
+
   private def watsonSay(utterance : String, voice : String, partner : ActorRef)
   {
     watsonOpt match {
@@ -185,12 +194,6 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
     case Event(InitializeAlexaMsg(alexaActor), _) => {
       alexaOpt = Some(alexaActor)
-      stay
-    }
-    case Event(UptimeRequestMsg, _) => {
-      val checkTime = readClockTime
-      val diff = Seconds.secondsBetween(startTime, checkTime)
-      sender ! UptimeResponseMsg(diff.getSeconds)
       stay
     }
     case Event(PairRequestMsg, Partner(oldPartner, voice, bg)) => {
