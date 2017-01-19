@@ -276,7 +276,7 @@ class CentralService(
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
-      topicSource.proposeTopicForPerson(name)
+      topicSource.preloadTopicsForPerson(name)
       val intro = {
         if (topicSource.isExhausted) {
           ""
@@ -315,7 +315,7 @@ class CentralService(
 
     private var iterator : Iterator[ConversationTopic] = Iterator.empty
 
-    override def proposeTopicForPerson(personName : String) =
+    def preloadTopicsForPerson(personName : String) =
     {
       if (personName != currentPerson) {
         currentPerson = personName
@@ -330,6 +330,11 @@ class CentralService(
         }
         iterator = topics.iterator
       }
+    }
+
+    override def proposeTopicForPerson(personName : String) =
+    {
+      preloadTopicsForPerson(personName)
       if (iterator.hasNext) {
         Some(iterator.next)
       } else {
