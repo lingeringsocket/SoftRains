@@ -26,3 +26,5 @@ lazy val alexa = project.dependsOn(kiosk % "test->test;compile->compile")
 
 lazy val root = (project in file(".")).aggregate(
   base, intercom, vision, kiosk, central)
+
+mappings in (Compile, packageDoc) := Seq()
