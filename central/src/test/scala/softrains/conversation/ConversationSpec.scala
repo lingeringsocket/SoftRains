@@ -42,13 +42,13 @@ class ConversationSpec extends Specification
       val dispatcher = new TopicDispatcher(topicSource, personName)
       dispatcher.produceUtterance() must be equalTo(
         Some("Hello, Ash.  How are you?"))
-      dispatcher.consumeUtterance("Very well, thank you.", personName)
+      dispatcher.consumeUtterance("Very well, thank you.")
       dispatcher.produceUtterance() must be equalTo(
         Some("The house is on fire!"))
-      dispatcher.consumeUtterance("Thanks for letting me know.", personName)
+      dispatcher.consumeUtterance("Thanks for letting me know.")
       dispatcher.produceUtterance() must be equalTo(
         Some("So, Ash, what is on your mind?"))
-      dispatcher.consumeUtterance("Goodbye", personName)
+      dispatcher.consumeUtterance("Goodbye")
       dispatcher.produceUtterance() must be equalTo(
         Some("Talk to you later!"))
       dispatcher.isInProgress must beFalse
@@ -64,7 +64,7 @@ class ConversationSpec extends Specification
         Some("Who goes there?"))
       dispatcher.isInProgress must beTrue
       dispatcher.consumeUtterance(
-        "whatevs", "")
+        "whatevs")
       dispatcher.produceUtterance() must be equalTo(
         Some("Sorry, I don't recognize your voice."))
       dispatcher.isInProgress must beFalse

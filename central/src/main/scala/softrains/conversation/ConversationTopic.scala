@@ -43,7 +43,7 @@ abstract class ConversationTopic
   def produceMessage() : Option[IntercomActor.SpeakerSoundMsg] =
     delegateToProduceUtterance
 
-  def consumeUtterance(utterance : String, personName : String)
+  def consumeUtterance(utterance : String, personName : String = "")
 
   def getNewSpeakerName() : String = ""
 
@@ -177,11 +177,13 @@ class TopicDispatcher(
       case Some(topic) => topic.consumeUtterance(
         utterance, personName)
       case _ => {
-        if (personName.isEmpty) {
+        if (personName.isEmpty && currentPerson.isEmpty) {
           response = "Sorry, I don't recognize your voice."
           done = true
         } else {
-          currentPerson = personName
+          if (!personName.isEmpty) {
+            currentPerson = personName
+          }
           changeTopic
           subTopic match {
             case Some(topic) => {
