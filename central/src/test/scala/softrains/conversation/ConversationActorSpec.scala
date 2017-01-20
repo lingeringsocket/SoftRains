@@ -78,7 +78,7 @@ class ConversationActorSpec
       actor ! PairAcceptedMsg
       expectMsg(PartnerUtteranceMsg(utterance0))
       actor ! SpeakerSoundFinishedMsg
-      expectMsg(PartnerListenMsg(""))
+      expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
       expectMsg(PartnerUtteranceMsg(utterance2))
       expectMsg(UnpairMsg)

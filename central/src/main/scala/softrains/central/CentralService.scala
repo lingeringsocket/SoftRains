@@ -277,7 +277,7 @@ class CentralService(
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
       topicSource.preloadTopicsForPerson(name)
-      val intro = topicSource.generateGreeting(name) + "  " + {
+      val intro = topicSource.generateGreeting() + "  " + {
         if (topicSource.isExhausted) {
           "How are you?"
         } else {
@@ -344,21 +344,42 @@ class CentralService(
 
     def isExhausted = iterator.isEmpty
 
-    def generateGreeting(name : String, embellish : Boolean = false) : String =
+    def generateGreeting(embellish : Boolean = false) : String =
     {
+      val name = {
+        if (currentPerson.isEmpty) {
+          "Stranger"
+        } else {
+          currentPerson
+        }
+      }
       val time = DateTime.now
       val hour = time.hourOfDay.get
       var includeDay = true
+      val utteranceOpt =
+        db.query[ConversationUtterance].whereEqual("person", name).
+          order("startTime", true).fetchOne
+      val recent = utteranceOpt match {
+        case Some(utterance) => {
+          utterance.startTime.isAfter(time.minusMinutes(30))
+        }
+        case _ => false
+      }
       val shortGreeting = {
-        if (hour < 3) {
+        if (recent) {
           includeDay = false
-          name + ", shouldn't you be in bed?"
-        } else if (hour < 12) {
-          "Good morning, " + name + "!"
-        } else if (hour < 18) {
-          "Good afternoon, " + name + "!"
+          "Hello again, " + name + "!"
         } else {
-          "Good evening, " + name + "!"
+          if (hour < 3) {
+            includeDay = false
+            name + ", shouldn't you be in bed?"
+          } else if (hour < 12) {
+            "Good morning, " + name + "!"
+          } else if (hour < 18) {
+            "Good afternoon, " + name + "!"
+          } else {
+            "Good evening, " + name + "!"
+          }
         }
       }
       if (!includeDay || !embellish) {

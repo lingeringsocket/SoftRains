@@ -102,7 +102,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   when(Paired) {
     case Event(SpeakerSoundFinishedMsg, ConvoData(topic)) => {
       if (topic.isInProgress) {
-        sender ! PartnerListenMsg(topic.getNewSpeakerName)
+        sender ! PartnerListenMsg(
+          topic.getPersonName, topic.useVoiceIdentification)
         stay
       } else {
         sender ! UnpairMsg
@@ -139,7 +140,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
           if (topic.isInProgress) {
             reply match {
               case StartAudioFileMsg(_,_) | StopAudioFileMsg => {
-                sender ! PartnerListenMsg(topic.getNewSpeakerName)
+                sender ! PartnerListenMsg(
+                  topic.getPersonName, topic.useVoiceIdentification)
               }
               case _ =>
             }

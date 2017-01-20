@@ -43,7 +43,9 @@ abstract class ConversationTopic
 
   def consumeUtterance(utterance : String, personName : String = "")
 
-  def getNewSpeakerName() : String = ""
+  def getPersonName() : String = ""
+
+  def useVoiceIdentification() : Boolean = false
 
   def getPriority() : CommunicationPriority
 }
@@ -98,8 +100,18 @@ class TopicDispatcher(
 
   override def isInProgress() = !done
 
-  override def getNewSpeakerName() =
-    subTopic.map(_.getNewSpeakerName).getOrElse("")
+  override def getPersonName() =
+  {
+    val name = subTopic.map(_.getPersonName).getOrElse("")
+    if (name.isEmpty) {
+      currentPerson
+    } else {
+      name
+    }
+  }
+
+  override def useVoiceIdentification() =
+    subTopic.map(_.useVoiceIdentification).getOrElse(false)
 
   override def produceUtterance() = delegateToProduceMessage
 
@@ -437,7 +449,7 @@ class VoiceIdentifier(residents : Seq[HomeResident])
 
   override def isInProgress() : Boolean = !done
 
-  override def getNewSpeakerName() : String =
+  override def getPersonName() : String =
   {
     if (counter < residents.size) {
       residents(counter).name
@@ -446,15 +458,17 @@ class VoiceIdentifier(residents : Seq[HomeResident])
     }
   }
 
+  override def useVoiceIdentification() : Boolean = true
+
   override def produceUtterance() =
   {
     if (counter == 0) {
       Some(
-        getNewSpeakerName +
+        getPersonName +
           ", please say, the quick brown fox jumped over the lazy dog.")
     } else if (counter < residents.size) {
       Some(
-        "Now, " + getNewSpeakerName +
+        "Now, " + getPersonName +
           ", you say the same sentence.")
     } else if (counter == residents.size) {
       Some(

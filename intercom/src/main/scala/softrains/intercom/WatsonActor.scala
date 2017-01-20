@@ -53,7 +53,8 @@ object WatsonActor
 {
   // received messages
   final case class SpeechListenMsg(
-    newPersonName : String = "")
+    personName : String = "",
+    identifyVoice : Boolean = false)
       extends SoftRainsMsg
   final case class SpeechSayMsg(
     utterance : String, voice : String)
@@ -100,8 +101,8 @@ class WatsonActor extends Actor
 
   def receive =
   {
-    case SpeechListenMsg(newPersonName) => {
-      listen(newPersonName)
+    case SpeechListenMsg(personName, identifyVoice) => {
+      listen(personName, identifyVoice)
     }
     case SpeechSayMsg(utterance, voice) => {
       log.info("Say '" + utterance + "' using voice " + voice)
@@ -131,7 +132,7 @@ class WatsonActor extends Actor
     }
   }
 
-  private def listen(newPersonName : String)
+  private def listen(personName : String, identifyVoice : Boolean)
   {
     log.info("Listening...")
     var result : AnyRef = IntercomActor.SilenceMsg
@@ -175,7 +176,7 @@ class WatsonActor extends Actor
                 transcript.getAlternatives.get(0).getTranscript.trim
               log.info("Heard:  " + utterance)
               result = IntercomActor.PersonUtteranceMsg(
-                utterance, newPersonName)
+                utterance, personName)
               speechPromise.success(speechResults)
             } catch {
               case ex : Throwable => {
@@ -212,23 +213,25 @@ class WatsonActor extends Actor
       (s"sox $rawFile $wavFile").!
       rawFile.delete
       if (!timeout) {
-        if (newPersonName.isEmpty) {
-          if (personCount > 0) {
-            val recognitoResults = recognito.identify(wavFile)
-            if (!recognitoResults.isEmpty) {
-              val identifiedPersonName = recognitoResults.get(0).getKey
-              result match {
-                case IntercomActor.PersonUtteranceMsg(utterance, _) => {
-                  result = IntercomActor.PersonUtteranceMsg(
-                    utterance, identifiedPersonName)
+        if (identifyVoice) {
+          if (personName.isEmpty) {
+            if (personCount > 0) {
+              val recognitoResults = recognito.identify(wavFile)
+              if (!recognitoResults.isEmpty) {
+                val identifiedPersonName = recognitoResults.get(0).getKey
+                result match {
+                  case IntercomActor.PersonUtteranceMsg(utterance, _) => {
+                    result = IntercomActor.PersonUtteranceMsg(
+                      utterance, identifiedPersonName)
+                  }
+                  case _ =>
                 }
-                case _ =>
               }
             }
+          } else {
+            recognito.createVoicePrint(personName, wavFile)
+            personCount += 1
           }
-        } else {
-          recognito.createVoicePrint(newPersonName, wavFile)
-          personCount += 1
         }
       }
     } finally {

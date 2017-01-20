@@ -47,7 +47,8 @@ object IntercomActor
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String, voice : String = "")
       extends SpeakerSoundMsg
-  final case class PartnerListenMsg(newPersonName : String = "")
+  final case class PartnerListenMsg(
+    personName : String = "", identifyVoice : Boolean = false)
       extends PeripheralMsg
   case object UnpairMsg
       extends PeripheralMsg
@@ -242,12 +243,16 @@ class IntercomActor extends LoggingFSM[State, Data]
         stay
       }
     }
-    case Event(PartnerListenMsg(newPersonName), Partner(partner, _, _)) => {
+    case Event(
+      PartnerListenMsg(personName, identifyVoice),
+      Partner(partner, _, _)) =>
+    {
       if (sender == partner) {
         context.parent ! ListeningStartedMsg
         watsonOpt match {
           case Some(watson) => {
-            watson ! WatsonActor.SpeechListenMsg(newPersonName)
+            watson ! WatsonActor.SpeechListenMsg(
+              personName, identifyVoice)
           }
           case _ => {
             partner ! SilenceMsg
