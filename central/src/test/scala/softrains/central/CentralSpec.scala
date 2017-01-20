@@ -120,10 +120,10 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
     {
       central.setActorSystem(system)
       getExceptionCount must be equalTo 0
-      val startTime = central.readClockTime
+      val startTime = readClockTime
       deviceMonitor.setHtml("<blah>")
       central.scanLan
-      val endTime = central.readClockTime
+      val endTime = readClockTime
       getExceptionCount must be equalTo 1
       val report = central.db.query[ExceptionReport].fetchOne.get
       report.message must contain("Unexpected device HTML")

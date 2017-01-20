@@ -1,0 +1,115 @@
+// SoftRains:  a Genuine People Personality for your home
+// Copyright 2016 John V. Sichi
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package softrains.conversation
+
+import softrains.central._
+
+import scala.collection.mutable._
+
+import org.joda.time._
+
+class PersonalizedTopicSource extends ConversationTopicSource
+{
+  private var currentPerson = ""
+
+  private var iterator : Iterator[ConversationTopic] = Iterator.empty
+
+  def preloadTopicsForPerson(
+    context : ConversationContext, personName : String) =
+  {
+    if (personName != currentPerson) {
+      currentPerson = personName
+      val topics = new ArrayBuffer[ConversationTopic]
+      val openhab = new CentralOpenhab(
+        context.getActorSystem,
+        context.getSettings)
+      openhab.checkDoor("front_door", "front door")
+      openhab.checkDoor("rear_door", "rear door")
+      openhab.checkDoor("garage_door", "garage door")
+      val results = openhab.retrieveResults
+      if (!results.isEmpty) {
+        topics += new WarningTopic(results)
+      }
+      iterator = topics.iterator
+    }
+  }
+
+  override def proposeTopicForPerson(
+    context : ConversationContext, personName : String) =
+  {
+    preloadTopicsForPerson(context, personName)
+    if (iterator.hasNext) {
+      Some(iterator.next)
+    } else {
+      None
+    }
+  }
+
+  def isExhausted = iterator.isEmpty
+
+  def generateGreeting(
+    context : ConversationContext, embellish : Boolean = false) : String =
+  {
+    val name = {
+      if (currentPerson.isEmpty) {
+        "Stranger"
+      } else {
+        currentPerson
+      }
+    }
+    val time = context.getCurrentTime
+    val hour = time.hourOfDay.get
+    var includeDay = true
+    val utteranceOpt =
+      context.getDatabase.query[ConversationUtterance].
+        whereEqual("person", name).
+        order("startTime", true).fetchOne
+    val recent = utteranceOpt match {
+      case Some(utterance) => {
+        utterance.startTime.isAfter(time.minusMinutes(30))
+      }
+      case _ => false
+    }
+    val shortGreeting = {
+      if (recent) {
+        includeDay = false
+        "Hello again, " + name + "!"
+      } else {
+        if (hour < 3) {
+          includeDay = false
+          name + ", shouldn't you be in bed?"
+        } else if (hour < 12) {
+          "Good morning, " + name + "!"
+        } else if (hour < 18) {
+          "Good afternoon, " + name + "!"
+        } else {
+          "Good evening, " + name + "!"
+        }
+      }
+    }
+    if (!includeDay || !embellish) {
+      return shortGreeting
+    }
+    val dayOfWeek = time.dayOfWeek
+    val extendedGreeting = dayOfWeek.get match {
+      case DateTimeConstants.MONDAY => "Ready for another week?"
+      case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
+      case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
+      case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
+      case _ => "Happy " + dayOfWeek.getAsText + "!"
+    }
+    shortGreeting + " " + extendedGreeting
+  }
+}

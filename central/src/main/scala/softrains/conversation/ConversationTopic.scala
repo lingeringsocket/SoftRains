@@ -14,18 +14,42 @@
 // limitations under the License.
 package softrains.conversation
 
+import softrains.base._
 import softrains.central._
 import softrains.intercom._
+
+import akka.actor._
+
+import org.joda.time._
 
 import CommunicationPriority._
 
 trait ConversationContext
 {
+  def getActorSystem : ActorSystem
+
+  def getSettings : SoftRainsSettings
+
+  def getDatabase : CentralDb
+
+  def getCurrentTime : DateTime = readClockTime
+
   def getLastUtterance : Option[ConversationUtterance]
 }
 
 object NullConversationContext extends ConversationContext
 {
+  private def unsupported =
+  {
+    throw new UnsupportedOperationException("NullConversationContext")
+  }
+
+  override def getActorSystem = unsupported
+
+  override def getSettings = unsupported
+
+  override def getDatabase = unsupported
+
   override def getLastUtterance : Option[ConversationUtterance] = None
 }
 
@@ -68,7 +92,9 @@ abstract class ConversationTopic
 
 trait ConversationTopicSource
 {
-  def proposeTopicForPerson(personName : String) : Option[ConversationTopic]
+  def proposeTopicForPerson(
+    context : ConversationContext,
+    personName : String) : Option[ConversationTopic]
 }
 
 class SequentialTopicSource(topics : Seq[ConversationTopic])
@@ -76,7 +102,9 @@ class SequentialTopicSource(topics : Seq[ConversationTopic])
 {
   private val iterator = topics.iterator
 
-  override def proposeTopicForPerson(personName : String) =
+  override def proposeTopicForPerson(
+    context : ConversationContext,
+    personName : String) =
   {
     if (iterator.hasNext) {
       Some(iterator.next)
@@ -139,7 +167,7 @@ class TopicDispatcher(
         case Some(topic) => {
           val messageOpt = topic.produceMessage(context)
           if (messageOpt.isEmpty) {
-            changeTopic
+            changeTopic(context)
             if (done) {
               softLanding
             } else {
@@ -155,7 +183,7 @@ class TopicDispatcher(
             }
           } else {
             if (!topic.isInProgress) {
-              changeTopic
+              changeTopic(context)
             }
             messageOpt
           }
@@ -169,9 +197,9 @@ class TopicDispatcher(
     }
   }
 
-  private def changeTopic()
+  private def changeTopic(context : ConversationContext)
   {
-    topicSource.proposeTopicForPerson(currentPerson) match {
+    topicSource.proposeTopicForPerson(context, currentPerson) match {
       case Some(newTopic) => {
         subTopic = Some(newTopic)
       }
@@ -212,7 +240,7 @@ class TopicDispatcher(
           if (!personName.isEmpty) {
             currentPerson = personName
           }
-          changeTopic
+          changeTopic(context)
           subTopic match {
             case Some(topic) => {
               // FIXME what if they start out with message

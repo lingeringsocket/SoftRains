@@ -41,6 +41,7 @@ import org.joda.time.DateTime
 
 class CentralService(
   settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
+    extends ConversationContext
 {
   private var actorSystem : Option[ActorSystem] = None
 
@@ -52,8 +53,6 @@ class CentralService(
   private var conversationActor : ActorRef = null
 
   def getDeviceMonitor = deviceMonitor
-
-  def getActorSystem = actorSystem.get
 
   def setActorSystem(system : ActorSystem)
   {
@@ -270,14 +269,25 @@ class CentralService(
       getIntercomActor)
   }
 
+  private def getConversationContext = this
+
+  override def getSettings = settings
+
+  override def getActorSystem = actorSystem.get
+
+  override def getDatabase = db
+
+  override def getLastUtterance = None
+
   private def startConversation()
   {
     val httpConsumer = new HttpConsumer(getActorSystem)
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
-      topicSource.preloadTopicsForPerson(name)
-      val intro = topicSource.generateGreeting() + "  " + {
+      val context = getConversationContext
+      topicSource.preloadTopicsForPerson(context, name)
+      val intro = topicSource.generateGreeting(context) + "  " + {
         if (topicSource.isExhausted) {
           "How are you?"
         } else {
@@ -309,94 +319,6 @@ class CentralService(
       getIntercomActor)
   }
 
-  class PersonalizedTopicSource extends ConversationTopicSource
-  {
-    private var currentPerson = ""
-
-    private var iterator : Iterator[ConversationTopic] = Iterator.empty
-
-    def preloadTopicsForPerson(personName : String) =
-    {
-      if (personName != currentPerson) {
-        currentPerson = personName
-        val topics = new ArrayBuffer[ConversationTopic]
-        val openhab = new CentralOpenhab(getActorSystem, settings)
-        openhab.checkDoor("front_door", "front door")
-        openhab.checkDoor("rear_door", "rear door")
-        openhab.checkDoor("garage_door", "garage door")
-        val results = openhab.retrieveResults
-        if (!results.isEmpty) {
-          topics += new WarningTopic(results)
-        }
-        iterator = topics.iterator
-      }
-    }
-
-    override def proposeTopicForPerson(personName : String) =
-    {
-      preloadTopicsForPerson(personName)
-      if (iterator.hasNext) {
-        Some(iterator.next)
-      } else {
-        None
-      }
-    }
-
-    def isExhausted = iterator.isEmpty
-
-    def generateGreeting(embellish : Boolean = false) : String =
-    {
-      val name = {
-        if (currentPerson.isEmpty) {
-          "Stranger"
-        } else {
-          currentPerson
-        }
-      }
-      val time = DateTime.now
-      val hour = time.hourOfDay.get
-      var includeDay = true
-      val utteranceOpt =
-        db.query[ConversationUtterance].whereEqual("person", name).
-          order("startTime", true).fetchOne
-      val recent = utteranceOpt match {
-        case Some(utterance) => {
-          utterance.startTime.isAfter(time.minusMinutes(30))
-        }
-        case _ => false
-      }
-      val shortGreeting = {
-        if (recent) {
-          includeDay = false
-          "Hello again, " + name + "!"
-        } else {
-          if (hour < 3) {
-            includeDay = false
-            name + ", shouldn't you be in bed?"
-          } else if (hour < 12) {
-            "Good morning, " + name + "!"
-          } else if (hour < 18) {
-            "Good afternoon, " + name + "!"
-          } else {
-            "Good evening, " + name + "!"
-          }
-        }
-      }
-      if (!includeDay || !embellish) {
-        return shortGreeting
-      }
-      val dayOfWeek = time.dayOfWeek
-      val extendedGreeting = dayOfWeek.get match {
-        case DateTimeConstants.MONDAY => "Ready for another week?"
-        case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
-        case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
-        case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
-        case _ => "Happy " + dayOfWeek.getAsText + "!"
-      }
-      shortGreeting + " " + extendedGreeting
-    }
-  }
-
   def logEvent(msg : String)
   {
     println(msg)
@@ -417,8 +339,6 @@ class CentralService(
       }
     }
   }
-
-  def readClockTime = new DateTime(DateTimeZone.UTC)
 
   private def handleException(tryTime : DateTime, ex : Exception)
   {

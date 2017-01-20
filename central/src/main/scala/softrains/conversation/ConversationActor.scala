@@ -171,6 +171,12 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 
   private def getConversationContext = this
 
+  override def getSettings = settings
+
+  override def getActorSystem = context.system
+
+  override def getDatabase = db
+
   override def getLastUtterance : Option[ConversationUtterance] =
     lastUtterance
 

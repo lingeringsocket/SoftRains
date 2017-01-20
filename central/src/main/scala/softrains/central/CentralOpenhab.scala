@@ -27,8 +27,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 {
   private val results = new mutable.ArrayBuffer[String]
 
-  // FIXME share readClockTime
-  private val now = new DateTime(DateTimeZone.UTC)
+  private val now = readClockTime
 
   def checkDoor(itemName : String, spokenName : String)
   {
