@@ -17,8 +17,6 @@ package softrains.conversation
 import softrains.central._
 import softrains.intercom._
 
-import org.joda.time._
-
 import CommunicationPriority._
 
 abstract class ConversationTopic
@@ -239,47 +237,6 @@ class DailyGreeting(resident : HomeResident)
     "Good morning, " + resident.name + "!"
 
   override def getPriority() = ASAP
-}
-
-class GenericGreeting
-    extends NotificationTopic
-{
-  override def getPriority() = ASAP
-
-  override protected def getNotification() =
-  {
-    val time = DateTime.now
-    val hour = time.hourOfDay.get
-    var includeDay = true
-    val greetingTime = {
-      if (hour < 3) {
-        includeDay = false
-        "Shouldn't you be in bed?"
-      } else if (hour < 12) {
-        "Good morning!"
-      } else if (hour < 18) {
-        "Good afternoon!"
-      } else {
-        "Good evening!"
-      }
-    }
-    val fullGreeting = {
-      if (includeDay) {
-        val dayOfWeek = time.dayOfWeek
-        val greetingDay = dayOfWeek.get match {
-          case DateTimeConstants.MONDAY => "Ready for another week?"
-          case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
-          case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
-          case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
-          case _ => "Happy " + dayOfWeek.getAsText + "!"
-        }
-        greetingTime + " " + greetingDay
-      } else {
-        greetingTime
-      }
-    }
-    fullGreeting
-  }
 }
 
 class ContainsTopicMatcher(

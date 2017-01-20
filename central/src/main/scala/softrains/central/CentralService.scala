@@ -277,11 +277,11 @@ class CentralService(
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
       topicSource.preloadTopicsForPerson(name)
-      val intro = {
+      val intro = topicSource.generateGreeting(name) + "  " + {
         if (topicSource.isExhausted) {
-          ""
+          "How are you?"
         } else {
-          "Hello, " + name + ".  I have some updates for you."
+          "I have some updates for you."
         }
       }
       val dispatcher = new TopicDispatcher(topicSource, name, intro)
@@ -343,6 +343,37 @@ class CentralService(
     }
 
     def isExhausted = iterator.isEmpty
+
+    def generateGreeting(name : String, embellish : Boolean = false) : String =
+    {
+      val time = DateTime.now
+      val hour = time.hourOfDay.get
+      var includeDay = true
+      val shortGreeting = {
+        if (hour < 3) {
+          includeDay = false
+          name + ", shouldn't you be in bed?"
+        } else if (hour < 12) {
+          "Good morning, " + name + "!"
+        } else if (hour < 18) {
+          "Good afternoon, " + name + "!"
+        } else {
+          "Good evening, " + name + "!"
+        }
+      }
+      if (!includeDay || !embellish) {
+        return shortGreeting
+      }
+      val dayOfWeek = time.dayOfWeek
+      val extendedGreeting = dayOfWeek.get match {
+        case DateTimeConstants.MONDAY => "Ready for another week?"
+        case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
+        case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
+        case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
+        case _ => "Happy " + dayOfWeek.getAsText + "!"
+      }
+      shortGreeting + " " + extendedGreeting
+    }
   }
 
   def logEvent(msg : String)
