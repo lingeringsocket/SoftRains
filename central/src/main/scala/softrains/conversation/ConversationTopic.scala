@@ -271,7 +271,7 @@ class DailyGreeting(resident : HomeResident)
 }
 
 class ContainsTopicMatcher(
-  phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg,
+  phrases : Seq[String], response : => IntercomActor.SpeakerSoundMsg,
   done : Boolean = false)
     extends TopicMatcher
 {
@@ -284,27 +284,27 @@ class ContainsTopicMatcher(
 object ContainsTopicMatcher
 {
   def apply(
-    phrases : Seq[String], response : String) =
+    phrases : Seq[String], response : => String) =
   {
     new ContainsTopicMatcher(
       phrases, IntercomActor.PartnerUtteranceMsg(response), false)
   }
 
   def apply(
-    phrases : Seq[String], response : String, done : Boolean) =
+    phrases : Seq[String], response : => String, done : Boolean) =
   {
     new ContainsTopicMatcher(
       phrases, IntercomActor.PartnerUtteranceMsg(response), done)
   }
 
-  def apply(
-    phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg) =
+  def message(
+    phrases : Seq[String], response : => IntercomActor.SpeakerSoundMsg) =
   {
     new ContainsTopicMatcher(phrases, response, false)
   }
 
-  def apply(
-    phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg,
+  def message(
+    phrases : Seq[String], response : => IntercomActor.SpeakerSoundMsg,
     done : Boolean) =
   {
     new ContainsTopicMatcher(phrases, response, done)
@@ -353,57 +353,57 @@ class PassiveTopic(name : String) extends ConversationTopic
     ContainsTopicMatcher(
       Seq("thanks", "thank you"),
       "You are very welcome!"),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("motor function"),
       IntercomActor.StartAudioFileMsg("okay.mp3", false)),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("christmas"),
       IntercomActor.StartAudioFileMsg("JingleBells.mp3", true)),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("new year"),
       IntercomActor.StartAudioFileMsg("AuldLangSyne.mp3", false),
       true),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("poem", "story"),
       IntercomActor.StartAudioFileMsg("nicholas.wav", false),
       true),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("hodor", "hold the door"),
       IntercomActor.StartAudioFileMsg("hodor.mp3", false)),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("ring the bell", "big ben", "ding dong", "knock knock",
         "anybody home"),
       IntercomActor.DoorbellMsg),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("michael", "mike"),
       IntercomActor.PartnerUtteranceMsg(
         "Well hello there!", "en-US_MichaelVoice")),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("allison", "alley"),
       IntercomActor.PartnerUtteranceMsg(
         "At your service!", "en-US_AllisonVoice")),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("allison", "alley"),
       IntercomActor.PartnerUtteranceMsg(
         "My name is Lisa and I am a recovering alcoholic.",
         "en-US_LisaVoice")),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("kate", "england", "britain", "british", "english"),
       IntercomActor.PartnerUtteranceMsg(
         "Blimey, would you like to try the bangers and mash?",
         "en-GB_KateVoice")),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("alexa", "amazon"),
       IntercomActor.WakeAlexaMsg),
     ContainsTopicMatcher(
       Seq("last thing I said", "what did I just say"),
       getContext.getLastUtterance.map(_.text).getOrElse("nothing")),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("play back"),
       IntercomActor.StartAudioFileMsg(
         getContext.getLastUtterance.flatMap(_.audioFile).getOrElse("hodor.mp3"),
         false)),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),
     EchoTopicMatcher
