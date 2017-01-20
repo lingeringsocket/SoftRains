@@ -111,7 +111,8 @@ class WatsonActor extends Actor
         file = Some(say(utterance, voice, !first))
         first = false
       } finally {
-        sender ! IntercomActor.SpeakerSoundFinishedMsg(file.map(_.getName))
+        sender ! IntercomActor.SpeakerSoundFinishedMsg(
+          file.map(_.getAbsolutePath))
       }
       log.info("Done speaking")
     }
@@ -178,7 +179,7 @@ class WatsonActor extends Actor
                 transcript.getAlternatives.get(0).getTranscript.trim
               log.info("Heard:  " + utterance)
               result = IntercomActor.PersonUtteranceMsg(
-                utterance, personName, Some(wavFile.getName))
+                utterance, personName, Some(wavFile.getAbsolutePath))
               speechPromise.success(speechResults)
             } catch {
               case ex : Throwable => {
@@ -224,7 +225,8 @@ class WatsonActor extends Actor
                 result match {
                   case IntercomActor.PersonUtteranceMsg(utterance, _, _) => {
                     result = IntercomActor.PersonUtteranceMsg(
-                      utterance, identifiedPersonName, Some(wavFile.getName))
+                      utterance, identifiedPersonName,
+                      Some(wavFile.getAbsolutePath))
                   }
                   case _ =>
                 }

@@ -29,6 +29,9 @@ import org.eclipse.jetty.util.ssl._
 import akka.actor._
 import akka.event._
 
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
 object AlexaActor
 {
   // received messages
@@ -88,10 +91,6 @@ class AlexaActor extends Actor
 
   private def finishProcessing()
   {
-    if (maybeStop) {
-      maybeStop = false
-      intercomActor ! IntercomActor.AlexaFinishedMsg
-    }
     controller.processingFinished
   }
 
@@ -127,6 +126,9 @@ class AlexaActor extends Actor
     controller.onUserActivity
     controller.stopRecording
     maybeStop = true
+    context.system.scheduler.scheduleOnce(5.seconds) {
+      self ! ExpiryMsg
+    }
   }
 
   override def onAlexaSpeechStarted()
@@ -176,6 +178,12 @@ class AlexaActor extends Actor
     case IntercomActor.WakeAlexaMsg => {
       intercomActor = sender
       startCapture
+    }
+    case ExpiryMsg => {
+      if (maybeStop) {
+        intercomActor ! IntercomActor.AlexaFinishedMsg
+        maybeStop = false
+      }
     }
   }
 

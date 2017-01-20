@@ -283,14 +283,14 @@ class ContainsTopicMatcher(
 
 object ContainsTopicMatcher
 {
-  def apply(
+  def string(
     phrases : Seq[String], response : => String) =
   {
     new ContainsTopicMatcher(
       phrases, IntercomActor.PartnerUtteranceMsg(response), false)
   }
 
-  def apply(
+  def string(
     phrases : Seq[String], response : => String, done : Boolean) =
   {
     new ContainsTopicMatcher(
@@ -346,11 +346,11 @@ class PassiveTopic(name : String) extends ConversationTopic
 
   private val matcher = Seq[TopicMatcher](
     EmptyTopicMatcher,
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.string(
       Seq("goodbye", "good bye"),
       "Talk to you later!",
       true),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.string(
       Seq("thanks", "thank you"),
       "You are very welcome!"),
     ContainsTopicMatcher.message(
@@ -395,7 +395,7 @@ class PassiveTopic(name : String) extends ConversationTopic
     ContainsTopicMatcher.message(
       Seq("alexa", "amazon"),
       IntercomActor.WakeAlexaMsg),
-    ContainsTopicMatcher(
+    ContainsTopicMatcher.string(
       Seq("last thing I said", "what did I just say"),
       getContext.getLastUtterance.map(_.text).getOrElse("nothing")),
     ContainsTopicMatcher.message(
