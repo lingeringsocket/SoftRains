@@ -21,3 +21,5 @@ libraryDependencies ++= Seq(
   "com.ibm.watson.developer_cloud" % "text-to-speech" % "3.5.1",
   "com.ibm.watson.developer_cloud" % "speech-to-text" % "3.5.1"
 )
+
+mappings in (Compile, packageDoc) := Seq()

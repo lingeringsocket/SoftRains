@@ -39,3 +39,5 @@ libraryDependencies ++= Common.akkaDeps
 parallelExecution in Test := false
 
 enablePlugins(JavaAppPackaging)
+
+mappings in (Compile, packageDoc) := Seq()

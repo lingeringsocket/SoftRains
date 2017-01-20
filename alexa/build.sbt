@@ -23,3 +23,5 @@ libraryDependencies ++= Seq(
 enablePlugins(JavaAppPackaging)
 
 enablePlugins(JettyAlpn)
+
+mappings in (Compile, packageDoc) := Seq()

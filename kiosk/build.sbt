@@ -17,3 +17,5 @@ traceLevel := Common.traceLevel
 scalastyleFailOnError := true
 
 enablePlugins(JavaAppPackaging)
+
+mappings in (Compile, packageDoc) := Seq()
