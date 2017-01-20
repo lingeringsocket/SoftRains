@@ -29,9 +29,6 @@ import org.eclipse.jetty.util.ssl._
 import akka.actor._
 import akka.event._
 
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-
 object AlexaActor
 {
   // received messages
