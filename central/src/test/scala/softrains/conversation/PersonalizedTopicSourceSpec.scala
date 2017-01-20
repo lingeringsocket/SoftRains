@@ -37,29 +37,26 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
       // 10am
       context.setTime(new DateTime(2017, 1, 20, 10, 0, 0))
       source.generateGreeting(context) must be equalTo
-        "Good morning, Stranger!"
-      // with embellishment
-      source.generateGreeting(context, true) must be equalTo
         "Good morning, Stranger! Thank God it's Friday!"
 
       // 1pm
       context.setTime(new DateTime(2017, 1, 20, 13, 0, 0))
       source.generateGreeting(context) must be equalTo
-        "Good afternoon, Stranger!"
+        "Good afternoon, Stranger! Thank God it's Friday!"
 
       // 7pm
       context.setTime(new DateTime(2017, 1, 20, 19, 0, 0))
       source.generateGreeting(context) must be equalTo
-      "Good evening, Stranger!"
+      "Good evening, Stranger! Thank God it's Friday!"
 
       // 2017-Jan-21 (Saturday)
       context.setTime(new DateTime(2017, 1, 21, 10, 0, 0))
-      source.generateGreeting(context, true) must be equalTo
+      source.generateGreeting(context) must be equalTo
         "Good morning, Stranger! Happy Saturday!"
 
       // 2017-Jan-23 (Monday)
       context.setTime(new DateTime(2017, 1, 23, 10, 0, 0))
-      source.generateGreeting(context, true) must be equalTo
+      source.generateGreeting(context) must be equalTo
         "Good morning, Stranger! Ready for another week?"
     }
 
@@ -74,7 +71,7 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
 
       context.setTime(nearTime)
       source.generateGreeting(context) must be equalTo
-        "Good morning, Stranger!"
+        "Good morning, Stranger! Thank God it's Friday!"
 
       val db = context.getDatabase
       val transcript = db.save(ConversationTranscript(lastTime))
@@ -86,7 +83,7 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
 
       context.setTime(farTime)
       source.generateGreeting(context) must be equalTo
-        "Good afternoon, Stranger!"
+        "Good afternoon, Stranger! How is your day going?"
     }
   }
 

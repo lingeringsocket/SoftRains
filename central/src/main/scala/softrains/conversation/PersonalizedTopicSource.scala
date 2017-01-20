@@ -60,7 +60,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
   def isExhausted = iterator.isEmpty
 
   def generateGreeting(
-    context : ConversationContext, embellish : Boolean = false) : String =
+    context : ConversationContext) : String =
   {
     val name = {
       if (currentPerson.isEmpty) {
@@ -69,26 +69,28 @@ class PersonalizedTopicSource extends ConversationTopicSource
         currentPerson
       }
     }
-    val time = context.getCurrentTime
-    val hour = time.hourOfDay.get
-    var includeDay = true
+    val currentTime = context.getCurrentTime
+    var omitExtended = false
     val utteranceOpt =
       context.getDatabase.query[ConversationUtterance].
         whereEqual("person", name).
         order("startTime", true).fetchOne
-    val recent = utteranceOpt match {
+    val (recent, spokeToday) = utteranceOpt match {
       case Some(utterance) => {
-        utterance.startTime.isAfter(time.minusMinutes(30))
+        (utterance.startTime.isAfter(currentTime.minusMinutes(30)),
+          utterance.startTime.minusHours(5).toLocalDate.equals(
+            currentTime.toLocalDate))
       }
-      case _ => false
+      case _ => (false, false)
     }
     val shortGreeting = {
       if (recent) {
-        includeDay = false
+        omitExtended = true
         "Hello again, " + name + "!"
       } else {
+        val hour = currentTime.hourOfDay.get
         if (hour < 3) {
-          includeDay = false
+          omitExtended = true
           name + ", shouldn't you be in bed?"
         } else if (hour < 12) {
           "Good morning, " + name + "!"
@@ -99,17 +101,29 @@ class PersonalizedTopicSource extends ConversationTopicSource
         }
       }
     }
-    if (!includeDay || !embellish) {
-      return shortGreeting
-    }
-    val dayOfWeek = time.dayOfWeek
-    val extendedGreeting = dayOfWeek.get match {
+    def dayOfWeek = currentTime.dayOfWeek
+    def extendedGreeting = dayOfWeek.get match {
       case DateTimeConstants.MONDAY => "Ready for another week?"
       case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
       case DateTimeConstants.FRIDAY => "Thank God it's Friday!"
-      case DateTimeConstants.SUNDAY => "Today is a good day for meditation."
+      case DateTimeConstants.SUNDAY => "Did you meditate today?"
       case _ => "Happy " + dayOfWeek.getAsText + "!"
     }
-    shortGreeting + " " + extendedGreeting
+    def statusOpt = {
+      if (isExhausted) {
+        if (omitExtended || !spokeToday) {
+          ""
+        } else {
+          " How is your day going?"
+        }
+      } else {
+        " I have some updates for you."
+      }
+    }
+    if (spokeToday || omitExtended) {
+      shortGreeting + statusOpt
+    } else {
+      shortGreeting + " " + extendedGreeting + statusOpt
+    }
   }
 }

@@ -287,13 +287,7 @@ class CentralService(
       val topicSource = new PersonalizedTopicSource
       val context = getConversationContext
       topicSource.preloadTopicsForPerson(context, name)
-      val intro = topicSource.generateGreeting(context) + "  " + {
-        if (topicSource.isExhausted) {
-          "How are you?"
-        } else {
-          "I have some updates for you."
-        }
-      }
+      val intro = topicSource.generateGreeting(context)
       val dispatcher = new TopicDispatcher(topicSource, name, intro)
       conversationActor ! ConversationActor.ActivateMsg(
         dispatcher,
