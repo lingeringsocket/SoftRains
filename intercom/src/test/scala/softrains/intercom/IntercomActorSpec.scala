@@ -60,22 +60,22 @@ class IntercomActorSpec extends AkkaActorSpecification
       val actor = system.actorOf(Props(classOf[IntercomActor]))
 
       actor ! RingtoneMsg
-      expectMsg(SpeakerSoundFinishedMsg)
+      expectMsg(SpeakerSoundFinishedMsg(None))
 
       actor ! DoorbellMsg
-      expectMsg(SpeakerSoundFinishedMsg)
+      expectMsg(SpeakerSoundFinishedMsg(None))
 
       actor ! PairRequestMsg
       expectMsg(PairAcceptedMsg)
 
       actor ! PartnerUtteranceMsg("hello")
-      expectMsg(10 seconds, SpeakerSoundFinishedMsg)
+      expectMsg(10 seconds, SpeakerSoundFinishedMsg(None))
 
       actor ! PartnerListenMsg()
       expectMsg(SilenceMsg)
 
       actor ! DoorbellMsg
-      expectMsg(SpeakerSoundFinishedMsg)
+      expectMsg(SpeakerSoundFinishedMsg(None))
 
       actor ! UnpairMsg
     }
@@ -95,7 +95,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       expectMsg(BusyMsg)
 
       actor ! DoorbellMsg
-      expectMsg(SpeakerSoundFinishedMsg)
+      expectMsg(SpeakerSoundFinishedMsg(None))
 
       actor ! UnpairMsg
       expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
@@ -132,7 +132,7 @@ class IntercomActorSpec extends AkkaActorSpecification
       probe.expectMsg(ProtocolErrorMsg(PROTOCOL_UNPAIR_WITHOUT_PAIR))
 
       actor ! PartnerUtteranceMsg("sorry to interrupt")
-      expectMsg(10 seconds, SpeakerSoundFinishedMsg)
+      expectMsg(10 seconds, SpeakerSoundFinishedMsg(None))
     }
   }
 }

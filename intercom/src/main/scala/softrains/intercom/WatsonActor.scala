@@ -106,17 +106,18 @@ class WatsonActor extends Actor
     }
     case SpeechSayMsg(utterance, voice) => {
       log.info("Say '" + utterance + "' using voice " + voice)
+      var file : Option[File] = None
       try {
-        say(utterance, voice, !first)
+        file = Some(say(utterance, voice, !first))
         first = false
       } finally {
-        sender ! IntercomActor.SpeakerSoundFinishedMsg
+        sender ! IntercomActor.SpeakerSoundFinishedMsg(file.map(_.getName))
       }
       log.info("Done speaking")
     }
   }
 
-  private def say(utterance : String, voice : String, cache : Boolean)
+  private def say(utterance : String, voice : String, cache : Boolean) =
   {
     val file = new File(
       audioDir,
@@ -130,6 +131,7 @@ class WatsonActor extends Actor
       val in = WaveUtils.reWriteWaveHeader(stream.execute)
       ((("tee " + file) #| settings.Speaker.command) #< in).!
     }
+    file
   }
 
   private def listen(personName : String, identifyVoice : Boolean)
@@ -176,7 +178,7 @@ class WatsonActor extends Actor
                 transcript.getAlternatives.get(0).getTranscript.trim
               log.info("Heard:  " + utterance)
               result = IntercomActor.PersonUtteranceMsg(
-                utterance, personName)
+                utterance, personName, Some(wavFile.getName))
               speechPromise.success(speechResults)
             } catch {
               case ex : Throwable => {
@@ -220,9 +222,9 @@ class WatsonActor extends Actor
               if (!recognitoResults.isEmpty) {
                 val identifiedPersonName = recognitoResults.get(0).getKey
                 result match {
-                  case IntercomActor.PersonUtteranceMsg(utterance, _) => {
+                  case IntercomActor.PersonUtteranceMsg(utterance, _, _) => {
                     result = IntercomActor.PersonUtteranceMsg(
-                      utterance, identifiedPersonName)
+                      utterance, identifiedPersonName, Some(wavFile.getName))
                   }
                   case _ =>
                 }

@@ -99,8 +99,8 @@ class KioskActor extends Actor
       httpConsumer.putString(modeUrl, "ON") {}
       httpConsumer.ensureSuccess
     }
-    case enableAlexaMsg : IntercomActor.InitializeAlexaMsg => {
-      intercomActor ! enableAlexaMsg
+    case initializeAlexaMsg : IntercomActor.InitializeAlexaMsg => {
+      intercomActor ! initializeAlexaMsg
     }
   }
 }

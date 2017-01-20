@@ -77,7 +77,8 @@ case class ConversationUtterance(
   transcript : ConversationTranscript,
   startTime : DateTime,
   person : String,
-  text : String
+  text : String,
+  audioFile : Option[String] = None
 ) extends CentralDbEntity
 
 case class PendingNotification(

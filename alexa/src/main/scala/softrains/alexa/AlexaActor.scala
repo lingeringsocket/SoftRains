@@ -91,6 +91,10 @@ class AlexaActor extends Actor
 
   private def finishProcessing()
   {
+    if (maybeStop) {
+      maybeStop = false
+      intercomActor ! IntercomActor.AlexaFinishedMsg
+    }
     controller.processingFinished
   }
 
@@ -126,9 +130,6 @@ class AlexaActor extends Actor
     controller.onUserActivity
     controller.stopRecording
     maybeStop = true
-    context.system.scheduler.scheduleOnce(3.seconds) {
-      self ! ExpiryMsg
-    }
   }
 
   override def onAlexaSpeechStarted()
@@ -153,7 +154,7 @@ class AlexaActor extends Actor
       override def onRequestError(e : Throwable)
       {
         e.printStackTrace
-        log.error("An error occured creating speech request: {}", e)
+        log.error("An error occurred creating speech request: {}", e)
         finishProcessing
       }
     }
@@ -178,12 +179,6 @@ class AlexaActor extends Actor
     case IntercomActor.WakeAlexaMsg => {
       intercomActor = sender
       startCapture
-    }
-    case ExpiryMsg => {
-      if (maybeStop) {
-        intercomActor ! IntercomActor.AlexaFinishedMsg
-        maybeStop = false
-      }
     }
   }
 

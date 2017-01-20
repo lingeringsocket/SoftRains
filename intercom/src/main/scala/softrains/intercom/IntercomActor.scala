@@ -98,11 +98,12 @@ object IntercomActor
   // forwarded messages (from watson to partner)
   trait WatsonCompletionMsg extends PeripheralMsg
   trait WatsonHeardMsg extends WatsonCompletionMsg
-  final case class PersonUtteranceMsg(utterance : String, personName : String)
+  final case class PersonUtteranceMsg(
+    utterance : String, personName : String, fileOpt : Option[String] = None)
       extends WatsonHeardMsg
   case object SilenceMsg
       extends WatsonHeardMsg
-  case object SpeakerSoundFinishedMsg
+  final case class SpeakerSoundFinishedMsg(fileOpt : Option[String] = None)
       extends WatsonCompletionMsg
 
   case object Asleep extends State
@@ -167,7 +168,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       }
       case _ => {
         log.info("Unable to say '" + utterance + "' using voice " + voice)
-        partner ! SpeakerSoundFinishedMsg
+        partner ! SpeakerSoundFinishedMsg()
       }
     }
   }
@@ -270,7 +271,7 @@ class IntercomActor extends LoggingFSM[State, Data]
         if (!command.isEmpty) {
           command.!
         }
-        sender ! SpeakerSoundFinishedMsg
+        sender ! SpeakerSoundFinishedMsg()
       } else if (partner == sender) {
         sender ! ProtocolErrorMsg(PROTOCOL_RING_WHILE_PAIRED)
       } else {
@@ -284,7 +285,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       if (!command.isEmpty) {
         command.!
       }
-      sender ! SpeakerSoundFinishedMsg
+      sender ! SpeakerSoundFinishedMsg()
       stay
     }
     case Event(StartAudioFileMsg(file, loop),

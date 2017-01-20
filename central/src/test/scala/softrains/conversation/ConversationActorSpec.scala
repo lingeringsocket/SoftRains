@@ -48,7 +48,7 @@ class ConversationActorSpec
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
       expectMsg(PartnerUtteranceMsg(utterance0))
-      actor ! SpeakerSoundFinishedMsg
+      actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
       db.query[ConversationTranscript].fetch.size must be equalTo 1
@@ -77,7 +77,7 @@ class ConversationActorSpec
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
       expectMsg(PartnerUtteranceMsg(utterance0))
-      actor ! SpeakerSoundFinishedMsg
+      actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
       expectMsg(PartnerUtteranceMsg(utterance2))

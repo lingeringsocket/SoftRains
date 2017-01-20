@@ -19,13 +19,24 @@ import softrains.intercom._
 
 import CommunicationPriority._
 
+trait ConversationContext
+{
+  def getLastUtterance : Option[ConversationUtterance]
+}
+
+object NullConversationContext extends ConversationContext
+{
+  override def getLastUtterance : Option[ConversationUtterance] = None
+}
+
 abstract class ConversationTopic
 {
   def isInProgress() : Boolean = false
 
-  protected def delegateToProduceMessage() =
+  protected def delegateToProduceMessage(
+    context : ConversationContext = NullConversationContext) =
   {
-    produceMessage() match {
+    produceMessage(context) match {
       case Some(IntercomActor.PartnerUtteranceMsg(utterance, voice)) =>
         Some(utterance)
       case _ =>
@@ -33,15 +44,20 @@ abstract class ConversationTopic
     }
   }
 
-  protected def delegateToProduceUtterance() =
-    produceUtterance.map(IntercomActor.PartnerUtteranceMsg(_))
+  protected def delegateToProduceUtterance(
+    context : ConversationContext = NullConversationContext) =
+    produceUtterance(context).map(IntercomActor.PartnerUtteranceMsg(_))
 
-  def produceUtterance() : Option[String]
+  def produceUtterance(context : ConversationContext = NullConversationContext)
+      : Option[String]
 
-  def produceMessage() : Option[IntercomActor.SpeakerSoundMsg] =
-    delegateToProduceUtterance
+  def produceMessage(context : ConversationContext = NullConversationContext)
+      : Option[IntercomActor.SpeakerSoundMsg] =
+    delegateToProduceUtterance(context)
 
-  def consumeUtterance(utterance : String, personName : String = "")
+  def consumeUtterance(
+    utterance : String, personName : String = "",
+    context : ConversationContext = NullConversationContext)
 
   def getPersonName() : String = ""
 
@@ -113,20 +129,21 @@ class TopicDispatcher(
   override def useVoiceIdentification() =
     subTopic.map(_.useVoiceIdentification).getOrElse(false)
 
-  override def produceUtterance() = delegateToProduceMessage
+  override def produceUtterance(context : ConversationContext) =
+    delegateToProduceMessage(context)
 
-  override def produceMessage() =
+  override def produceMessage(context : ConversationContext) =
   {
     if (response.isEmpty) {
       subTopic match {
         case Some(topic) => {
-          val messageOpt = topic.produceMessage
+          val messageOpt = topic.produceMessage(context)
           if (messageOpt.isEmpty) {
             changeTopic
             if (done) {
               softLanding
             } else {
-              subTopic.get.produceUtterance match {
+              subTopic.get.produceUtterance(context) match {
                 case Some(utterance) => {
                   Some(IntercomActor.PartnerUtteranceMsg(utterance))
                 }
@@ -181,11 +198,12 @@ class TopicDispatcher(
       "Well, " + currentPerson + ", it has been nice chatting with you!"))
   }
 
-  override def consumeUtterance(utterance : String, personName : String) =
+  override def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext) =
   {
     subTopic match {
       case Some(topic) => topic.consumeUtterance(
-        utterance, personName)
+        utterance, personName, context)
       case _ => {
         if (personName.isEmpty && currentPerson.isEmpty) {
           response = "Sorry, I don't recognize your voice."
@@ -199,7 +217,7 @@ class TopicDispatcher(
             case Some(topic) => {
               // FIXME what if they start out with message
               // instead of utterance?
-              topic.produceUtterance match {
+              topic.produceUtterance(context) match {
                 case Some(utterance) => {
                   response = {
                     utterance
@@ -227,7 +245,7 @@ abstract class NotificationTopic
 
   protected def getNotification() : String
 
-  override def produceUtterance() =
+  override def produceUtterance(context : ConversationContext) =
   {
     if (over) {
       None
@@ -237,7 +255,8 @@ abstract class NotificationTopic
     }
   }
 
-  override def consumeUtterance(utterance : String, personName : String)
+  override def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext)
   {
   }
 }
@@ -314,11 +333,16 @@ class PassiveTopic(name : String) extends ConversationTopic
 
   private var echo = ""
 
+  private var contextOpt : Option[ConversationContext] = None
+
+  private def getContext = contextOpt.getOrElse(NullConversationContext)
+
   override def getPriority() = ASAP
 
   override def isInProgress() : Boolean = !done
 
-  override def produceUtterance() = delegateToProduceMessage
+  override def produceUtterance(context : ConversationContext) =
+    delegateToProduceMessage(context)
 
   private val matcher = Seq[TopicMatcher](
     EmptyTopicMatcher,
@@ -331,7 +355,7 @@ class PassiveTopic(name : String) extends ConversationTopic
       "You are very welcome!"),
     ContainsTopicMatcher(
       Seq("motor function"),
-      "Okay."),
+      IntercomActor.StartAudioFileMsg("okay.mp3", false)),
     ContainsTopicMatcher(
       Seq("christmas"),
       IntercomActor.StartAudioFileMsg("JingleBells.mp3", true)),
@@ -372,6 +396,14 @@ class PassiveTopic(name : String) extends ConversationTopic
       Seq("alexa", "amazon"),
       IntercomActor.WakeAlexaMsg),
     ContainsTopicMatcher(
+      Seq("last thing I said", "what did I just say"),
+      getContext.getLastUtterance.map(_.text).getOrElse("nothing")),
+    ContainsTopicMatcher(
+      Seq("play back"),
+      IntercomActor.StartAudioFileMsg(
+        getContext.getLastUtterance.flatMap(_.audioFile).getOrElse("hodor.mp3"),
+        false)),
+    ContainsTopicMatcher(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),
     EchoTopicMatcher
@@ -379,22 +411,28 @@ class PassiveTopic(name : String) extends ConversationTopic
     (a : TopicMatcher, b : TopicMatcher) => a orElse b
   }
 
-  override def produceMessage() =
+  override def produceMessage(context : ConversationContext) =
   {
-    val response = matcher.lift(echo)
-    if (response.isEmpty) {
-      done = true
-      None
-    } else {
-      val (msg, finished) = response.get
-      if (finished) {
+    contextOpt = Some(context)
+    try {
+      val response = matcher.lift(echo)
+      if (response.isEmpty) {
         done = true
+        None
+      } else {
+        val (msg, finished) = response.get
+        if (finished) {
+          done = true
+        }
+        Some(msg)
       }
-      Some(msg)
+    } finally {
+      contextOpt = None
     }
   }
 
-  def consumeUtterance(utterance : String, personName : String) =
+  def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext) =
   {
     echo = utterance.toLowerCase
   }
@@ -409,9 +447,10 @@ class EchoLoop extends ConversationTopic
 
   override def isInProgress() : Boolean = !done
 
-  override def produceUtterance() = delegateToProduceMessage
+  override def produceUtterance(context : ConversationContext) =
+    delegateToProduceMessage(context)
 
-  override def produceMessage() =
+  override def produceMessage(context : ConversationContext) =
   {
     if (echo.isEmpty) {
       Some(
@@ -428,7 +467,8 @@ class EchoLoop extends ConversationTopic
     }
   }
 
-  def consumeUtterance(utterance : String, personName : String) =
+  def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext) =
   {
     echo = utterance.toLowerCase
   }
@@ -460,7 +500,7 @@ class VoiceIdentifier(residents : Seq[HomeResident])
 
   override def useVoiceIdentification() : Boolean = true
 
-  override def produceUtterance() =
+  override def produceUtterance(context : ConversationContext) =
   {
     if (counter == 0) {
       Some(
@@ -485,7 +525,8 @@ class VoiceIdentifier(residents : Seq[HomeResident])
     }
   }
 
-  def consumeUtterance(utterance : String, personName : String) =
+  def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext) =
   {
     lastUtterance = utterance
     lastPerson = personName

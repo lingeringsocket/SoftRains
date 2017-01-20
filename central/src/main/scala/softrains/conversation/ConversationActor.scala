@@ -47,12 +47,15 @@ import ConversationActor._
 import CommunicationPriority._
 
 class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
+    with ConversationContext
 {
   import IntercomActor._
 
   private val settings = SoftRainsActorSettings(context)
 
   private var currentTranscript : Option[ConversationTranscript] = None
+
+  private var lastUtterance : Option[ConversationUtterance] = None
 
   startWith(Inactive, Empty)
 
@@ -100,7 +103,10 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   }
 
   when(Paired) {
-    case Event(SpeakerSoundFinishedMsg, ConvoData(topic)) => {
+    case Event(SpeakerSoundFinishedMsg(fileOpt), ConvoData(topic)) => {
+      lastUtterance.foreach(utterance => {
+        db.save(utterance.copy(audioFile = fileOpt))
+      })
       if (topic.isInProgress) {
         sender ! PartnerListenMsg(
           topic.getPersonName, topic.useVoiceIdentification)
@@ -115,23 +121,23 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       sender ! UnpairMsg
       goto(Inactive) using Empty
     }
-    case Event(PersonUtteranceMsg(utterance, personName),
+    case Event(PersonUtteranceMsg(utterance, personName, audioFile),
       ConvoData(topic)) =>
     {
       // FIXME: pass real start time of utterance as part of
       // PersonUtteranceMsg, making sure clocks are synchronized
       currentTranscript.foreach(transcript =>
-        db.save(ConversationUtterance(
-          transcript, readClockTime, personName, utterance)))
-      topic.consumeUtterance(utterance, personName)
-      topic.produceMessage match {
+        lastUtterance = Some(db.save(ConversationUtterance(
+          transcript, readClockTime, personName, utterance, audioFile))))
+      topic.consumeUtterance(utterance, personName, getConversationContext)
+      topic.produceMessage(getConversationContext) match {
         case Some(reply) => {
           // FIXME:  use correct voice name
           currentTranscript.foreach(transcript =>
             reply match {
               case PartnerUtteranceMsg(utterance, _) => {
-                db.save(ConversationUtterance(
-                  transcript, readClockTime, "SoftRains", utterance))
+                lastUtterance = Some(db.save(ConversationUtterance(
+                  transcript, readClockTime, "SoftRains", utterance)))
               }
               case _ =>
             }
@@ -163,17 +169,22 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
     }
   }
 
+  private def getConversationContext = this
+
+  override def getLastUtterance : Option[ConversationUtterance] =
+    lastUtterance
+
   private def startConversation(
     topic : ConversationTopic, channel : ActorRef)
   {
     val startTime = readClockTime
     val transcript = db.save(ConversationTranscript(startTime))
     currentTranscript = Some(transcript)
-    topic.produceMessage.foreach({ msg =>
+    topic.produceMessage(getConversationContext).foreach({ msg =>
       msg match {
         case PartnerUtteranceMsg(utterance, _) => {
-          db.save(ConversationUtterance(
-            transcript, startTime, "SoftRains", utterance))
+          lastUtterance = Some(db.save(ConversationUtterance(
+            transcript, startTime, "SoftRains", utterance)))
         }
         case _ =>
       }
