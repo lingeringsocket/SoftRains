@@ -47,7 +47,7 @@ class ConversationSpec extends Specification
         Some("The house is on fire!"))
       dispatcher.consumeUtterance("Thanks for letting me know.")
       dispatcher.produceUtterance() must be equalTo(
-        Some("So, Ash, what is on your mind?"))
+        Some("So, what is on your mind?"))
       dispatcher.consumeUtterance("Goodbye")
       dispatcher.produceUtterance() must be equalTo(
         Some("Talk to you later!"))
@@ -80,7 +80,7 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "Your worst enemy", "Voldemort")
       dispatcher.produceUtterance() must be equalTo(
-        Some("So, Voldemort, what is on your mind?"))
+        Some("So, what is on your mind?"))
     }
 
     "dispatch to daily greeting" in
@@ -97,7 +97,7 @@ class ConversationSpec extends Specification
         Some("Good morning, Frodo!"))
       dispatcher.isInProgress must beTrue
       dispatcher.produceUtterance() must be equalTo(
-        Some("So, Frodo, what is on your mind?"))
+        Some("So, what is on your mind?"))
     }
 
     "dispatch to echo loop followed by voice identifier" in

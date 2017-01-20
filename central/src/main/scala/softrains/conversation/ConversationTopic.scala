@@ -282,9 +282,67 @@ class GenericGreeting
   }
 }
 
+class ContainsTopicMatcher(
+  phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg,
+  done : Boolean = false)
+    extends TopicMatcher
+{
+  override def isDefinedAt(input : String) = phrases.exists(
+    phrase => input.contains(phrase))
+
+  override def apply(input : String) = (response, done)
+}
+
+object ContainsTopicMatcher
+{
+  def apply(
+    phrases : Seq[String], response : String) =
+  {
+    new ContainsTopicMatcher(
+      phrases, IntercomActor.PartnerUtteranceMsg(response), false)
+  }
+
+  def apply(
+    phrases : Seq[String], response : String, done : Boolean) =
+  {
+    new ContainsTopicMatcher(
+      phrases, IntercomActor.PartnerUtteranceMsg(response), done)
+  }
+
+  def apply(
+    phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg) =
+  {
+    new ContainsTopicMatcher(phrases, response, false)
+  }
+
+  def apply(
+    phrases : Seq[String], response : IntercomActor.SpeakerSoundMsg,
+    done : Boolean) =
+  {
+    new ContainsTopicMatcher(phrases, response, done)
+  }
+}
+
+object EmptyTopicMatcher extends TopicMatcher
+{
+  override def isDefinedAt(input : String) = input.isEmpty
+
+  override def apply(input : String) =
+    (IntercomActor.PartnerUtteranceMsg("So, what is on your mind?"), false)
+}
+
+object EchoTopicMatcher extends TopicMatcher
+{
+  override def isDefinedAt(input : String) = true
+
+  override def apply(input : String) =
+    (IntercomActor.PartnerUtteranceMsg("I think you said, " + input), false)
+}
+
 class PassiveTopic(name : String) extends ConversationTopic
 {
   private var done = false
+
   private var echo = ""
 
   override def getPriority() = ASAP
@@ -293,58 +351,77 @@ class PassiveTopic(name : String) extends ConversationTopic
 
   override def produceUtterance() = delegateToProduceMessage
 
+  private val matcher = Seq[TopicMatcher](
+    EmptyTopicMatcher,
+    ContainsTopicMatcher(
+      Seq("goodbye", "good bye"),
+      "Talk to you later!",
+      true),
+    ContainsTopicMatcher(
+      Seq("thanks", "thank you"),
+      "You are very welcome!"),
+    ContainsTopicMatcher(
+      Seq("motor function"),
+      "Okay."),
+    ContainsTopicMatcher(
+      Seq("christmas"),
+      IntercomActor.StartAudioFileMsg("JingleBells.mp3", true)),
+    ContainsTopicMatcher(
+      Seq("new year"),
+      IntercomActor.StartAudioFileMsg("AuldLangSyne.mp3", false),
+      true),
+    ContainsTopicMatcher(
+      Seq("poem", "story"),
+      IntercomActor.StartAudioFileMsg("nicholas.wav", false),
+      true),
+    ContainsTopicMatcher(
+      Seq("hodor", "hold the door"),
+      IntercomActor.StartAudioFileMsg("hodor.mp3", false)),
+    ContainsTopicMatcher(
+      Seq("ring the bell", "big ben", "ding dong", "knock knock",
+        "anybody home"),
+      IntercomActor.DoorbellMsg),
+    ContainsTopicMatcher(
+      Seq("michael", "mike"),
+      IntercomActor.PartnerUtteranceMsg(
+        "Well hello there!", "en-US_MichaelVoice")),
+    ContainsTopicMatcher(
+      Seq("allison", "alley"),
+      IntercomActor.PartnerUtteranceMsg(
+        "At your service!", "en-US_AllisonVoice")),
+    ContainsTopicMatcher(
+      Seq("allison", "alley"),
+      IntercomActor.PartnerUtteranceMsg(
+        "My name is Lisa and I am a recovering alcoholic.",
+        "en-US_LisaVoice")),
+    ContainsTopicMatcher(
+      Seq("kate", "england", "britain", "british", "english"),
+      IntercomActor.PartnerUtteranceMsg(
+        "Blimey, would you like to try the bangers and mash?",
+        "en-GB_KateVoice")),
+    ContainsTopicMatcher(
+      Seq("alexa", "amazon"),
+      IntercomActor.WakeAlexaMsg),
+    ContainsTopicMatcher(
+      Seq("stop", "quiet", "silen"),
+      IntercomActor.StopAudioFileMsg),
+    EchoTopicMatcher
+  ).reduce {
+    (a : TopicMatcher, b : TopicMatcher) => a orElse b
+  }
+
   override def produceMessage() =
   {
-    if (echo.isEmpty) {
-      Some(
-        IntercomActor.PartnerUtteranceMsg(
-          "So, " + name + ", what is on your mind?"))
+    val response = matcher.lift(echo)
+    if (response.isEmpty) {
+      done = true
+      None
     } else {
-      if ((echo.contains("goodbye")) || (echo.contains("good bye"))) {
+      val (msg, finished) = response.get
+      if (finished) {
         done = true
-        Some(IntercomActor.PartnerUtteranceMsg("Talk to you later!"))
-      } else if (echo.contains("thank you")) {
-        Some(IntercomActor.PartnerUtteranceMsg("You are very welcome!"))
-      } else if (echo.contains("motor function")) {
-        Some(IntercomActor.PartnerUtteranceMsg("Okay."))
-      } else if (echo.contains("christmas")) {
-        done = true
-        Some(IntercomActor.StartAudioFileMsg("JingleBells.mp3", true))
-      } else if (echo.contains("new year")) {
-        done = true
-        Some(IntercomActor.StartAudioFileMsg("AuldLangSyne.mp3", true))
-      } else if (echo.contains("story")) {
-        done = true
-        Some(IntercomActor.StartAudioFileMsg("nicholas.wav", false))
-      } else if (echo.contains("hodor") || echo.contains("hold the door")) {
-        Some(IntercomActor.StartAudioFileMsg("hodor.mp3", false))
-      } else if ((echo == "ring the bell") || (echo == "big ben") ||
-        (echo == "ding dong") || (echo == "knock knock"))
-      {
-        Some(IntercomActor.DoorbellMsg)
-      } else if (echo.contains("michael")) {
-        Some(IntercomActor.PartnerUtteranceMsg(
-          "Well hello there!", "en-US_MichaelVoice"))
-      } else if (echo.contains("allison")) {
-        Some(IntercomActor.PartnerUtteranceMsg(
-          "At your service!", "en-US_AllisonVoice"))
-      } else if (echo.contains("lisa")) {
-        Some(IntercomActor.PartnerUtteranceMsg(
-          "My name is Lisa and I am a recovering alcoholic.",
-          "en-US_LisaVoice"))
-      } else if (echo.contains("kate")) {
-        Some(IntercomActor.PartnerUtteranceMsg(
-          "Blimey, would you like to try the bangers and mash?",
-          "en-GB_KateVoice"))
-      } else if (echo.contains("alexa") || echo.contains("amazon")) {
-        Some(IntercomActor.WakeAlexaMsg)
-      } else if (echo.contains("stop") || echo.contains("quiet") ||
-        echo.contains("silen"))
-      {
-        Some(IntercomActor.StopAudioFileMsg)
-      } else {
-        Some(IntercomActor.PartnerUtteranceMsg("I think you said, " + echo))
       }
+      Some(msg)
     }
   }
 

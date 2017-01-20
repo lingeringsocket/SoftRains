@@ -66,7 +66,7 @@ class ConversationActorSpec
 
     "have a two-way conversation" in new AkkaActorExample
     {
-      val utterance0 = "So, Typhlosion, what is on your mind?"
+      val utterance0 = "So, what is on your mind?"
       val utterance1 = "Goodbye"
       val utterance2 = "Talk to you later!"
 
