@@ -22,6 +22,8 @@ import scala.sys.process._
 
 import org.joda.time.Seconds
 
+import java.io._
+
 object IntercomActor
 {
   val PROTOCOL_ALREADY_PAIRED = "already paired"
@@ -288,7 +290,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       sender ! SpeakerSoundFinishedMsg()
       stay
     }
-    case Event(StartAudioFileMsg(file, loop),
+    case Event(StartAudioFileMsg(fileName, loop),
       Partner(partner, voice, background)) =>
     {
       background match {
@@ -304,7 +306,15 @@ class IntercomActor extends LoggingFSM[State, Data]
           settings.Speaker.playFileCommand
         }
       }
-      val process = command.format(file).run
+      val absoluteFile = {
+        val file = new File(fileName)
+        if (file.isAbsolute) {
+          file
+        } else {
+          new File(settings.Speaker.soundPath, fileName)
+        }
+      }
+      val process = command.format(absoluteFile).run
       stay using Partner(partner, voice, Some(process))
     }
     case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {

@@ -109,6 +109,7 @@ class SoftRainsSettings(rootConf : Config)
     val sleepCommand = subConf.getString("sleep-command")
     val wakeCommand = subConf.getString("wake-command")
     val sleepTimeout = getMillis(subConf, "sleep-timeout")
+    val soundPath = new File(subConf.getString("sound-path")).getAbsoluteFile
   }
 
   object Files
