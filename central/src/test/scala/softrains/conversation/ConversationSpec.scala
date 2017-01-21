@@ -98,6 +98,10 @@ class ConversationSpec extends Specification
       dispatcher.isInProgress must beTrue
       dispatcher.produceUtterance() must be equalTo(
         Some("So, what is on your mind?"))
+      dispatcher.consumeUtterance(
+        "Thank you very much")
+      dispatcher.produceUtterance() must be equalTo(
+        Some("You are very welcome!"))
     }
 
     "dispatch to echo loop followed by voice identifier" in

@@ -277,8 +277,6 @@ class CentralService(
 
   override def getDatabase = db
 
-  override def getLastUtterance = None
-
   private def startConversation()
   {
     val httpConsumer = new HttpConsumer(getActorSystem)

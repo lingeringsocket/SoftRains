@@ -53,9 +53,11 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 
   private val settings = SoftRainsActorSettings(context)
 
-  private var currentTranscript : Option[ConversationTranscript] = None
+  private var currentTranscript
+      : Option[ConversationTranscript with sorm.Persisted] = None
 
-  private var lastUtterance : Option[ConversationUtterance] = None
+  private var lastUtterance
+      : Option[ConversationUtterance] = None
 
   startWith(Inactive, Empty)
 
@@ -65,6 +67,7 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
         db.save(transcript.copy(endTime = Some(readClockTime)))
       })
       currentTranscript = None
+      lastUtterance = None
     }
   }
 
@@ -177,8 +180,7 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 
   override def getDatabase = db
 
-  override def getLastUtterance : Option[ConversationUtterance] =
-    lastUtterance
+  override def getTranscript = currentTranscript
 
   private def startConversation(
     topic : ConversationTopic, channel : ActorRef)

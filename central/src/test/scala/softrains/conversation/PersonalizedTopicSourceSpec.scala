@@ -65,18 +65,28 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
       val context = new PersonalizedConversationContext(system, settings)
       val source = new PersonalizedTopicSource
 
-      val lastTime = new DateTime(2017, 1, 20, 10, 0, 0)
+      val prevTime = new DateTime(2017, 1, 20, 10, 0, 0)
+      val lastTime = new DateTime(2017, 1, 20, 10, 0, 1)
       val nearTime = new DateTime(2017, 1, 20, 10, 15, 0)
       val farTime = new DateTime(2017, 1, 20, 16, 15, 0)
+
+      val db = context.getDatabase
+      val transcript = db.save(ConversationTranscript(lastTime))
+      context.setTranscript(transcript)
 
       context.setTime(nearTime)
       source.generateGreeting(context) must be equalTo
         "Good morning, Stranger! Thank God it's Friday!"
 
-      val db = context.getDatabase
-      val transcript = db.save(ConversationTranscript(lastTime))
+      context.getPreviousUtteranceFor("Stranger") must beNone
+
       db.save(ConversationUtterance(
-          transcript, lastTime, "Stranger", "Yo"))
+          transcript, prevTime, "Stranger", "Yo"))
+      db.save(ConversationUtterance(
+          transcript, lastTime, "Stranger", "Dawg"))
+
+      context.getPreviousUtteranceFor("Stranger").map(_.text) must
+        beSome("Yo")
 
       source.generateGreeting(context) must be equalTo
         "Hello again, Stranger!"
@@ -93,6 +103,9 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
   {
     private val db = new CentralDb(settings)
 
+    private var transcriptOpt :
+        Option[ConversationTranscript with sorm.Persisted] = None
+
     private var currentTime = readClockTime
 
     override def getActorSystem = system
@@ -103,11 +116,17 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
 
     override def getCurrentTime = currentTime
 
-    override def getLastUtterance = None
+    override def getTranscript = transcriptOpt
 
     def setTime(newTime : DateTime)
     {
       currentTime = newTime
+    }
+
+    def setTranscript(
+      newTranscript : ConversationTranscript with sorm.Persisted)
+    {
+      transcriptOpt = Some(newTranscript)
     }
   }
 }

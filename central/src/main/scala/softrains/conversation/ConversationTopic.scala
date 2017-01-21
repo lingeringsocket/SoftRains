@@ -34,7 +34,29 @@ trait ConversationContext
 
   def getCurrentTime : DateTime = readClockTime
 
-  def getLastUtterance : Option[ConversationUtterance]
+  def getTranscript :
+      Option[ConversationTranscript with sorm.Persisted] = None
+
+  def getPreviousUtteranceFor(personName : String) :
+      Option[ConversationUtterance] =
+  {
+    getTranscript match {
+      case Some(transcript) => {
+        val utterances = getDatabase.query[ConversationUtterance].
+          whereEqual("transcript.id", transcript.id).
+          whereEqual("person", personName).
+          order("startTime", true).
+          limit(2).
+          fetch
+        if (utterances.size < 2) {
+          None
+        } else {
+          Some(utterances(1))
+        }
+      }
+      case _ => None
+    }
+  }
 }
 
 object NullConversationContext extends ConversationContext
@@ -49,8 +71,6 @@ object NullConversationContext extends ConversationContext
   override def getSettings = unsupported
 
   override def getDatabase = unsupported
-
-  override def getLastUtterance : Option[ConversationUtterance] = None
 }
 
 abstract class ConversationTopic
@@ -424,12 +444,14 @@ class PassiveTopic(name : String) extends ConversationTopic
       Seq("alexa", "amazon"),
       IntercomActor.WakeAlexaMsg),
     ContainsTopicMatcher.string(
-      Seq("last thing I said", "what did I just say"),
-      getContext.getLastUtterance.map(_.text).getOrElse("nothing")),
+      Seq("last thing i said", "what did i just say"),
+      getContext.getPreviousUtteranceFor(name).
+        map(_.text).getOrElse("nothing")),
     ContainsTopicMatcher.message(
-      Seq("play back"),
+      Seq("mimic", "parrot"),
       IntercomActor.StartAudioFileMsg(
-        getContext.getLastUtterance.flatMap(_.audioFile).getOrElse("hodor.mp3"),
+        getContext.getPreviousUtteranceFor(name).
+          flatMap(_.audioFile).getOrElse("hodor.mp3"),
         false)),
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
