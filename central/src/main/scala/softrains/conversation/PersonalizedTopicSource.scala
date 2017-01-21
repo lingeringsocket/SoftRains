@@ -70,7 +70,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
       }
     }
     val currentTime = context.getCurrentTime
-    val localTime = currentTime.toLocalDateTime
+    val localTime = currentTime.toDateTime(DateTimeZone.getDefault)
     var omitExtended = false
     val utteranceOpt =
       context.getDatabase.query[ConversationUtterance].
