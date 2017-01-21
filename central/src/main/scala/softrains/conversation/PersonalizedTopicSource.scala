@@ -59,6 +59,11 @@ class PersonalizedTopicSource extends ConversationTopicSource
 
   def isExhausted = iterator.isEmpty
 
+  private def toDayStart(dateTime : DateTime) =
+  {
+    dateTime.toDateTime(DateTimeZone.getDefault).withTimeAtStartOfDay
+  }
+
   def generateGreeting(
     context : ConversationContext) : String =
   {
@@ -79,8 +84,8 @@ class PersonalizedTopicSource extends ConversationTopicSource
     val (recent, spokeToday) = utteranceOpt match {
       case Some(utterance) => {
         (utterance.startTime.isAfter(currentTime.minusMinutes(30)),
-          utterance.startTime.minusHours(5).toLocalDate.equals(
-            currentTime.toLocalDate))
+          toDayStart(utterance.startTime.minusHours(5)).equals(
+            toDayStart(currentTime)))
       }
       case _ => (false, false)
     }
