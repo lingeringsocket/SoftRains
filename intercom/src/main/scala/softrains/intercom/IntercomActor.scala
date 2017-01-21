@@ -66,6 +66,8 @@ object IntercomActor
       extends SpeakerSoundMsg
   case object DoorbellMsg
       extends SpeakerSoundMsg
+  final case class PlayAudioFileMsg(audioFile : String)
+      extends SpeakerSoundMsg
   final case class StartAudioFileMsg(audioFile : String, loop : Boolean)
       extends SpeakerSoundMsg
   case object StopAudioFileMsg
@@ -172,6 +174,16 @@ class IntercomActor extends LoggingFSM[State, Data]
         log.info("Unable to say '" + utterance + "' using voice " + voice)
         partner ! SpeakerSoundFinishedMsg()
       }
+    }
+  }
+
+  private def getAbsoluteFile(fileName : String) =
+  {
+    val file = new File(fileName)
+    if (file.isAbsolute) {
+      file
+    } else {
+      new File(settings.Speaker.soundPath, fileName)
     }
   }
 
@@ -293,12 +305,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     case Event(StartAudioFileMsg(fileName, loop),
       Partner(partner, voice, background)) =>
     {
-      background match {
-        case Some(process) => {
-          process.destroy
-        }
-        case _ =>
-      }
+      background.foreach(_.destroy)
       val command = {
         if (loop) {
           settings.Speaker.loopFileCommand
@@ -306,16 +313,19 @@ class IntercomActor extends LoggingFSM[State, Data]
           settings.Speaker.playFileCommand
         }
       }
-      val absoluteFile = {
-        val file = new File(fileName)
-        if (file.isAbsolute) {
-          file
-        } else {
-          new File(settings.Speaker.soundPath, fileName)
-        }
-      }
+      val absoluteFile = getAbsoluteFile(fileName)
       val process = command.format(absoluteFile).run
       stay using Partner(partner, voice, Some(process))
+    }
+    case Event(PlayAudioFileMsg(fileName),
+      Partner(partner, voice, background)) =>
+    {
+      background.foreach(_.destroy)
+      val command = settings.Speaker.playFileCommand
+      val absoluteFile = getAbsoluteFile(fileName)
+      command.format(absoluteFile).!
+      sender ! SpeakerSoundFinishedMsg()
+      stay using Partner(partner, voice, None)
     }
     case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {
       background match {

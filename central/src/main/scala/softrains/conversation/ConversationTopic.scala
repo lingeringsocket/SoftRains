@@ -403,7 +403,7 @@ class PassiveTopic(name : String) extends ConversationTopic
       "You are very welcome!"),
     ContainsTopicMatcher.message(
       Seq("motor function"),
-      IntercomActor.StartAudioFileMsg("okay.mp3", false)),
+      IntercomActor.PlayAudioFileMsg("okay.mp3")),
     ContainsTopicMatcher.message(
       Seq("christmas"),
       IntercomActor.StartAudioFileMsg("JingleBells.mp3", true)),
@@ -417,7 +417,7 @@ class PassiveTopic(name : String) extends ConversationTopic
       true),
     ContainsTopicMatcher.message(
       Seq("hodor", "hold the door"),
-      IntercomActor.StartAudioFileMsg("hodor.mp3", false)),
+      IntercomActor.PlayAudioFileMsg("hodor.mp3")),
     ContainsTopicMatcher.message(
       Seq("ring the bell", "big ben", "ding dong", "knock knock",
         "anybody home"),
@@ -449,10 +449,9 @@ class PassiveTopic(name : String) extends ConversationTopic
         map(_.text).getOrElse("nothing")),
     ContainsTopicMatcher.message(
       Seq("mimic", "parrot"),
-      IntercomActor.StartAudioFileMsg(
+      IntercomActor.PlayAudioFileMsg(
         getContext.getPreviousUtteranceFor(name).
-          flatMap(_.audioFile).getOrElse("hodor.mp3"),
-        false)),
+          flatMap(_.audioFile).getOrElse("hodor.mp3"))),
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),
