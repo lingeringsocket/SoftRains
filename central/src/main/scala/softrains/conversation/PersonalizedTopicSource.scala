@@ -70,6 +70,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
       }
     }
     val currentTime = context.getCurrentTime
+    val localTime = currentTime.toLocalDateTime
     var omitExtended = false
     val utteranceOpt =
       context.getDatabase.query[ConversationUtterance].
@@ -88,7 +89,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
         omitExtended = true
         "Hello again, " + name + "!"
       } else {
-        val hour = currentTime.hourOfDay.get
+        val hour = localTime.hourOfDay.get
         if (hour < 3) {
           omitExtended = true
           name + ", shouldn't you be in bed?"
@@ -101,7 +102,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
         }
       }
     }
-    def dayOfWeek = currentTime.dayOfWeek
+    def dayOfWeek = localTime.dayOfWeek
     def extendedGreeting = dayOfWeek.get match {
       case DateTimeConstants.MONDAY => "Ready for another week?"
       case DateTimeConstants.WEDNESDAY => "Today is Hump Day!"
