@@ -19,3 +19,4 @@ scalastyleFailOnError := true
 enablePlugins(JavaAppPackaging)
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()

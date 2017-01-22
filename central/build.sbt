@@ -29,3 +29,4 @@ parallelExecution in Test := false
 enablePlugins(JavaAppPackaging)
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()

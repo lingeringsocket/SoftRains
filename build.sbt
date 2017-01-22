@@ -28,3 +28,4 @@ lazy val root = (project in file(".")).aggregate(
   base, intercom, vision, kiosk, central)
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()

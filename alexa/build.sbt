@@ -25,3 +25,4 @@ enablePlugins(JavaAppPackaging)
 enablePlugins(JettyAlpn)
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()

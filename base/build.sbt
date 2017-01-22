@@ -26,3 +26,4 @@ libraryDependencies ++= Common.specs2Deps
 libraryDependencies ++= Common.akkaDeps
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()

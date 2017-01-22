@@ -23,3 +23,4 @@ libraryDependencies ++= Seq(
 )
 
 mappings in (Compile, packageDoc) := Seq()
+mappings in (Compile, packageSrc) := Seq()
