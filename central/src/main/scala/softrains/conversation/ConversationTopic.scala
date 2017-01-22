@@ -37,24 +37,17 @@ trait ConversationContext
   def getTranscript :
       Option[ConversationTranscript with sorm.Persisted] = None
 
-  def getPreviousUtteranceFor(personName : String) :
-      Option[ConversationUtterance] =
+  def getUtterances() :
+      Seq[ConversationUtterance] =
   {
     getTranscript match {
       case Some(transcript) => {
-        val utterances = getDatabase.query[ConversationUtterance].
+        getDatabase.query[ConversationUtterance].
           whereEqual("transcript.id", transcript.id).
-          whereEqual("person", personName).
-          order("startTime", true).
-          limit(2).
+          order("startTime").
           fetch
-        if (utterances.size < 2) {
-          None
-        } else {
-          Some(utterances(1))
-        }
       }
-      case _ => None
+      case _ => Seq.empty
     }
   }
 }
@@ -430,14 +423,14 @@ class PassiveTopic(name : String) extends ConversationTopic
         IntercomActor.PartnerUtteranceMsg(
           "Well hello there!", "en-US_MichaelVoice")))),
     ContainsTopicMatcher.message(
-      Seq("allison", "alley"),
+      Seq("allison", "alley", "ally"),
       IntercomActor.SpeakerSoundSeqMsg(Seq(
         IntercomActor.PartnerUtteranceMsg(
           "I'll put you through,,,"),
         IntercomActor.PartnerUtteranceMsg(
           "At your service!", "en-US_AllisonVoice")))),
     ContainsTopicMatcher.message(
-      Seq("allison", "alley"),
+      Seq("lisa"),
       IntercomActor.SpeakerSoundSeqMsg(Seq(
         IntercomActor.PartnerUtteranceMsg(
           "Just a moment,,,"),
@@ -454,16 +447,16 @@ class PassiveTopic(name : String) extends ConversationTopic
           "en-GB_KateVoice")))),
     ContainsTopicMatcher.message(
       Seq("alexa", "amazon"),
-      IntercomActor.WakeAlexaMsg),
-    ContainsTopicMatcher.string(
-      Seq("last thing i said", "what did i just say"),
-      getContext.getPreviousUtteranceFor(name).
-        map(_.text).getOrElse("nothing")),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "OK, fine,,,"),
+        IntercomActor.WakeAlexaMsg))),
     ContainsTopicMatcher.message(
-      Seq("mimic", "parrot"),
-      IntercomActor.PlayAudioFileMsg(
-        getContext.getPreviousUtteranceFor(name).
-          flatMap(_.audioFile).getOrElse("hodor.mp3"))),
+      Seq("play back", "play it back"),
+      IntercomActor.SpeakerSoundSeqMsg(
+        getContext.getUtterances().map(utterance =>
+          IntercomActor.PlayAudioFileMsg(
+            utterance.audioFile.getOrElse("hodor.mp3"))))),
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),

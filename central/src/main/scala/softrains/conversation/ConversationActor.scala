@@ -214,6 +214,7 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       case PartnerUtteranceMsg(utterance, _) => {
         saveUtterance("SoftRains", utterance)
       }
+      case _ =>
     }
     sender ! reply
   }

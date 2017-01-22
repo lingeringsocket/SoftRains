@@ -78,15 +78,16 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
       source.generateGreeting(context) must be equalTo
         "Good morning, Stranger! Thank God it's Friday!"
 
-      context.getPreviousUtteranceFor("Stranger") must beNone
+      context.getUtterances() must beEmpty
 
       db.save(ConversationUtterance(
           transcript, prevTime, "Stranger", "Yo"))
       db.save(ConversationUtterance(
           transcript, lastTime, "Stranger", "Dawg"))
 
-      context.getPreviousUtteranceFor("Stranger").map(_.text) must
-        beSome("Yo")
+      context.getUtterances().map(_.text) must be equalTo Seq(
+        "Yo",
+        "Dawg")
 
       source.generateGreeting(context) must be equalTo
         "Hello again, Stranger!"
