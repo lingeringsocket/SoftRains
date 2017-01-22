@@ -81,14 +81,11 @@ class ConversationActorSpec
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
       expectMsg(PartnerUtteranceMsg(utterance2))
+      actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
       db.query[ConversationTranscript].fetch.size must be equalTo 1
       db.query[ConversationUtterance].fetch.size must be equalTo 3
-
-      val transcript = db.query[ConversationTranscript].fetchOne.get
-      transcript.endTime must beSome
-      transcript.endTime.get must beGreaterThan(transcript.startTime)
 
       val utterances =
         db.query[ConversationUtterance].order("startTime").fetch
@@ -96,6 +93,40 @@ class ConversationActorSpec
         utterance0,
         utterance1,
         utterance2)
+    }
+
+    "process a compound reply" in new AkkaActorExample
+    {
+      val utterance0 = "So, what is on your mind?"
+      val utterance1 = "I want to talk to Kate."
+      val utterance2 = "Please wait half a second,,,"
+      val utterance3 = "Blimey, would you like to try the bangers and mash?"
+
+      val db = new CentralDb(settings)
+      val actor = system.actorOf(Props(classOf[ConversationActor], db))
+      val greeting = new PassiveTopic(typhlosion.name)
+      actor ! ActivateMsg(greeting, self)
+      expectMsg(PairRequestMsg)
+      actor ! PairAcceptedMsg
+      expectMsg(PartnerUtteranceMsg(utterance0))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerListenMsg("", false))
+      actor ! PersonUtteranceMsg(utterance1, "")
+      expectMsg(PartnerUtteranceMsg(utterance2))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerUtteranceMsg(utterance3, "en-GB_KateVoice"))
+      actor ! SpeakerSoundFinishedMsg()
+
+      db.query[ConversationTranscript].fetch.size must be equalTo 1
+      db.query[ConversationUtterance].fetch.size must be equalTo 4
+
+      val utterances =
+        db.query[ConversationUtterance].order("startTime").fetch
+      utterances.map(_.text).toSeq must be equalTo immutable.Seq(
+        utterance0,
+        utterance1,
+        utterance2,
+        utterance3)
     }
   }
 }

@@ -72,6 +72,10 @@ object IntercomActor
       extends SpeakerSoundMsg
   case object StopAudioFileMsg
       extends SpeakerSoundMsg
+  // not actually received directly
+  final case class SpeakerSoundSeqMsg(
+    seq : Seq[SpeakerSoundMsg])
+      extends SpeakerSoundMsg
 
   // sent messages (to partner)
   case object BusyMsg
@@ -315,6 +319,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       }
       val absoluteFile = getAbsoluteFile(fileName)
       val process = command.format(absoluteFile).run
+      sender ! SpeakerSoundFinishedMsg()
       stay using Partner(partner, voice, Some(process))
     }
     case Event(PlayAudioFileMsg(fileName),
@@ -328,6 +333,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       stay using Partner(partner, voice, None)
     }
     case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {
+      sender ! SpeakerSoundFinishedMsg()
       background match {
         case Some(process) => {
           process.destroy

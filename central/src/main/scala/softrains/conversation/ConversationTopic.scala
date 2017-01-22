@@ -424,22 +424,34 @@ class PassiveTopic(name : String) extends ConversationTopic
       IntercomActor.DoorbellMsg),
     ContainsTopicMatcher.message(
       Seq("michael", "mike"),
-      IntercomActor.PartnerUtteranceMsg(
-        "Well hello there!", "en-US_MichaelVoice")),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "Transferring,,,"),
+        IntercomActor.PartnerUtteranceMsg(
+          "Well hello there!", "en-US_MichaelVoice")))),
     ContainsTopicMatcher.message(
       Seq("allison", "alley"),
-      IntercomActor.PartnerUtteranceMsg(
-        "At your service!", "en-US_AllisonVoice")),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "I'll put you through,,,"),
+        IntercomActor.PartnerUtteranceMsg(
+          "At your service!", "en-US_AllisonVoice")))),
     ContainsTopicMatcher.message(
       Seq("allison", "alley"),
-      IntercomActor.PartnerUtteranceMsg(
-        "My name is Lisa and I am a recovering alcoholic.",
-        "en-US_LisaVoice")),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "Just a moment,,,"),
+        IntercomActor.PartnerUtteranceMsg(
+          "My name is Lisa and I am a recovering alcoholic.",
+          "en-US_LisaVoice")))),
     ContainsTopicMatcher.message(
       Seq("kate", "england", "britain", "british", "english"),
-      IntercomActor.PartnerUtteranceMsg(
-        "Blimey, would you like to try the bangers and mash?",
-        "en-GB_KateVoice")),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "Please wait half a second,,,"),
+        IntercomActor.PartnerUtteranceMsg(
+          "Blimey, would you like to try the bangers and mash?",
+          "en-GB_KateVoice")))),
     ContainsTopicMatcher.message(
       Seq("alexa", "amazon"),
       IntercomActor.WakeAlexaMsg),

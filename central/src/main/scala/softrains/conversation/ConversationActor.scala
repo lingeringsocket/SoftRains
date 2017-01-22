@@ -27,6 +27,9 @@ object ConversationActor
     topic : ConversationTopic, channel : ActorRef)
       extends SoftRainsMsg
 
+  // sent messages
+  // see IntercomActor received messages
+
   sealed trait State
   sealed trait Data
 
@@ -40,7 +43,8 @@ object ConversationActor
     topic : ConversationTopic, channel : ActorRef)
       extends Data
   final case class ConvoData(
-    topic : ConversationTopic)
+    topic : ConversationTopic,
+    replies : Iterator[IntercomActor.SpeakerSoundMsg] = Iterator.empty)
       extends Data
 }
 import ConversationActor._
@@ -106,17 +110,25 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   }
 
   when(Paired) {
-    case Event(SpeakerSoundFinishedMsg(fileOpt), ConvoData(topic)) => {
-      lastUtterance.foreach(utterance => {
-        db.save(utterance.copy(audioFile = fileOpt))
-      })
-      if (topic.isInProgress) {
-        sender ! PartnerListenMsg(
-          topic.getPersonName, topic.useVoiceIdentification)
+    case Event(SpeakerSoundFinishedMsg(fileOpt), ConvoData(topic, replies)) => {
+      if (!fileOpt.isEmpty) {
+        lastUtterance.foreach(utterance => {
+          db.save(utterance.copy(audioFile = fileOpt))
+        })
+      }
+      if (replies.hasNext) {
+        val reply = replies.next
+        sendReply(reply)
         stay
       } else {
-        sender ! UnpairMsg
-        goto(Inactive) using Empty
+        if (topic.isInProgress) {
+          sender ! PartnerListenMsg(
+            topic.getPersonName, topic.useVoiceIdentification)
+          stay
+        } else {
+          sender ! UnpairMsg
+          goto(Inactive) using Empty
+        }
       }
     }
     case Event(SilenceMsg, _) => {
@@ -125,40 +137,26 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       goto(Inactive) using Empty
     }
     case Event(PersonUtteranceMsg(utterance, personName, audioFile),
-      ConvoData(topic)) =>
+      ConvoData(topic, _)) =>
     {
       // FIXME: pass real start time of utterance as part of
       // PersonUtteranceMsg, making sure clocks are synchronized
-      currentTranscript.foreach(transcript =>
-        lastUtterance = Some(db.save(ConversationUtterance(
-          transcript, readClockTime, personName, utterance, audioFile))))
+      saveUtterance(personName, utterance, audioFile)
       topic.consumeUtterance(utterance, personName, getConversationContext)
       topic.produceMessage(getConversationContext) match {
-        case Some(reply) => {
-          // FIXME:  use correct voice name
-          currentTranscript.foreach(transcript =>
-            reply match {
-              case PartnerUtteranceMsg(utterance, _) => {
-                lastUtterance = Some(db.save(ConversationUtterance(
-                  transcript, readClockTime, "SoftRains", utterance)))
-              }
-              case _ =>
-            }
-          )
-          sender ! reply
-          if (topic.isInProgress) {
-            reply match {
-              case StartAudioFileMsg(_,_) | StopAudioFileMsg => {
-                sender ! PartnerListenMsg(
-                  topic.getPersonName, topic.useVoiceIdentification)
-              }
-              case _ =>
-            }
-            stay
+        case Some(SpeakerSoundSeqMsg(seq)) => {
+          val replies = seq.iterator
+          if (replies.hasNext) {
+            sendReply(replies.next)
+            stay using ConvoData(topic, replies)
           } else {
             sender ! UnpairMsg
             goto(Inactive) using Empty
           }
+        }
+        case Some(reply) => {
+          sendReply(reply)
+          stay
         }
         case _ => {
           sender ! UnpairMsg
@@ -198,6 +196,26 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       }
       channel ! msg
     })
+  }
+
+  private def saveUtterance(
+    speakerName : String, utterance : String,
+    audioFile : Option[String] = None)
+  {
+    currentTranscript.foreach(transcript =>
+      lastUtterance = Some(db.save(ConversationUtterance(
+        transcript, readClockTime, speakerName, utterance, audioFile))))
+  }
+
+  private def sendReply(reply : SpeakerSoundMsg)
+  {
+    // FIXME:  use correct voice name
+    reply match {
+      case PartnerUtteranceMsg(utterance, _) => {
+        saveUtterance("SoftRains", utterance)
+      }
+    }
+    sender ! reply
   }
 
   initialize()
