@@ -63,6 +63,8 @@ class AlexaActor extends Actor
 
   private var maybeStop = false
 
+  private var expiryCancellable : Option[Cancellable] = None
+
   private var intercomActor : ActorRef = ActorRef.noSender
 
   private val clientFactory = new ClientFactory(deviceConfig)
@@ -126,13 +128,18 @@ class AlexaActor extends Actor
     controller.onUserActivity
     controller.stopRecording
     maybeStop = true
-    context.system.scheduler.scheduleOnce(5.seconds) {
-      self ! ExpiryMsg
-    }
+    expiryCancellable.foreach(_.cancel)
+    expiryCancellable = Some(
+      context.system.scheduler.scheduleOnce(5.seconds) {
+        self ! ExpiryMsg
+      }
+    )
   }
 
   override def onAlexaSpeechStarted()
   {
+    expiryCancellable.foreach(_.cancel)
+    expiryCancellable = None
     maybeStop = false
   }
 
