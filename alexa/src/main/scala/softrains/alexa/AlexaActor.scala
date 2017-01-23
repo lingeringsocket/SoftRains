@@ -18,10 +18,11 @@ import softrains.base._
 import softrains.intercom._
 
 import com.amazon.alexa.avs._
-import com.amazon.alexa.avs.config._
-import com.amazon.alexa.avs.http._
 import com.amazon.alexa.avs.auth._
 import com.amazon.alexa.avs.auth.companionservice._
+import com.amazon.alexa.avs.config._
+import com.amazon.alexa.avs.http._
+import com.amazon.alexa.avs.message.response.speechsynthesizer._
 import com.amazon.alexa.avs.wakeword._
 
 import org.eclipse.jetty.util.ssl._
@@ -65,7 +66,9 @@ class AlexaActor extends Actor
 
   private var expiryCancellable : Option[Cancellable] = None
 
-  private var intercomActor : ActorRef = ActorRef.noSender
+  private val intercomOff = ActorRef.noSender
+
+  private var intercomActor : ActorRef = intercomOff
 
   private val clientFactory = new ClientFactory(deviceConfig)
 
@@ -123,6 +126,9 @@ class AlexaActor extends Actor
 
   override def onStopCaptureDirective()
   {
+    if (isIntercomOff) {
+      return
+    }
     intercomActor ! IntercomActor.ListeningDoneMsg
     log.info("STOP CAPTURE")
     controller.onUserActivity
@@ -138,6 +144,9 @@ class AlexaActor extends Actor
 
   override def onAlexaSpeechStarted()
   {
+    if (isIntercomOff) {
+      return
+    }
     expiryCancellable.foreach(_.cancel)
     expiryCancellable = None
     maybeStop = false
@@ -145,6 +154,9 @@ class AlexaActor extends Actor
 
   override def onAlexaSpeechFinished()
   {
+    if (isIntercomOff) {
+      return
+    }
     startCapture
   }
 
@@ -189,10 +201,13 @@ class AlexaActor extends Actor
     case ExpiryMsg => {
       if (maybeStop) {
         intercomActor ! IntercomActor.AlexaFinishedMsg
+        intercomActor = intercomOff
         maybeStop = false
       }
     }
   }
+
+  private def isIntercomOff() = (intercomActor != intercomOff)
 
   class ClientFactory(config : DeviceConfig)
       extends AVSClientFactory(config)
@@ -219,7 +234,14 @@ class AlexaActor extends Actor
 
     override def getAudioPlayer(controller : AVSController) =
     {
-      val player = new AVSAudioPlayer(controller)
+      val player = new AVSAudioPlayer(controller) {
+        override def handleSpeak(speak : Speak)
+        {
+          if (!isIntercomOff) {
+            super.handleSpeak(speak)
+          }
+        }
+      }
       playerOpt = Some(player)
       player
     }

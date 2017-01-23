@@ -16,8 +16,16 @@ traceLevel := Common.traceLevel
 
 scalastyleFailOnError := true
 
+val alexaJavaClientVersion = {
+  if (System.getProperty("os.arch", "amd64").startsWith("arm")) {
+    "20160207.0"
+  } else {
+    "20160207.1"
+  }
+}
+
 libraryDependencies ++= Seq(
-  "com.amazon.alexa.avs" % "sample-java-client" % "20160207.0"
+  "com.amazon.alexa.avs" % "sample-java-client" % alexaJavaClientVersion
 )
 
 enablePlugins(JavaAppPackaging)
