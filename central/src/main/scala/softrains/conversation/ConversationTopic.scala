@@ -488,13 +488,14 @@ class PassiveTopic(name : String) extends ConversationTopic
         context.getActorSystem, context.getSettings)
       if (openhabPrivacy.getResidentPrivacy(resident)) {
         "I'm sorry, I am not at liberty to answer that right now."
-      }
-      val openhabPresence = new CentralOpenhab(
-        context.getActorSystem, context.getSettings)
-      if (openhabPresence.getResidentPresence(resident)) {
-        "I believe " + resident.name + " is currently at home."
       } else {
-        "I believe " + resident.name + " is currently away from home."
+        val openhabPresence = new CentralOpenhab(
+          context.getActorSystem, context.getSettings)
+        if (openhabPresence.getResidentPresence(resident)) {
+          "I believe " + resident.name + " is currently at home."
+        } else {
+          "I believe " + resident.name + " is currently away from home."
+        }
       }
     }
   }
