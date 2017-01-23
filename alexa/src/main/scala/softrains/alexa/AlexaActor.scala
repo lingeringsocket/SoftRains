@@ -207,7 +207,7 @@ class AlexaActor extends Actor
     }
   }
 
-  private def isIntercomOff() = (intercomActor != intercomOff)
+  private def isIntercomOff() = (intercomActor == intercomOff)
 
   class ClientFactory(config : DeviceConfig)
       extends AVSClientFactory(config)
