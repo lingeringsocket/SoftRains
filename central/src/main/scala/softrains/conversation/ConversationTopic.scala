@@ -26,6 +26,8 @@ import CommunicationPriority._
 
 trait ConversationContext
 {
+  private var person = ""
+
   def getActorSystem : ActorSystem
 
   def getSettings : SoftRainsSettings
@@ -49,6 +51,13 @@ trait ConversationContext
       }
       case _ => Seq.empty
     }
+  }
+
+  def getPerson() : String = person
+
+  def setPerson(name : String)
+  {
+    person = name
   }
 }
 
@@ -457,12 +466,37 @@ class PassiveTopic(name : String) extends ConversationTopic
         getContext.getUtterances().map(utterance =>
           IntercomActor.PlayAudioFileMsg(
             utterance.audioFile.getOrElse("hodor.mp3"))))),
+    ContainsTopicMatcher.string(
+      Seq("where is"),
+      checkPresence),
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),
     EchoTopicMatcher
   ).reduce {
     (a : TopicMatcher, b : TopicMatcher) => a orElse b
+  }
+
+  private def checkPresence() =
+  {
+    val context = getContext
+    if (context.getPerson.isEmpty) {
+      "I am not sure who or what you are referring to."
+    } else {
+      val resident = new HomeResident(context.getPerson)
+      val openhabPrivacy = new CentralOpenhab(
+        context.getActorSystem, context.getSettings)
+      if (openhabPrivacy.getResidentPrivacy(resident)) {
+        "I'm sorry, I am not at liberty to answer that right now."
+      }
+      val openhabPresence = new CentralOpenhab(
+        context.getActorSystem, context.getSettings)
+      if (openhabPresence.getResidentPresence(resident)) {
+        "I believe " + resident.name + " is currently at home."
+      } else {
+        "I believe " + resident.name + " is currently away from home."
+      }
+    }
   }
 
   override def produceMessage(context : ConversationContext) =
@@ -489,6 +523,11 @@ class PassiveTopic(name : String) extends ConversationTopic
     utterance : String, personName : String, context : ConversationContext) =
   {
     echo = utterance.toLowerCase
+    if (echo.contains("sujin") || echo.contains("wife")) {
+      context.setPerson("Sujin")
+    } else if (echo.contains("john") || echo.contains("husband")) {
+      context.setPerson("John")
+    }
   }
 }
 

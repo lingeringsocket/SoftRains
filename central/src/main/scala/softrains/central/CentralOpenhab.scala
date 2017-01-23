@@ -74,4 +74,38 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
       (resident.name.toLowerCase + "_phone_radio") + "/state"
     putString(stateUrl, state) {}
   }
+
+  def getResidentPrivacy(resident : HomeResident) : Boolean =
+  {
+    if (settings.Openhab.url.isEmpty || settings.Test.active) {
+      return false
+    }
+    val stateUrl = settings.Openhab.url + "/rest/items/" +
+      (resident.name.toLowerCase + "_privacy") + "/state"
+    var result = true
+    fetchString(stateUrl) { state =>
+      if (state == "OFF") {
+        result = false
+      }
+    }
+    waitForCompletion
+    result
+  }
+
+  def getResidentPresence(resident : HomeResident) : Boolean =
+  {
+    if (settings.Openhab.url.isEmpty || settings.Test.active) {
+      return false
+    }
+    val stateUrl = settings.Openhab.url + "/rest/items/" +
+      (resident.name.toLowerCase + "_presence") + "/state"
+    var result = false
+    fetchString(stateUrl) { state =>
+      if (state == "ON") {
+        result = true
+      }
+    }
+    waitForCompletion
+    result
+  }
 }
