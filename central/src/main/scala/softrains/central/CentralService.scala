@@ -269,8 +269,6 @@ class CentralService(
       getIntercomActor)
   }
 
-  private def getConversationContext = this
-
   override def getSettings = settings
 
   override def getActorSystem = actorSystem.get
@@ -283,7 +281,7 @@ class CentralService(
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
-      val context = getConversationContext
+      val context = new ConversationSubContext(this)
       topicSource.preloadTopicsForPerson(context, name)
       val intro = topicSource.generateGreeting(context)
       val dispatcher = new TopicDispatcher(topicSource, name, intro)

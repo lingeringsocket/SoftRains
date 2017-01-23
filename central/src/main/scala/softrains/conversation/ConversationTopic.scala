@@ -26,8 +26,6 @@ import CommunicationPriority._
 
 trait ConversationContext
 {
-  private var person = ""
-
   def getActorSystem : ActorSystem
 
   def getSettings : SoftRainsSettings
@@ -53,9 +51,30 @@ trait ConversationContext
     }
   }
 
-  def getPerson() : String = person
+  def getPerson() : String = ""
 
   def setPerson(name : String)
+  {}
+}
+
+class ConversationSubContext(parent : ConversationContext)
+    extends ConversationContext
+{
+  private var person = ""
+
+  override def getActorSystem = parent.getActorSystem
+
+  override def getSettings = parent.getSettings
+
+  override def getDatabase = parent.getDatabase
+
+  override def getCurrentTime = parent.getCurrentTime
+
+  override def getTranscript = parent.getTranscript
+
+  override def getPerson() : String = person
+
+  override def setPerson(name : String)
   {
     person = name
   }
@@ -73,6 +92,11 @@ object NullConversationContext extends ConversationContext
   override def getSettings = unsupported
 
   override def getDatabase = unsupported
+
+  override def setPerson(name : String)
+  {
+    unsupported
+  }
 }
 
 abstract class ConversationTopic

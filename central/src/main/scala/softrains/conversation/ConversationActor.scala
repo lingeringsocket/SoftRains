@@ -63,6 +63,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   private var lastUtterance
       : Option[ConversationUtterance] = None
 
+  private var conversationContext : ConversationContext = this
+
   startWith(Inactive, Empty)
 
   onTransition {
@@ -72,6 +74,7 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       })
       currentTranscript = None
       lastUtterance = None
+      conversationContext = this
     }
   }
 
@@ -142,8 +145,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       // FIXME: pass real start time of utterance as part of
       // PersonUtteranceMsg, making sure clocks are synchronized
       saveUtterance(personName, utterance, audioFile)
-      topic.consumeUtterance(utterance, personName, getConversationContext)
-      topic.produceMessage(getConversationContext) match {
+      topic.consumeUtterance(utterance, personName, conversationContext)
+      topic.produceMessage(conversationContext) match {
         case Some(SpeakerSoundSeqMsg(seq)) => {
           val replies = seq.iterator
           if (replies.hasNext) {
@@ -170,8 +173,6 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
     }
   }
 
-  private def getConversationContext = this
-
   override def getSettings = settings
 
   override def getActorSystem = context.system
@@ -186,7 +187,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
     val startTime = readClockTime
     val transcript = db.save(ConversationTranscript(startTime))
     currentTranscript = Some(transcript)
-    topic.produceMessage(getConversationContext).foreach({ msg =>
+    conversationContext = new ConversationSubContext(this)
+    topic.produceMessage(conversationContext).foreach({ msg =>
       msg match {
         case PartnerUtteranceMsg(utterance, _) => {
           lastUtterance = Some(db.save(ConversationUtterance(
