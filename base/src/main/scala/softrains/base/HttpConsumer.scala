@@ -112,13 +112,19 @@ class HttpConsumer(actorSystem : ActorSystem)
         MediaTypes.`application/json`)))))
     val requestFuture = Http().singleRequest(request)
     phaser.register
+    def success(entity : HttpEntity) {
+      entity.dataBytes.runWith(Sink.ignore)
+      completion
+      phaser.arrive
+    }
     requestFuture onComplete {
       case Success(response) => {
         response match {
+          case HttpResponse(StatusCodes.OK, _, entity, _) => {
+            success(entity)
+          }
           case HttpResponse(StatusCodes.Accepted, _, entity, _) => {
-            entity.dataBytes.runWith(Sink.ignore)
-            completion
-            phaser.arrive
+            success(entity)
           }
           case HttpResponse(code, _, _, _) => {
             fail("HTTP response code " + code)
