@@ -464,7 +464,7 @@ class CentralService(
       "select id from home_resident r where not exists(" +
         "select * from pending_notification " +
         "where receive_time is null " +
-        "and home_resident$id = r.id" +
+        "and resident$id = r.id" +
         "and ((expiration_time is null) or (expiration_time > ?)))",
       now).foreach(resident => {
         openhab.updateResidentNotificationFlag(resident, false)
