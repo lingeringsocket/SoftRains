@@ -68,7 +68,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
     }
   }
 
-  def isExhausted = iterator.isEmpty
+  override def isExhausted = iterator.isEmpty
 
   private def toDayStart(dateTime : DateTime) =
   {

@@ -54,9 +54,26 @@ class ConversationSpec extends Specification
       dispatcher.isInProgress must beFalse
     }
 
+    "dispatch without pleasantries" in
+    {
+      val personName = "Ash"
+      val topicSource = new SequentialTopicSource(Seq.empty)
+      val dispatcher = new TopicDispatcher(topicSource, personName)
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Hello, Ash.  How are you?"))
+      dispatcher.consumeUtterance("Thanks a million.")
+      dispatcher.produceUtterance() must be equalTo(
+        Some("You are very welcome!"))
+      dispatcher.consumeUtterance("Goodbye")
+      dispatcher.produceUtterance() must be equalTo(
+        Some("Talk to you later!"))
+      dispatcher.isInProgress must beFalse
+    }
+
     "dispatch unknown voice" in
     {
-      val topicSource = new SequentialTopicSource(Seq.empty)
+      val topicSource = new SequentialTopicSource(Seq(
+        new WarningTopic("You just won the lottery!")))
       val dispatcher = new TopicDispatcher(topicSource)
       dispatcher.getPriority must be equalTo(
         CommunicationPriority.ONLY_IF_NOT_BUSY)

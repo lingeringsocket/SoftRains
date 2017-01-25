@@ -141,6 +141,8 @@ trait ConversationTopicSource
   def proposeTopicForPerson(
     context : ConversationContext,
     personName : String) : Option[ConversationTopic]
+
+  def isExhausted : Boolean
 }
 
 class SequentialTopicSource(topics : Seq[ConversationTopic])
@@ -158,6 +160,8 @@ class SequentialTopicSource(topics : Seq[ConversationTopic])
       None
     }
   }
+
+  override def isExhausted = iterator.isEmpty
 }
 
 class TopicDispatcher(
@@ -170,7 +174,7 @@ class TopicDispatcher(
 
   private var turned = false
 
-  private var response = {
+  private var pending = {
     if (personName.isEmpty) {
       "Who goes there?"
     } else {
@@ -208,7 +212,7 @@ class TopicDispatcher(
 
   override def produceMessage(context : ConversationContext) =
   {
-    if (response.isEmpty) {
+    if (pending.isEmpty) {
       subTopic match {
         case Some(topic) => {
           val messageOpt = topic.produceMessage(context)
@@ -237,8 +241,11 @@ class TopicDispatcher(
         case _ => None
       }
     } else {
-      val message = IntercomActor.PartnerUtteranceMsg(response)
-      response = ""
+      val message = IntercomActor.PartnerUtteranceMsg(pending)
+      pending = ""
+      if (subTopic.isEmpty && topicSource.isExhausted) {
+        turnTheTables
+      }
       Some(message)
     }
   }
@@ -273,18 +280,18 @@ class TopicDispatcher(
   }
 
   override def consumeUtterance(
-    utterance : String, personName : String, context : ConversationContext) =
+    utterance : String, speakingPerson : String, context : ConversationContext) =
   {
     subTopic match {
       case Some(topic) => topic.consumeUtterance(
-        utterance, personName, context)
+        utterance, speakingPerson, context)
       case _ => {
-        if (personName.isEmpty && currentPerson.isEmpty) {
-          response = "Sorry, I don't recognize your voice."
+        if (speakingPerson.isEmpty && currentPerson.isEmpty) {
+          pending = "Sorry, I don't recognize your voice."
           done = true
         } else {
-          if (!personName.isEmpty) {
-            currentPerson = personName
+          if (!speakingPerson.isEmpty) {
+            currentPerson = speakingPerson
           }
           changeTopic(context)
           subTopic match {
@@ -293,9 +300,7 @@ class TopicDispatcher(
               // instead of utterance?
               topic.produceUtterance(context) match {
                 case Some(utterance) => {
-                  response = {
-                    utterance
-                  }
+                  pending = utterance
                 }
                 case _ => {
                   turnTheTables
@@ -385,20 +390,26 @@ object ContainsTopicMatcher
   }
 }
 
-object EmptyTopicMatcher extends TopicMatcher
+class CatchAllTopicMatcher extends TopicMatcher
 {
-  override def isDefinedAt(input : String) = input.isEmpty
+  private var first = true
 
-  override def apply(input : String) =
-    (IntercomActor.PartnerUtteranceMsg("So, what is on your mind?"), false)
-}
+  def clearFirst()
+  {
+    first = false
+  }
 
-object EchoTopicMatcher extends TopicMatcher
-{
   override def isDefinedAt(input : String) = true
 
   override def apply(input : String) =
-    (IntercomActor.PartnerUtteranceMsg("I think you said, " + input), false)
+  {
+    if (input.isEmpty || first) {
+      first = false
+      (IntercomActor.PartnerUtteranceMsg("So, what is on your mind?"), false)
+    } else {
+      (IntercomActor.PartnerUtteranceMsg("I think you said, " + input), false)
+    }
+  }
 }
 
 class EchoLoop extends ConversationTopic

@@ -27,6 +27,8 @@ class PassiveTopic(name : String) extends ConversationTopic
 
   private var contextOpt : Option[ConversationContext] = None
 
+  private var catchAll = new CatchAllTopicMatcher
+
   private def getContext = contextOpt.getOrElse(NullConversationContext)
 
   override def getPriority() = ASAP
@@ -37,7 +39,6 @@ class PassiveTopic(name : String) extends ConversationTopic
     delegateToProduceMessage(context)
 
   private val matcher = Seq[TopicMatcher](
-    EmptyTopicMatcher,
     ContainsTopicMatcher.string(
       Seq("goodbye", "good bye"),
       "Talk to you later!",
@@ -114,7 +115,7 @@ class PassiveTopic(name : String) extends ConversationTopic
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silen"),
       IntercomActor.StopAudioFileMsg),
-    EchoTopicMatcher
+    catchAll
   ).reduce {
     (a : TopicMatcher, b : TopicMatcher) => a orElse b
   }
@@ -147,6 +148,7 @@ class PassiveTopic(name : String) extends ConversationTopic
     contextOpt = Some(context)
     try {
       val response = matcher.lift(echo)
+      catchAll.clearFirst
       if (response.isEmpty) {
         done = true
         None
