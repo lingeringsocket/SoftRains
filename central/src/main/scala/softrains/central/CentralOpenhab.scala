@@ -31,7 +31,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 
   def checkDoor(itemName : String, spokenName : String)
   {
-    if (settings.Openhab.url.isEmpty) {
+    if (unavailable) {
       return
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +
@@ -65,9 +65,23 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     }
   }
 
+  private def unavailable =
+    (settings.Openhab.url.isEmpty || settings.Test.active)
+
+  def updateResidentNotificationFlag(resident : HomeResident, flag : Boolean)
+  {
+    if (unavailable) {
+      return
+    }
+    val stateUrl = settings.Openhab.url + "/rest/items/" +
+      (resident.name.toLowerCase + "_notifications") + "/state"
+    val state = if (flag) "ON" else "OFF"
+    putString(stateUrl, state) {}
+  }
+
   def updateResidentPhoneRadio(resident : HomeResident, state : String)
   {
-    if (settings.Openhab.url.isEmpty || settings.Test.active) {
+    if (unavailable) {
       return
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +
@@ -75,9 +89,19 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     putString(stateUrl, state) {}
   }
 
+  def sendResidentNotification(resident : HomeResident, message : String)
+  {
+    if (unavailable) {
+      return
+    }
+    val stateUrl = settings.Openhab.url + "/rest/items/" +
+      (resident.name.toLowerCase + "_phone_notifier") + "/state"
+    putString(stateUrl, message) {}
+  }
+
   def getResidentPrivacy(resident : HomeResident) : Boolean =
   {
-    if (settings.Openhab.url.isEmpty || settings.Test.active) {
+    if (unavailable) {
       return false
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +
@@ -94,7 +118,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 
   def getResidentPresence(resident : HomeResident) : Boolean =
   {
-    if (settings.Openhab.url.isEmpty || settings.Test.active) {
+    if (unavailable) {
       return false
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +

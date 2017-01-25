@@ -24,13 +24,21 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object CentralActor
 {
+  // request a notification scan
+  case object ScanNotificationsMsg extends SoftRainsMsg
 }
 
 class CentralActor(central : CentralService) extends Actor
 {
+  import CentralActor._
+
   private val settings = SoftRainsActorSettings(context)
 
-  private val networkScanFreq = settings.Router.scanFreq
+  private val networkScanInterval =
+    settings.Router.scanInterval
+
+  private val notificationScanInterval =
+    settings.Residents.notificationScanInterval
 
   private val log = Logging(context.system, this)
 
@@ -40,13 +48,20 @@ class CentralActor(central : CentralService) extends Actor
 
   override def preStart()
   {
+    if (networkScanInterval.length > 0) {
+      context.system.scheduler.schedule(
+        networkScanInterval, networkScanInterval,
+        deviceMonitorActor, DeviceMonitorActor.ScanNetworkMsg)
+    }
     context.system.scheduler.schedule(
-      networkScanFreq, networkScanFreq,
-      deviceMonitorActor, DeviceMonitorActor.ScanNetworkMsg)
+      notificationScanInterval, notificationScanInterval,
+      self, CentralActor.ScanNotificationsMsg)
   }
 
   def receive =
   {
-    case "test" => log.info("received test")
+    case ScanNotificationsMsg => {
+      central.scanNotifications
+    }
   }
 }

@@ -42,6 +42,17 @@ class PersonalizedTopicSource extends ConversationTopicSource
       if (!results.isEmpty) {
         topics += new WarningTopic(results)
       }
+      val now = context.getCurrentTime
+      val db = context.getDatabase
+      db.query[PendingNotification].
+        whereEqual("resident.name", personName).
+        whereEqual("receiveTime", None).
+        whereLarger("expirationTime.item", now).
+        fetch.foreach(notification => {
+          // FIXME define and use MessageTopic instead
+          topics += new WarningTopic(notification.message)
+          db.save(notification.copy(receiveTime = Some(now)))
+        })
       iterator = topics.iterator
     }
   }

@@ -25,6 +25,7 @@ import org.joda.time._
 
 import java.io._
 import scala.io._
+import scala.util._
 
 import scala.concurrent._
 import scala.collection.mutable._
@@ -154,6 +155,45 @@ class CentralService(
 
     val contentType = ContentTypes.`text/html(UTF-8)`
     val route = {
+      pathPrefix("notification") {
+        pathEndOrSingleSlash {
+          post {
+            formFields(
+              'resident, 'message, 'priority, 'pushAfter, 'expireAfter)
+            { (resident : String, message : String, priority : String,
+              pushAfter : String, expireAfter : String) =>
+              complete {
+                val recipientOpt = db.query[HomeResident].
+                  whereEqual("name", resident).fetchOne
+                val priorityOpt = Try(CommunicationPriority.withName(priority))
+                (recipientOpt, priorityOpt) match {
+                  case (Some(recipient), Success(priority)) => {
+                    val creationTime = readClockTime
+                    val pushTime =
+                      creationTime.plusMinutes(pushAfter.toInt)
+                    val expirationTime =
+                      creationTime.plusMinutes(expireAfter.toInt)
+                    createNotification(PendingNotification(
+                      recipient,
+                      message,
+                      None,
+                      priority,
+                      creationTime,
+                      Some(pushTime),
+                      Some(expirationTime),
+                      None
+                    ))
+                    StatusCodes.OK
+                  }
+                  case _ => {
+                    StatusCodes.NotFound
+                  }
+                }
+              }
+            }
+          }
+        }
+      } ~
       path("doorbell") {
         get {
           complete({
@@ -387,6 +427,49 @@ class CentralService(
         "(select min(start_time) from lan_presence " +
         "where device$id = lan_device.id) > ?",
       lastTallyTime)
+  }
+
+  def createNotification(notification : PendingNotification)
+  {
+    db.save(notification)
+    val openhab = new CentralOpenhab(getActorSystem, settings)
+    openhab.updateResidentNotificationFlag(notification.resident, true)
+    openhab.waitForCompletion
+  }
+
+  def scanNotifications()
+  {
+    val now = readClockTime
+    val openhab = new CentralOpenhab(getActorSystem, settings)
+
+    // push out any ripe notification
+    db.query[PendingNotification].
+      whereEqual("receiveTime", None).
+      whereLarger("expirationTime.item", now).
+      fetch.foreach(notification => {
+        notification.pushTime.foreach(time => {
+          if (time.isBefore(now)) {
+            openhab.sendResidentNotification(
+              notification.resident,
+              notification.message)
+            db.save(notification.copy(
+              pushTime = Some(now),
+              receiveTime = Some(now)))
+          }
+        })
+      })
+
+    // turn off notifications flags when expired
+    db.fetchWithSql[HomeResident](
+      "select id from home_resident r where not exists(" +
+        "select * from pending_notification " +
+        "where receive_time is null " +
+        "and home_resident$id = r.id" +
+        "and ((expiration_time is null) or (expiration_time > ?)))",
+      now).foreach(resident => {
+        openhab.updateResidentNotificationFlag(resident, false)
+      })
+    openhab.waitForCompletion
   }
 
   private def sendMail(resident : HomeResident, subject : String, body : String)

@@ -59,7 +59,7 @@ class SoftRainsSettings(rootConf : Config)
     val url = subConf.getString("url")
     val user = subConf.getString("user")
     val password = subConf.getString("password")
-    val scanFreq = getMillis(subConf, "scanFreq")
+    val scanInterval = getMillis(subConf, "scan-interval")
   }
 
   object Db
@@ -140,6 +140,8 @@ class SoftRainsSettings(rootConf : Config)
   object Residents
   {
     val subConf = conf.getConfig("residents")
+    val notificationScanInterval = getMillis(
+      subConf, "notification-scan-interval")
     val deviceMap = readMap(subConf, "devices")
     val emailMap = readMap(subConf, "email")
   }

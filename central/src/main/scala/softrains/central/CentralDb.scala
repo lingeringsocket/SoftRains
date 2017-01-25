@@ -84,10 +84,12 @@ case class ConversationUtterance(
 case class PendingNotification(
   resident : HomeResident,
   message : String,
+  audioFile : Option[String],
   priority : CommunicationPriority,
   creationTime : DateTime,
   pushTime : Option[DateTime],
-  expirationTime : Option[DateTime]
+  expirationTime : Option[DateTime],
+  receiveTime : Option[DateTime]
 ) extends CentralDbEntity
 
 class CentralDb(settings : SoftRainsSettings) extends Instance (
@@ -95,6 +97,7 @@ class CentralDb(settings : SoftRainsSettings) extends Instance (
     Entity[ExceptionReport](),
     Entity[ConversationTranscript](),
     Entity[ConversationUtterance](),
+    Entity[PendingNotification](),
     Entity[CameraFeed](unique = Set() + Seq("name")),
     Entity[HomeResident](unique = Set() + Seq("name")),
     Entity[HomePresence](),
