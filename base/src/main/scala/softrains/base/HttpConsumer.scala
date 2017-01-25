@@ -89,8 +89,21 @@ class HttpConsumer(actorSystem : ActorSystem)
   def putString(endpoint : String, data : String)(
     completion : => Unit)
   {
+    sendString(endpoint, data, HttpMethods.PUT)(completion)
+  }
+
+  def postString(endpoint : String, data : String)(
+    completion : => Unit)
+  {
+    sendString(endpoint, data, HttpMethods.POST)(completion)
+  }
+
+  private def sendString(endpoint : String, data : String,
+    httpMethod : HttpMethod)(
+    completion : => Unit)
+  {
     val request = HttpRequest(
-      HttpMethods.PUT,
+      httpMethod,
       uri = endpoint,
       entity = HttpEntity(
         MediaTypes.`text/plain` withCharset HttpCharsets.`UTF-8`,

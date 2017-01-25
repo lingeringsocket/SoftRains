@@ -112,7 +112,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
         result = false
       }
     }
-    waitForCompletion
+    ensureSuccess
     result
   }
 
@@ -129,7 +129,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
         result = true
       }
     }
-    waitForCompletion
+    ensureSuccess
     result
   }
 }

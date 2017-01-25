@@ -72,7 +72,7 @@ class KioskActor extends Actor
     case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
       intercomActor ! IntercomActor.PreWakeMsg
       val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(faceNameUrl, name) {}
+      httpConsumer.postString(faceNameUrl, name) {}
       httpConsumer.ensureSuccess
     }
     case IntercomActor.PairedMsg => {

@@ -344,7 +344,7 @@ class CentralService(
           }
         }
       }
-      httpConsumer.waitForCompletion
+      httpConsumer.ensureSuccess
     }
   }
 
@@ -443,7 +443,7 @@ class CentralService(
     db.save(notification)
     val openhab = new CentralOpenhab(getActorSystem, settings)
     openhab.updateResidentNotificationFlag(notification.resident, true)
-    openhab.waitForCompletion
+    openhab.ensureSuccess
   }
 
   def scanNotifications()
@@ -478,7 +478,7 @@ class CentralService(
       now).foreach(resident => {
         openhab.updateResidentNotificationFlag(resident, false)
       })
-    openhab.waitForCompletion
+    openhab.ensureSuccess
   }
 
   private def sendMail(resident : HomeResident, subject : String, body : String)
