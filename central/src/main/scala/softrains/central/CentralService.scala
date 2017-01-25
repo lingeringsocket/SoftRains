@@ -320,9 +320,12 @@ class CentralService(
     val httpConsumer = new HttpConsumer(getActorSystem)
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
+      // FIXME check privacy
       val topicSource = new PersonalizedTopicSource
       val context = new ConversationSubContext(this)
       topicSource.preloadTopicsForPerson(context, name)
+      // eagerly clear notification flag
+      scanNotifications
       val intro = topicSource.generateGreeting(context)
       val dispatcher = new TopicDispatcher(topicSource, name, intro)
       conversationActor ! ConversationActor.ActivateMsg(
