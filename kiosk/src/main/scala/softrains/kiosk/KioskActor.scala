@@ -70,9 +70,18 @@ class KioskActor extends Actor
   def receive =
   {
     case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
+      intercomActor ! IntercomActor.PreWakeMsg
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(faceNameUrl, name) {}
       httpConsumer.ensureSuccess
+    }
+    case IntercomActor.PairedMsg => {
+      cameraActor ! CameraActor.ControlFaceDetectionMsg(false)
+      maybeNotify {
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(modeUrl, "ON") {}
+        httpConsumer.ensureSuccess
+      }
     }
     case IntercomActor.UnpairedMsg => {
       context.system.scheduler.scheduleOnce(

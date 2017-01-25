@@ -54,6 +54,8 @@ object IntercomActor
       extends PeripheralMsg
   case object UnpairMsg
       extends PeripheralMsg
+  case object PreWakeMsg
+      extends PeripheralMsg
   case object UptimeRequestMsg
       extends PeripheralMsg
   final case class InitializeAlexaMsg(alexaActor : ActorRef)
@@ -93,6 +95,8 @@ object IntercomActor
   case object WokeUpMsg
       extends PeripheralMsg
   case object FellAsleepMsg
+      extends PeripheralMsg
+  case object PairedMsg
       extends PeripheralMsg
   case object UnpairedMsg
       extends PeripheralMsg
@@ -204,6 +208,9 @@ class IntercomActor extends LoggingFSM[State, Data]
   }
 
   when(Awake, stateTimeout = sleepTimeout) {
+    case Event(PreWakeMsg, _) => {
+      stay
+    }
     case Event(StateTimeout, _) => {
       context.parent ! FellAsleepMsg
       val command = settings.Speaker.sleepCommand
@@ -221,6 +228,7 @@ class IntercomActor extends LoggingFSM[State, Data]
         oldPartner ! ProtocolErrorMsg(PROTOCOL_ALREADY_PAIRED)
         stay
       } else if (oldPartner == unpaired) {
+        context.parent ! PairedMsg
         sender ! PairAcceptedMsg
         stay using Partner(sender, voice, bg)
       } else {

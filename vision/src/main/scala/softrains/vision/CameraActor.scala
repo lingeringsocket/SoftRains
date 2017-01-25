@@ -87,7 +87,6 @@ class CameraActor extends LoggingFSM[State, Data]
     {
       sentinel.analyzeFrame
       if (sentinel.wasFaceDetected) {
-        sentinel.disableFaceDetection
         listener ! FaceDetectedMsg(
           sentinel.getLastFace, sentinel.getFaceConfidence)
       }

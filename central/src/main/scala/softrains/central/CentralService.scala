@@ -320,7 +320,6 @@ class CentralService(
     val httpConsumer = new HttpConsumer(getActorSystem)
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
-      // FIXME check privacy
       val topicSource = new PersonalizedTopicSource
       val context = new ConversationSubContext(this)
       topicSource.preloadTopicsForPerson(context, name)
@@ -337,8 +336,15 @@ class CentralService(
     } else {
       val nameUrl = openhabUrl + "/rest/items/face_name/state"
       httpConsumer.fetchString(nameUrl) {
-        name => greet(name.capitalize)
+        name => {
+          val residentName = name.capitalize
+          val openhab = new CentralOpenhab(getActorSystem, settings)
+          if (!openhab.getResidentPrivacy(HomeResident(residentName))) {
+            greet(residentName)
+          }
+        }
       }
+      httpConsumer.waitForCompletion
     }
   }
 
