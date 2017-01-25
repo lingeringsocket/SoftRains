@@ -74,7 +74,7 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
       return
     }
     val stateUrl = settings.Openhab.url + "/rest/items/" +
-      (resident.name.toLowerCase + "_notifications") + "/state"
+      (resident.name.toLowerCase + "_message") + "/state"
     val state = if (flag) "ON" else "OFF"
     putString(stateUrl, state) {}
   }
