@@ -31,7 +31,7 @@ class KioskActor extends Actor
     settings.Openhab.url + "/rest/items/facetime_mode/state"
 
   private val faceNameUrl =
-    settings.Openhab.url + "/rest/items/face_name/state"
+    settings.Openhab.url + "/rest/items/face_name"
 
   private val cameraSpec = settings.Actors.camera
   assert (!cameraSpec.isEmpty)
