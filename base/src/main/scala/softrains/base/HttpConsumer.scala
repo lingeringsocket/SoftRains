@@ -112,11 +112,13 @@ class HttpConsumer(actorSystem : ActorSystem)
         MediaTypes.`application/json`)))))
     val requestFuture = Http().singleRequest(request)
     phaser.register
+
     def success(entity : HttpEntity) {
       entity.dataBytes.runWith(Sink.ignore)
       completion
       phaser.arrive
     }
+
     requestFuture onComplete {
       case Success(response) => {
         response match {
