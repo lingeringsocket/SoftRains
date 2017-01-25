@@ -28,6 +28,34 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
 
   "PersonalizedTopicSource" should
   {
+    "include notifications" in new AkkaActorExample
+    {
+      val context = new PersonalizedConversationContext(system, settings)
+      val db = context.getDatabase
+      val name = "Pete"
+      val resident = db.save(HomeResident(name))
+      val message = "Hello hello!"
+      val creationTime = context.getCurrentTime
+      db.save(PendingNotification(
+        resident,
+        message,
+        None,
+        CommunicationPriority.ASAP,
+        creationTime,
+        None,
+        Some(creationTime.plusMinutes(60)),
+        None))
+
+      val source = new PersonalizedTopicSource
+      source.preloadTopicsForPerson(context, name)
+      source.isExhausted must beFalse
+      val topicOpt = source.proposeTopicForPerson(context, name)
+      source.isExhausted must beTrue
+      topicOpt must not beEmpty
+      val topic = topicOpt.get
+      topic.produceUtterance(context) must beSome(message)
+    }
+
     "generate initial greetings" in new AkkaActorExample
     {
       val context = new PersonalizedConversationContext(system, settings)

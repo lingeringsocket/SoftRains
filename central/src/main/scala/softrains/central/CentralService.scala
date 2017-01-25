@@ -337,7 +337,7 @@ class CentralService(
     } else {
       val nameUrl = openhabUrl + "/rest/items/face_name/state"
       httpConsumer.fetchString(nameUrl) {
-        name => greet(name)
+        name => greet(name.capitalize)
       }
     }
   }
