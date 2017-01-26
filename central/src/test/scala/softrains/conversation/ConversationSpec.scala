@@ -192,6 +192,10 @@ class ConversationSpec extends Specification
       dispatcher.produceUtterance(context).get must startWith(
         "I am fairly sure you are John")
       dispatcher.consumeUtterance(
+        "Who is Donald Trump?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "I am not sure who or what")
+      dispatcher.consumeUtterance(
         "Where am I?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
         "Silly human")
@@ -199,6 +203,14 @@ class ConversationSpec extends Specification
         "Who is Sujin?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
         "Sujin is my favorite")
+      dispatcher.consumeUtterance(
+        "Who is she?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Sujin is my favorite")
+      dispatcher.consumeUtterance(
+        "Where is he?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "I am not sure who or what")
     }
   }
 }
