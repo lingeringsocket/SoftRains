@@ -31,7 +31,7 @@ class KioskActor extends Actor
     settings.Openhab.url + "/rest/items/facetime_mode/state"
 
   private val faceNameUrl =
-    settings.Openhab.url + "/rest/items/face_name"
+    settings.Openhab.url + "/rest/items/face_name/state"
 
   private val cameraSpec = settings.Actors.camera
   assert (!cameraSpec.isEmpty)
@@ -72,7 +72,7 @@ class KioskActor extends Actor
     case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
       intercomActor ! IntercomActor.PreWakeMsg
       val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.postString(faceNameUrl, name) {}
+      httpConsumer.putString(faceNameUrl, name) {}
       httpConsumer.ensureSuccess
     }
     case IntercomActor.PairedMsg => {
