@@ -175,11 +175,26 @@ object NullConversationContext extends ConversationContext
 
   override def getDatabase = unsupported
 
-  override def setPersonName(name : String) = unsupported
+  override def setPersonName(name : String)
+  {
+    if (!name.isEmpty) {
+      unsupported
+    }
+  }
 
-  override def setPersonalPronoun(newPronoun : PersonalPronoun) = unsupported
+  override def setPersonalPronoun(newPronoun : PersonalPronoun)
+  {
+    if (newPronoun != PersonalPronoun.SOMEONE) {
+      unsupported
+    }
+  }
 
-  override def setPartner(newPartner : ConversationPartner) = unsupported
+  override def setPartner(newPartner : ConversationPartner)
+  {
+    if (newPartner != ConversationPartner.ALLISON) {
+      unsupported
+    }
+  }
 }
 
 abstract class ConversationTopic

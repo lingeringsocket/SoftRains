@@ -24,6 +24,28 @@ object QueryAssumption extends Enumeration
   type QueryAssumption = Value
 
   val ASSUME_TRUE, ASSUME_FALSE, ASSUME_NOTHING = Value
+
+  def generateConfirmation(assumption : QueryAssumption, truth : Boolean)
+      : String =
+  {
+    assumption match {
+      case ASSUME_TRUE => {
+        if (truth) {
+          "Yes, "
+        } else {
+          "No, "
+        }
+      }
+      case ASSUME_FALSE => {
+        if (truth) {
+          "No, "
+        } else {
+          "Yes, "
+        }
+      }
+      case _ => ""
+    }
+  }
 }
 import QueryAssumption._
 
@@ -152,7 +174,13 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         if (context.getPersonName.isEmpty) {
           clueless
         } else {
-          context.getPersonName + " is my favorite human, other than yourself"
+          if (context.getPersonName == residentName) {
+            context.getPersonName +
+              ", are you suffering from an identity crisis?"
+          } else {
+            context.getPersonName +
+              " is my favorite human, other than yourself"
+          }
         }
       }
     }
@@ -181,27 +209,14 @@ class PassiveTopic(residentName : String) extends ConversationTopic
             val openhabPresence = new CentralOpenhab(
               context.getActorSystem, context.getSettings)
             val present = openhabPresence.getResidentPresence(resident)
-            val prefix = assumption match {
-              case ASSUME_TRUE => {
-                if (present) {
-                  "Yes, "
-                } else {
-                  "No, "
-                }
+            val confirmation =
+              QueryAssumption.generateConfirmation(assumption, present)
+            confirmation + {
+              if (present) {
+                "I believe " + resident.name + " is currently at home."
+              } else {
+                "I believe " + resident.name + " is currently away from home."
               }
-              case ASSUME_FALSE => {
-                if (present) {
-                  "No, "
-                } else {
-                  "Yes, "
-                }
-              }
-              case _ => ""
-            }
-            if (present) {
-              "I believe " + resident.name + " is currently at home."
-            } else {
-              "I believe " + resident.name + " is currently away from home."
             }
           }
         }
@@ -230,6 +245,12 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     }
   }
 
+  private def forgetPerson(context : ConversationContext)
+  {
+    context.setPersonalPronoun(PersonalPronoun.SOMEONE)
+    context.setPersonName("")
+  }
+
   def consumeUtterance(
     utterance : String, personName : String, context : ConversationContext) =
   {
@@ -246,6 +267,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       if (residentName == "John") {
         context.setPersonalPronoun(PersonalPronoun.SHE)
         context.setPersonName("Sujin")
+      } else {
+        forgetPerson(context)
       }
     } else if (ContainsTopicMatcher.matchPhrases(
       inputSplit, Seq("john", "sichi")))
@@ -258,6 +281,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       if (residentName == "Sujin") {
         context.setPersonalPronoun(PersonalPronoun.HE)
         context.setPersonName("John")
+      } else {
+        forgetPerson(context)
       }
     } else if (ContainsTopicMatcher.matchPhrases(
       inputSplit, Seq("me", "i", "my")))
@@ -265,10 +290,24 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       context.setPersonalPronoun(PersonalPronoun.I)
       context.setPersonName(residentName)
     } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("you", "your")))
+      inputSplit, Seq("you", "your", "you're")))
     {
       context.setPersonalPronoun(PersonalPronoun.YOU)
       context.setPersonName("")
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("he", "his", "him")))
+    {
+      if (context.getPersonalPronoun != PersonalPronoun.HE) {
+        forgetPerson(context)
+      }
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("she", "her", "hers")))
+    {
+      if (context.getPersonalPronoun != PersonalPronoun.SHE) {
+        forgetPerson(context)
+      }
+    } else {
+      forgetPerson(context)
     }
   }
 }
