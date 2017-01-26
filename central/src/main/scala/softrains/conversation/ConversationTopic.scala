@@ -121,14 +121,15 @@ trait ConversationContext
   {}
 }
 
-class ConversationSubContext(parent : ConversationContext)
+class ConversationSubContext(
+  parent : ConversationContext, writeParent : Boolean = false)
     extends ConversationContext
 {
-  private var partner = ConversationPartner.ALLISON
+  private var partner = parent.getPartner
 
-  private var person = ""
+  private var person = parent.getPersonName
 
-  private var pronoun = PersonalPronoun.SOMEONE
+  private var pronoun = parent.getPersonalPronoun
 
   override def getActorSystem = parent.getActorSystem
 
@@ -144,6 +145,9 @@ class ConversationSubContext(parent : ConversationContext)
 
   override def setPersonName(name : String)
   {
+    if (writeParent) {
+      parent.setPersonName(name)
+    }
     person = name
   }
 
@@ -151,6 +155,9 @@ class ConversationSubContext(parent : ConversationContext)
 
   override def setPersonalPronoun(newPronoun : PersonalPronoun)
   {
+    if (writeParent) {
+      parent.setPersonalPronoun(newPronoun)
+    }
     pronoun = newPronoun
   }
 
@@ -158,6 +165,9 @@ class ConversationSubContext(parent : ConversationContext)
 
   override def setPartner(newPartner : ConversationPartner)
   {
+    if (writeParent) {
+      parent.setPartner(newPartner)
+    }
     partner = newPartner
   }
 }
