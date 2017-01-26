@@ -99,7 +99,7 @@ class ConversationActorSpec
     {
       val utterance0 = "So, what is on your mind?"
       val utterance1 = "I want to talk to Kate."
-      val utterance2 = "Please wait half a second,,,"
+      val utterance2 = "I'll put you through,,,"
       val utterance3 = "Blimey, would you like to try the bangers and mash?"
 
       val db = new CentralDb(settings)

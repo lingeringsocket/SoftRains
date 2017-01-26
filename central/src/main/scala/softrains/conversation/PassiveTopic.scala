@@ -19,7 +19,15 @@ import softrains.intercom._
 
 import CommunicationPriority._
 
-class PassiveTopic(name : String) extends ConversationTopic
+object QueryAssumption extends Enumeration
+{
+  type QueryAssumption = Value
+
+  val ASSUME_TRUE, ASSUME_FALSE, ASSUME_NOTHING = Value
+}
+import QueryAssumption._
+
+class PassiveTopic(residentName : String) extends ConversationTopic
 {
   private var done = false
 
@@ -69,34 +77,16 @@ class PassiveTopic(name : String) extends ConversationTopic
       IntercomActor.DoorbellMsg),
     ContainsTopicMatcher.message(
       Seq("michael", "mike"),
-      IntercomActor.SpeakerSoundSeqMsg(Seq(
-        IntercomActor.PartnerUtteranceMsg(
-          "Transferring,,,"),
-        IntercomActor.PartnerUtteranceMsg(
-          "Well hello there!", "en-US_MichaelVoice")))),
+      changePartner(getContext, ConversationPartner.MICHAEL)),
     ContainsTopicMatcher.message(
       Seq("allison", "alley", "ally"),
-      IntercomActor.SpeakerSoundSeqMsg(Seq(
-        IntercomActor.PartnerUtteranceMsg(
-          "I'll put you through,,,"),
-        IntercomActor.PartnerUtteranceMsg(
-          "At your service!", "en-US_AllisonVoice")))),
+      changePartner(getContext, ConversationPartner.ALLISON)),
     ContainsTopicMatcher.message(
       Seq("lisa"),
-      IntercomActor.SpeakerSoundSeqMsg(Seq(
-        IntercomActor.PartnerUtteranceMsg(
-          "Just a moment,,,"),
-        IntercomActor.PartnerUtteranceMsg(
-          "My name is Lisa and I am a recovering alcoholic.",
-          "en-US_LisaVoice")))),
+      changePartner(getContext, ConversationPartner.LISA)),
     ContainsTopicMatcher.message(
       Seq("kate", "england", "britain", "british", "english"),
-      IntercomActor.SpeakerSoundSeqMsg(Seq(
-        IntercomActor.PartnerUtteranceMsg(
-          "Please wait half a second,,,"),
-        IntercomActor.PartnerUtteranceMsg(
-          "Blimey, would you like to try the bangers and mash?",
-          "en-GB_KateVoice")))),
+      changePartner(getContext, ConversationPartner.KATE)),
     ContainsTopicMatcher.message(
       Seq("alexa", "amazon"),
       IntercomActor.SpeakerSoundSeqMsg(Seq(
@@ -110,34 +100,110 @@ class PassiveTopic(name : String) extends ConversationTopic
           IntercomActor.PlayAudioFileMsg(
             utterance.audioFile.getOrElse("hodor.mp3"))))),
     ContainsTopicMatcher.string(
-      Seq("where is"),
-      checkPresence),
+      Seq("where", "where's", "where", "where're"),
+      reportLocation(ASSUME_NOTHING)),
+    ContainsTopicMatcher.string(
+      Seq("home", "here", "come home", "arrive", "arrived"),
+      reportLocation(ASSUME_TRUE)),
+    ContainsTopicMatcher.string(
+      Seq("away", "go out", "leave"),
+      reportLocation(ASSUME_FALSE)),
+    ContainsTopicMatcher.string(
+      Seq("name", "who", "who", "who", "whose", "who's", "who're"),
+      reportIdentity),
     ContainsTopicMatcher.message(
-      Seq("stop", "quiet", "silen"),
+      Seq("stop", "quiet", "silent", "silence"),
       IntercomActor.StopAudioFileMsg),
     catchAll
   ).reduce {
     (a : TopicMatcher, b : TopicMatcher) => a orElse b
   }
 
-  private def checkPresence() =
+  private def changePartner(
+    context : ConversationContext,
+    newPartner : ConversationPartner) =
+  {
+    val oldPartner = context.getPartner
+    context.setPartner(newPartner)
+    IntercomActor.SpeakerSoundSeqMsg(Seq(
+      IntercomActor.PartnerUtteranceMsg(
+        oldPartner.transferFrom),
+      IntercomActor.PartnerUtteranceMsg(
+        newPartner.transferTo, newPartner.voiceName)))
+  }
+
+  def clueless() = "I am not sure who or what you are referring to."
+
+  private def reportIdentity() =
   {
     val context = getContext
-    if (context.getPerson.isEmpty) {
-      "I am not sure who or what you are referring to."
-    } else {
-      val resident = new HomeResident(context.getPerson)
-      val openhabPrivacy = new CentralOpenhab(
-        context.getActorSystem, context.getSettings)
-      if (openhabPrivacy.getResidentPrivacy(resident)) {
-        "I'm sorry, I am not at liberty to answer that right now."
-      } else {
-        val openhabPresence = new CentralOpenhab(
-          context.getActorSystem, context.getSettings)
-        if (openhabPresence.getResidentPresence(resident)) {
-          "I believe " + resident.name + " is currently at home."
+    context.getPersonalPronoun match {
+      case PersonalPronoun.I => {
+        if (context.getPersonName.isEmpty) {
+          clueless
         } else {
-          "I believe " + resident.name + " is currently away from home."
+          "I am fairly sure you are " + context.getPersonName
+        }
+      }
+      case PersonalPronoun.YOU => {
+        context.getPartner.selfIntro
+      }
+      case _ => {
+        if (context.getPersonName.isEmpty) {
+          clueless
+        } else {
+          context.getPersonName + " is my favorite human, other than yourself"
+        }
+      }
+    }
+  }
+
+  private def reportLocation(assumption : QueryAssumption) =
+  {
+    val context = getContext
+    context.getPersonalPronoun match {
+      case PersonalPronoun.I => {
+        "Silly human, you are standing right in front of me!"
+      }
+      case PersonalPronoun.YOU => {
+        context.getPartner.locationDescription
+      }
+      case _ => {
+        if (context.getPersonName.isEmpty) {
+          clueless
+        } else {
+          val resident = new HomeResident(context.getPersonName)
+          val openhabPrivacy = new CentralOpenhab(
+            context.getActorSystem, context.getSettings)
+          if (openhabPrivacy.getResidentPrivacy(resident)) {
+            "I'm sorry, I am not at liberty to answer that right now."
+          } else {
+            val openhabPresence = new CentralOpenhab(
+              context.getActorSystem, context.getSettings)
+            val present = openhabPresence.getResidentPresence(resident)
+            val prefix = assumption match {
+              case ASSUME_TRUE => {
+                if (present) {
+                  "Yes, "
+                } else {
+                  "No, "
+                }
+              }
+              case ASSUME_FALSE => {
+                if (present) {
+                  "No, "
+                } else {
+                  "Yes, "
+                }
+              }
+              case _ => ""
+            }
+            if (present) {
+              "I believe " + resident.name + " is currently at home."
+            } else {
+              "I believe " + resident.name + " is currently away from home."
+            }
+          }
         }
       }
     }
@@ -168,10 +234,41 @@ class PassiveTopic(name : String) extends ConversationTopic
     utterance : String, personName : String, context : ConversationContext) =
   {
     echo = utterance.toLowerCase
-    if (echo.contains("sujin") || echo.contains("wife")) {
-      context.setPerson("Sujin")
-    } else if (echo.contains("john") || echo.contains("husband")) {
-      context.setPerson("John")
+    val inputSplit = ContainsTopicMatcher.splitWords(echo)
+    if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("sujin", "lee")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.SHE)
+      context.setPersonName("Sujin")
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("my wife")))
+    {
+      if (residentName == "John") {
+        context.setPersonalPronoun(PersonalPronoun.SHE)
+        context.setPersonName("Sujin")
+      }
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("john", "sichi")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.HE)
+      context.setPersonName("John")
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("my husband")))
+    {
+      if (residentName == "Sujin") {
+        context.setPersonalPronoun(PersonalPronoun.HE)
+        context.setPersonName("John")
+      }
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("me", "i", "my")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.I)
+      context.setPersonName(residentName)
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("you", "your")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.YOU)
+      context.setPersonName("")
     }
   }
 }

@@ -188,6 +188,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
     val transcript = db.save(ConversationTranscript(startTime))
     currentTranscript = Some(transcript)
     conversationContext = new ConversationSubContext(this)
+    // FIXME:  get current name via channel?
+    conversationContext.setPartner(ConversationPartner.ALLISON)
     topic.produceMessage(conversationContext).foreach({ msg =>
       msg match {
         case PartnerUtteranceMsg(utterance, _) => {

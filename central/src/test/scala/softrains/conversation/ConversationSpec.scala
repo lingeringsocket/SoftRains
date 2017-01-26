@@ -92,11 +92,12 @@ class ConversationSpec extends Specification
     {
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource)
-      dispatcher.produceUtterance() must be equalTo(
+      val context = new ConversationSubContext(NullConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Who goes there?"))
       dispatcher.consumeUtterance(
-        "Your worst enemy", "Voldemort")
-      dispatcher.produceUtterance() must be equalTo(
+        "Your worst enemy", "Voldemort", context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("So, what is on your mind?"))
     }
 
@@ -106,18 +107,19 @@ class ConversationSpec extends Specification
       val greeting = new DailyGreeting(frodo)
       val topicSource = new SequentialTopicSource(Seq(greeting))
       val dispatcher = new TopicDispatcher(topicSource)
-      dispatcher.produceUtterance() must be equalTo(
+      val context = new ConversationSubContext(NullConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Who goes there?"))
       dispatcher.consumeUtterance(
-        "The Ring-bearer", frodo.name)
-      dispatcher.produceUtterance() must be equalTo(
+        "The Ring-bearer", frodo.name, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Good morning, Frodo!"))
       dispatcher.isInProgress must beTrue
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("So, what is on your mind?"))
       dispatcher.consumeUtterance(
-        "Thank you very much")
-      dispatcher.produceUtterance() must be equalTo(
+        "Thank you very much", frodo.name, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("You are very welcome!"))
     }
 
@@ -167,6 +169,36 @@ class ConversationSpec extends Specification
       dispatcher.produceUtterance() must be equalTo(
         Some("I heard Bert say, I want my rubber ducky.  Try another?"))
       dispatcher.isInProgress must beTrue
+    }
+
+    "answer some personal questions" in
+    {
+      val resident = new HomeResident("John")
+      val topicSource = new SequentialTopicSource(Seq.empty)
+      val dispatcher = new TopicDispatcher(topicSource, resident.name)
+      val context = new ConversationSubContext(NullConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
+        Some("Hello, John.  How are you?"))
+      dispatcher.consumeUtterance(
+        "Who are you?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "My name is Allison")
+      dispatcher.consumeUtterance(
+        "Where are you?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "I live in a magical cloud palace")
+      dispatcher.consumeUtterance(
+        "Who am I?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "I am fairly sure you are John")
+      dispatcher.consumeUtterance(
+        "Where am I?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Silly human")
+      dispatcher.consumeUtterance(
+        "Who is Sujin?", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Sujin is my favorite")
     }
   }
 }

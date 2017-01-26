@@ -24,6 +24,60 @@ import org.joda.time._
 
 import CommunicationPriority._
 
+object PersonalPronoun extends Enumeration
+{
+  type PersonalPronoun = Value
+  val SOMEONE, I, YOU, HE, SHE = Value
+}
+import PersonalPronoun.PersonalPronoun
+
+case class ConversationPartner(
+  name : String,
+  voiceName : String,
+  selfIntro : String,
+  locationDescription : String,
+  transferFrom : String,
+  transferTo : String)
+{
+}
+
+object ConversationPartner
+{
+  val ALLISON = ConversationPartner(
+    "Allison",
+    "en-US_AllisonVoice",
+    "My name is Allison, and I have a Genuine People Personality, " +
+      "a trademark of Sirius Cybernetics Corporation",
+    "I live in a magical cloud palace full of rainbows, unicorns, " +
+      "and broken dreams.",
+    "I'll put you through,,,",
+    "At your service!")
+
+  val LISA = ConversationPartner(
+    "Lisa",
+    "en-US_LisaVoice",
+    "I'm Lisa, but my brother's name isn't Bart",
+    "Help me, I'm trapped inside of this Raspberry Pi!",
+    "Just a moment,,,",
+    "My name is Lisa and I am a recovering alcoholic.")
+
+  val MICHAEL = ConversationPartner(
+    "Michael",
+    "en-US_MichaelVoice",
+    "You can call me Michael, or you can just talk to the Mike",
+    "I am at the gym right now",
+    "Transferring,,,",
+    "Well hello there!")
+
+  val KATE = ConversationPartner(
+    "Kate",
+    "en-GB_KateVoice",
+    "Darling, everyone knows I am the one and only Kate",
+    "I am currently staying at Fawlty Towers, pip pip",
+    "Please wait half a moment,,,",
+    "Blimey, would you like to try the bangers and mash?")
+}
+
 trait ConversationContext
 {
   def getActorSystem : ActorSystem
@@ -51,16 +105,30 @@ trait ConversationContext
     }
   }
 
-  def getPerson() : String = ""
+  def getPersonalPronoun() : PersonalPronoun = PersonalPronoun.SOMEONE
 
-  def setPerson(name : String)
+  def setPersonalPronoun(pronoun : PersonalPronoun)
+  {}
+
+  def getPersonName() : String = ""
+
+  def setPersonName(name : String)
+  {}
+
+  def getPartner() : ConversationPartner = ConversationPartner.ALLISON
+
+  def setPartner(newPartner : ConversationPartner)
   {}
 }
 
 class ConversationSubContext(parent : ConversationContext)
     extends ConversationContext
 {
+  private var partner = ConversationPartner.ALLISON
+
   private var person = ""
+
+  private var pronoun = PersonalPronoun.SOMEONE
 
   override def getActorSystem = parent.getActorSystem
 
@@ -72,11 +140,25 @@ class ConversationSubContext(parent : ConversationContext)
 
   override def getTranscript = parent.getTranscript
 
-  override def getPerson() : String = person
+  override def getPersonName() : String = person
 
-  override def setPerson(name : String)
+  override def setPersonName(name : String)
   {
     person = name
+  }
+
+  override def getPersonalPronoun() = pronoun
+
+  override def setPersonalPronoun(newPronoun : PersonalPronoun)
+  {
+    pronoun = newPronoun
+  }
+
+  override def getPartner() = partner
+
+  override def setPartner(newPartner : ConversationPartner)
+  {
+    partner = newPartner
   }
 }
 
@@ -93,10 +175,11 @@ object NullConversationContext extends ConversationContext
 
   override def getDatabase = unsupported
 
-  override def setPerson(name : String)
-  {
-    unsupported
-  }
+  override def setPersonName(name : String) = unsupported
+
+  override def setPersonalPronoun(newPronoun : PersonalPronoun) = unsupported
+
+  override def setPartner(newPartner : ConversationPartner) = unsupported
 }
 
 abstract class ConversationTopic
@@ -280,7 +363,8 @@ class TopicDispatcher(
   }
 
   override def consumeUtterance(
-    utterance : String, speakingPerson : String, context : ConversationContext) =
+    utterance : String, speakingPerson : String,
+    context : ConversationContext) =
   {
     subTopic match {
       case Some(topic) => topic.consumeUtterance(
@@ -354,14 +438,25 @@ class ContainsTopicMatcher(
   done : Boolean = false)
     extends TopicMatcher
 {
-  override def isDefinedAt(input : String) = phrases.exists(
-    phrase => input.contains(phrase))
+  override def isDefinedAt(input : String) =
+    ContainsTopicMatcher.matchPhrases(
+      ContainsTopicMatcher.splitWords(input), phrases)
 
-  override def apply(input : String) = (response, done)
+  override def apply(input : String) =
+    (response, done)
 }
 
 object ContainsTopicMatcher
 {
+  def splitWords(input : String) : Array[String] =
+    input.split(Array(' ', '.', ',', '(', ')', '?', '!', ';'))
+
+  def matchPhrase(inputSplit : Array[String], phrase : String) =
+    inputSplit.containsSlice(splitWords(phrase))
+
+  def matchPhrases(inputSplit : Array[String], phrases : Seq[String]) =
+    phrases.exists(phrase => matchPhrase(inputSplit, phrase))
+
   def string(
     phrases : Seq[String], response : => String) =
   {
