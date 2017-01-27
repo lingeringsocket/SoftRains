@@ -18,35 +18,6 @@ import softrains.central._
 import softrains.intercom._
 
 import CommunicationPriority._
-
-object QueryAssumption extends Enumeration
-{
-  type QueryAssumption = Value
-
-  val ASSUME_TRUE, ASSUME_FALSE, ASSUME_NOTHING = Value
-
-  def generateConfirmation(assumption : QueryAssumption, truth : Boolean)
-      : String =
-  {
-    assumption match {
-      case ASSUME_TRUE => {
-        if (truth) {
-          "Yes, "
-        } else {
-          "No, "
-        }
-      }
-      case ASSUME_FALSE => {
-        if (truth) {
-          "No, "
-        } else {
-          "Yes, "
-        }
-      }
-      case _ => ""
-    }
-  }
-}
 import QueryAssumption._
 
 class PassiveTopic(residentName : String) extends ConversationTopic
