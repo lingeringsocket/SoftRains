@@ -31,53 +31,6 @@ object PersonalPronoun extends Enumeration
 }
 import PersonalPronoun.PersonalPronoun
 
-case class ConversationPartner(
-  name : String,
-  voiceName : String,
-  selfIntro : String,
-  locationDescription : String,
-  transferFrom : String,
-  transferTo : String)
-{
-}
-
-object ConversationPartner
-{
-  val ALLISON = ConversationPartner(
-    "Allison",
-    "en-US_AllisonVoice",
-    "My name is Allison, and I have a Genuine People Personality, " +
-      "a trademark of Sirius Cybernetics Corporation",
-    "I live in a magical cloud palace full of rainbows, unicorns, " +
-      "and broken dreams.",
-    "I'll put you through,,,",
-    "At your service!")
-
-  val LISA = ConversationPartner(
-    "Lisa",
-    "en-US_LisaVoice",
-    "I'm Lisa, but my brother's name isn't Bart",
-    "Help me, I'm trapped inside of this Raspberry Pi!",
-    "Just a moment,,,",
-    "My name is Lisa and I am a recovering alcoholic.")
-
-  val MICHAEL = ConversationPartner(
-    "Michael",
-    "en-US_MichaelVoice",
-    "You can call me Michael, or you can just talk to the Mike",
-    "I am at the gym right now",
-    "Transferring,,,",
-    "Well hello there!")
-
-  val KATE = ConversationPartner(
-    "Kate",
-    "en-GB_KateVoice",
-    "Darling, everyone knows I am the one and only Kate",
-    "I am currently staying at Fawlty Towers, pip pip",
-    "Please wait half a moment,,,",
-    "Blimey, would you like to try the bangers and mash?")
-}
-
 trait ConversationContext
 {
   def getActorSystem : ActorSystem
