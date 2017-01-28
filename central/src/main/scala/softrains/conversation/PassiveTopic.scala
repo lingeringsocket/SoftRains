@@ -190,8 +190,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
 
   private def loadResident(name : String) =
   {
-    getContext.getDatabase.query[HomeResident]. whereEqual("name", name).
-      fetchOne.get
+    getContext.getDatabase.query[HomeResident].whereEqual("name", name).
+      fetchOne.getOrElse(HomeResident("Stranger"))
   }
 
   private def reportLocation(assumption : QueryAssumption) =

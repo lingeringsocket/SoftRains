@@ -14,9 +14,12 @@
 // limitations under the License.
 package softrains.conversation
 
+import softrains.base._
 import softrains.central._
 
 import org.specs2.mutable._
+
+import com.typesafe.config._
 
 class ConversationSpec extends Specification
 {
@@ -221,7 +224,7 @@ class ConversationSpec extends Specification
       val resident = new HomeResident("John")
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource, resident.name)
-      val context = new ConversationSubContext(NullConversationContext)
+      val context = new ConversationSubContext(TestConversationContext)
       dispatcher.produceUtterance(context) must be equalTo(
         Some("Hello, John.  How are you?"))
       dispatcher.consumeUtterance(
@@ -237,5 +240,21 @@ class ConversationSpec extends Specification
       dispatcher.produceUtterance(context).get must startWith(
         "Bombs away!")
     }
+  }
+
+  object TestConversationContext extends ConversationContext
+  {
+    private val settings = SoftRainsSettings(ConfigFactory.load("test.conf"))
+
+    private val db = new CentralDb(settings)
+
+    override def getActorSystem =
+    {
+      throw new UnsupportedOperationException("TestConversationContext")
+    }
+
+    override def getSettings = settings
+
+    override def getDatabase = db
   }
 }
