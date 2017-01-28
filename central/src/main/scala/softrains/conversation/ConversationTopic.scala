@@ -273,6 +273,32 @@ abstract class NotificationTopic
   }
 }
 
+class MessageTopic(msg : IntercomActor.SpeakerSoundMsg)
+    extends ConversationTopic
+{
+  private var over = false
+
+  override def getPriority() = ASAP
+
+  override def produceMessage(context : ConversationContext) =
+  {
+    if (over) {
+      None
+    } else {
+      over = true
+      Some(msg)
+    }
+  }
+
+  override def produceUtterance(context : ConversationContext) =
+    delegateToProduceMessage(context)
+
+  override def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext)
+  {
+  }
+}
+
 class DailyGreeting(resident : HomeResident)
     extends NotificationTopic
 {

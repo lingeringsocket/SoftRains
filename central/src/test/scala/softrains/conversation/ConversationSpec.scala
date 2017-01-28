@@ -230,7 +230,7 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "I want to leave a message for my wife.", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
-        "Okay, please record")
+        "Okay, please tell me your message")
       dispatcher.consumeUtterance(
         "Hodor!", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(

@@ -47,7 +47,7 @@ class RecordingTopic(sender : HomeResident, recipient : HomeResident)
       case INTRO => {
         state = RECORD
         Some(IntercomActor.PartnerUtteranceMsg(
-          "Okay, please record your message now."))
+          "Okay, please tell me your message now."))
       }
       case CONFIRM => {
         Some(IntercomActor.PartnerUtteranceMsg(
@@ -60,7 +60,7 @@ class RecordingTopic(sender : HomeResident, recipient : HomeResident)
           IntercomActor.PlayAudioFileMsg(audioFile.getOrElse("hodor.mp3")),
           IntercomActor.PartnerUtteranceMsg(
             "Do you want to play it back again, send it, cancel, "
-              + "or re-record?"))))
+              + "or ree ree cord?"))))
       }
       case SENT => {
         state = DONE
@@ -76,7 +76,7 @@ class RecordingTopic(sender : HomeResident, recipient : HomeResident)
         state = CONFIRM
         Some(IntercomActor.PartnerUtteranceMsg(
           "I beg your pardon?  I need to know whether you want " +
-            "to play your message back, or send it, or re-record it, " +
+            "to play your message back, or send it, or ree ree cord it, " +
             "or cancel?"))
       }
       case _ => None

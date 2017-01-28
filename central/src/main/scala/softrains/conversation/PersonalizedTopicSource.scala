@@ -15,6 +15,7 @@
 package softrains.conversation
 
 import softrains.central._
+import softrains.intercom._
 
 import scala.collection.mutable._
 
@@ -52,8 +53,17 @@ class PersonalizedTopicSource extends ConversationTopicSource
           "and (expiration_time is null or expiration_time > ?)",
         personName, now
       ).foreach(notification => {
-        // FIXME define and use MessageTopic instead
-        topics += new WarningTopic(notification.message)
+        topics += new MessageTopic(
+          notification.audioFile match {
+            case Some(file) => {
+              IntercomActor.SpeakerSoundSeqMsg(Seq(
+                IntercomActor.PartnerUtteranceMsg(notification.message),
+                IntercomActor.PlayAudioFileMsg(file)))
+            }
+            case _ => {
+              IntercomActor.PartnerUtteranceMsg(notification.message)
+            }
+          })
         db.save(notification.copy(receiveTime = Some(now)))
       })
       iterator = topics.iterator
