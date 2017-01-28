@@ -137,7 +137,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     val context = getContext
     context.getPersonalPronoun match {
       case PersonalPronoun.I => {
-        val resident = new HomeResident(residentName)
+        val resident = loadResident(residentName)
         changedTopic = Some(
           new RecordingTopic(resident, resident))
         ""
@@ -146,8 +146,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         "That's very sweet, but why don't you just tell me directly?"
       }
       case PersonalPronoun.HE | PersonalPronoun.SHE => {
-        val sender = new HomeResident(residentName)
-        val recipient = new HomeResident(context.getPersonName)
+        val sender = loadResident(residentName)
+        val recipient = loadResident(context.getPersonName)
         changedTopic = Some(
           new RecordingTopic(sender, recipient))
         ""
@@ -188,6 +188,12 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     }
   }
 
+  private def loadResident(name : String) =
+  {
+    getContext.getDatabase.query[HomeResident]. whereEqual("name", name).
+      fetchOne.get
+  }
+
   private def reportLocation(assumption : QueryAssumption) =
   {
     val context = getContext
@@ -202,7 +208,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         if (context.getPersonName.isEmpty) {
           clueless
         } else {
-          val resident = new HomeResident(context.getPersonName)
+          val resident = loadResident(context.getPersonName)
           val openhabPrivacy = new CentralOpenhab(
             context.getActorSystem, context.getSettings)
           if (openhabPrivacy.getResidentPrivacy(resident)) {
