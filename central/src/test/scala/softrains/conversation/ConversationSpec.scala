@@ -20,6 +20,9 @@ import org.specs2.mutable._
 
 class ConversationSpec extends Specification
 {
+  // database state is shared, so we need isolation
+  sequential
+
   "ConversationProcessor" should
   {
     "say good morning" in
@@ -211,6 +214,28 @@ class ConversationSpec extends Specification
         "Where is he?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
         "I am not sure who or what")
+    }
+
+    "record voicemail" in
+    {
+      val resident = new HomeResident("John")
+      val topicSource = new SequentialTopicSource(Seq.empty)
+      val dispatcher = new TopicDispatcher(topicSource, resident.name)
+      val context = new ConversationSubContext(NullConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
+        Some("Hello, John.  How are you?"))
+      dispatcher.consumeUtterance(
+        "I want to leave a message for my wife.", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Okay, please record")
+      dispatcher.consumeUtterance(
+        "Hodor!", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Should I play back")
+      dispatcher.consumeUtterance(
+        "send", resident.name, context)
+      dispatcher.produceUtterance(context).get must startWith(
+        "Bombs away!")
     }
   }
 }

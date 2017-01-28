@@ -54,6 +54,8 @@ abstract class ConversationTopic
   def useVoiceIdentification() : Boolean = false
 
   def getPriority() : CommunicationPriority
+
+  def getChangedTopic() : Option[ConversationTopic] = None
 }
 
 trait ConversationTopicSource
@@ -172,6 +174,16 @@ class TopicDispatcher(
 
   private def changeTopic(context : ConversationContext)
   {
+    subTopic match {
+      case Some(lastTopic) => {
+        val newTopic = lastTopic.getChangedTopic
+        if (!newTopic.isEmpty) {
+          subTopic = newTopic
+          return
+        }
+      }
+      case _ =>
+    }
     topicSource.proposeTopicForPerson(context, currentPerson) match {
       case Some(newTopic) => {
         subTopic = Some(newTopic)

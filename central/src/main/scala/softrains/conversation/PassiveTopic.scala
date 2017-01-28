@@ -26,6 +26,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
 
   private var echo = ""
 
+  private var changedTopic : Option[ConversationTopic] = None
+
   private var contextOpt : Option[ConversationContext] = None
 
   private var catchAll = new CatchAllTopicMatcher
@@ -41,7 +43,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
 
   private val matcher = Seq[TopicMatcher](
     ContainsTopicMatcher.string(
-      Seq("goodbye", "good bye"),
+      Seq("goodbye", "bye"),
       "Talk to you later!",
       true),
     ContainsTopicMatcher.string(
@@ -99,6 +101,9 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       Seq("home", "here", "come home", "arrive", "arrived"),
       reportLocation(ASSUME_TRUE)),
     ContainsTopicMatcher.string(
+      Seq("message", "record", "voicemail"),
+      recordVoicemail),
+    ContainsTopicMatcher.string(
       Seq("away", "go out", "leave"),
       reportLocation(ASSUME_FALSE)),
     ContainsTopicMatcher.string(
@@ -126,6 +131,32 @@ class PassiveTopic(residentName : String) extends ConversationTopic
   }
 
   def clueless() = "I am not sure who or what you are referring to."
+
+  private def recordVoicemail() =
+  {
+    val context = getContext
+    context.getPersonalPronoun match {
+      case PersonalPronoun.I => {
+        val resident = new HomeResident(residentName)
+        changedTopic = Some(
+          new RecordingTopic(resident, resident))
+        ""
+      }
+      case PersonalPronoun.YOU => {
+        "That's very sweet, but why don't you just tell me directly?"
+      }
+      case PersonalPronoun.HE | PersonalPronoun.SHE => {
+        val sender = new HomeResident(residentName)
+        val recipient = new HomeResident(context.getPersonName)
+        changedTopic = Some(
+          new RecordingTopic(sender, recipient))
+        ""
+      }
+      case _ => {
+        clueless
+      }
+    }
+  }
 
   private def reportIdentity() =
   {
@@ -209,12 +240,19 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         if (finished) {
           done = true
         }
-        Some(msg)
+        if (!changedTopic.isEmpty) {
+          done = true
+          None
+        } else {
+          Some(msg)
+        }
       }
     } finally {
       contextOpt = None
     }
   }
+
+  override def getChangedTopic() = changedTopic
 
   private def forgetPerson(context : ConversationContext)
   {
@@ -242,7 +280,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         forgetPerson(context)
       }
     } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("john", "sichi")))
+      inputSplit, Seq("john", "sichi", "see key")))
     {
       context.setPersonalPronoun(PersonalPronoun.HE)
       context.setPersonName("John")
@@ -256,16 +294,6 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         forgetPerson(context)
       }
     } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("me", "i", "my")))
-    {
-      context.setPersonalPronoun(PersonalPronoun.I)
-      context.setPersonName(residentName)
-    } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("you", "your", "you're")))
-    {
-      context.setPersonalPronoun(PersonalPronoun.YOU)
-      context.setPersonName("")
-    } else if (ContainsTopicMatcher.matchPhrases(
       inputSplit, Seq("he", "his", "him")))
     {
       if (context.getPersonalPronoun != PersonalPronoun.HE) {
@@ -277,6 +305,16 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       if (context.getPersonalPronoun != PersonalPronoun.SHE) {
         forgetPerson(context)
       }
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("me", "i", "my", "myself")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.I)
+      context.setPersonName(residentName)
+    } else if (ContainsTopicMatcher.matchPhrases(
+      inputSplit, Seq("you", "your", "you're")))
+    {
+      context.setPersonalPronoun(PersonalPronoun.YOU)
+      context.setPersonName("")
     } else {
       forgetPerson(context)
     }

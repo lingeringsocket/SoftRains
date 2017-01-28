@@ -87,9 +87,9 @@ case class PendingNotification(
   audioFile : Option[String],
   priority : CommunicationPriority,
   creationTime : DateTime,
-  pushTime : Option[DateTime],
-  expirationTime : Option[DateTime],
-  receiveTime : Option[DateTime]
+  pushTime : Option[DateTime] = None,
+  expirationTime : Option[DateTime] = None,
+  receiveTime : Option[DateTime] = None
 ) extends CentralDbEntity
 
 class CentralDb(settings : SoftRainsSettings) extends Instance (

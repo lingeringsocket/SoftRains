@@ -438,14 +438,6 @@ class CentralService(
       lastTallyTime)
   }
 
-  def createNotification(notification : PendingNotification)
-  {
-    db.save(notification)
-    val openhab = new CentralOpenhab(getActorSystem, settings)
-    openhab.updateResidentNotificationFlag(notification.resident, true)
-    openhab.ensureSuccess
-  }
-
   def scanNotifications()
   {
     val now = readClockTime

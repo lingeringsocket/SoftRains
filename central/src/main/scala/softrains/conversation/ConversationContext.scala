@@ -55,6 +55,14 @@ trait ConversationContext
     }
   }
 
+  def createNotification(notification : PendingNotification)
+  {
+    getDatabase.save(notification)
+    val openhab = new CentralOpenhab(getActorSystem, getSettings)
+    openhab.updateResidentNotificationFlag(notification.resident, true)
+    openhab.ensureSuccess
+  }
+
   def getPersonalPronoun() : PersonalPronoun = PersonalPronoun.SOMEONE
 
   def setPersonalPronoun(pronoun : PersonalPronoun)
