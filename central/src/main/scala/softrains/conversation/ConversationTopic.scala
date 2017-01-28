@@ -14,6 +14,7 @@
 // limitations under the License.
 package softrains.conversation
 
+import softrains.base._
 import softrains.central._
 import softrains.intercom._
 
@@ -274,7 +275,8 @@ abstract class NotificationTopic
   }
 }
 
-class MessageTopic(msg : IntercomActor.SpeakerSoundMsg)
+class MessageTopic(
+  notification : PendingNotification, msg : IntercomActor.SpeakerSoundMsg)
     extends ConversationTopic
 {
   private var over = false
@@ -283,6 +285,8 @@ class MessageTopic(msg : IntercomActor.SpeakerSoundMsg)
 
   override def produceMessage(context : ConversationContext) =
   {
+    context.getDatabase.save(
+      notification.copy(receiveTime = Some(readClockTime)))
     if (over) {
       None
     } else {

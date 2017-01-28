@@ -54,6 +54,7 @@ class PersonalizedTopicSource extends ConversationTopicSource
         personName, now
       ).foreach(notification => {
         topics += new MessageTopic(
+          notification,
           notification.audioFile match {
             case Some(file) => {
               IntercomActor.SpeakerSoundSeqMsg(Seq(
@@ -64,7 +65,6 @@ class PersonalizedTopicSource extends ConversationTopicSource
               IntercomActor.PartnerUtteranceMsg(notification.message)
             }
           })
-        db.save(notification.copy(receiveTime = Some(now)))
       })
       iterator = topics.iterator
     }
