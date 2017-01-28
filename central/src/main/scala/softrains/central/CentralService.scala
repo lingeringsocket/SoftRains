@@ -53,6 +53,8 @@ class CentralService(
 
   private var conversationActor : ActorRef = null
 
+  private var lastGreet : DateTime = readClockTime
+
   def getDeviceMonitor = deviceMonitor
 
   def setActorSystem(system : ActorSystem)
@@ -257,7 +259,11 @@ class CentralService(
       path("greet") {
         get {
           complete({
-            startConversation
+            val now = readClockTime
+            if (lastGreet.isBefore(now.minusSeconds(10))) {
+              lastGreet = now
+              startConversation
+            }
             HttpEntity(contentType, "Salutations!")
           })
         }
@@ -317,7 +323,6 @@ class CentralService(
 
   private def startConversation()
   {
-    val httpConsumer = new HttpConsumer(getActorSystem)
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
       val topicSource = new PersonalizedTopicSource
@@ -335,6 +340,7 @@ class CentralService(
       greet("Stranger")
     } else {
       val nameUrl = openhabUrl + "/rest/items/face_name/state"
+      val httpConsumer = new HttpConsumer(getActorSystem)
       httpConsumer.fetchString(nameUrl) {
         name => {
           val residentName = name.capitalize
