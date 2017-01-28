@@ -96,17 +96,19 @@ class TopicDispatcher(
 
   private var turned = false
 
-  private var pending = {
-    if (personName.isEmpty) {
-      "Who goes there?"
-    } else {
-      if (intro.isEmpty) {
-        "Hello, " + personName + ".  How are you?"
+  private var pending : Option[IntercomActor.SpeakerSoundMsg] = Some(
+    IntercomActor.PartnerUtteranceMsg(
+      if (personName.isEmpty) {
+        "Who goes there?"
       } else {
-        intro
+        if (intro.isEmpty) {
+          "Hello, " + personName + ".  How are you?"
+        } else {
+          intro
+        }
       }
-    }
-  }
+    )
+  )
 
   private var currentPerson = personName
 
@@ -163,12 +165,12 @@ class TopicDispatcher(
         case _ => None
       }
     } else {
-      val message = IntercomActor.PartnerUtteranceMsg(pending)
-      pending = ""
+      val message = pending
+      pending = None
       if (subTopic.isEmpty && topicSource.isExhausted) {
         turnTheTables
       }
-      Some(message)
+      message
     }
   }
 
@@ -220,7 +222,8 @@ class TopicDispatcher(
         utterance, speakingPerson, context)
       case _ => {
         if (speakingPerson.isEmpty && currentPerson.isEmpty) {
-          pending = "Sorry, I don't recognize your voice."
+          pending = Some(IntercomActor.PartnerUtteranceMsg(
+            "Sorry, I don't recognize your voice."))
           done = true
         } else {
           if (!speakingPerson.isEmpty) {
@@ -229,11 +232,9 @@ class TopicDispatcher(
           changeTopic(context)
           subTopic match {
             case Some(topic) => {
-              // FIXME what if they start out with message
-              // instead of utterance?
-              topic.produceUtterance(context) match {
-                case Some(utterance) => {
-                  pending = utterance
+              topic.produceMessage(context) match {
+                case Some(message) => {
+                  pending = Some(message)
                 }
                 case _ => {
                   turnTheTables

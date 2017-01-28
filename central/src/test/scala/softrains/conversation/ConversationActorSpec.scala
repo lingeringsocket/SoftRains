@@ -23,6 +23,8 @@ import akka.testkit._
 
 import scala.collection._
 
+import org.joda.time._
+
 class ConversationActorSpec
     extends AkkaActorSpecification with DateTimeOrderingImplicit
 {
@@ -127,6 +129,82 @@ class ConversationActorSpec
         utterance1,
         utterance2,
         utterance3)
+    }
+
+    "process a voicemail flow" in new AkkaActorExample
+    {
+      val utterance0 = "Hello, John.  How are you?"
+      val utterance1 = "I want to leave a message for my wife."
+      val utterance2 = "Okay, please tell me your message now."
+      val utterance3 = "Hodor!"
+      val utterance4 = "Should I play back your message, or send it now?"
+      val utterance5 = "Send it."
+      val utterance6 = "Bombs away!"
+      val utterance7 = "Good morning, Sujin! Ready for another week?" +
+        " I have some updates for you."
+      val utterance8 = "Let's hear it."
+      val utterance9 = "Here is a message from John."
+
+      val db = new CentralDb(settings)
+
+      val actor = TestActorRef(new ConversationActor(db))
+
+      val sender = "John"
+      val recipient = "Sujin"
+      val filename = "hodor.mp3"
+
+      db.save(HomeResident(sender))
+      db.save(HomeResident(recipient))
+
+      val emptySource = new SequentialTopicSource(Seq.empty)
+      val senderDispatcher = new TopicDispatcher(emptySource, sender)
+      actor ! ActivateMsg(senderDispatcher, self)
+      expectMsg(PairRequestMsg)
+      actor ! PairAcceptedMsg
+      expectMsg(PartnerUtteranceMsg(utterance0))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerListenMsg(sender, false))
+      actor ! PersonUtteranceMsg(utterance1, "")
+      expectMsg(PartnerUtteranceMsg(utterance2))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerListenMsg(sender, false))
+      actor ! PersonUtteranceMsg(utterance3, "", Some(filename))
+      expectMsg(PartnerUtteranceMsg(utterance4))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerListenMsg(sender, false))
+      actor ! PersonUtteranceMsg(utterance5, "")
+      expectMsg(PartnerUtteranceMsg(utterance6))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(UnpairMsg)
+
+      val notifications = db.query[PendingNotification].fetch
+      notifications.size must be equalTo 1
+      val message = notifications.head
+      message.resident.name must be equalTo recipient
+      message.audioFile must beSome(filename)
+      message.pushTime must beEmpty
+      message.expirationTime must beEmpty
+      message.receiveTime must beEmpty
+
+      val recipientSource = new PersonalizedTopicSource()
+      val context = new ConversationSubContext(actor.underlyingActor)
+      context.setCurrentTime(new DateTime(2017, 1, 23, 10, 0, 0))
+      recipientSource.preloadTopicsForPerson(
+        context, recipient)
+      val recipientDispatcher = new TopicDispatcher(
+        recipientSource, recipient,
+        recipientSource.generateGreeting(context))
+      actor ! ActivateMsg(recipientDispatcher, self)
+      expectMsg(PairRequestMsg)
+      actor ! PairAcceptedMsg
+      expectMsg(PartnerUtteranceMsg(utterance7))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PartnerListenMsg(recipient, false))
+      actor ! PersonUtteranceMsg(utterance8, "")
+      expectMsg(PartnerUtteranceMsg(utterance9))
+      actor ! SpeakerSoundFinishedMsg()
+      expectMsg(PlayAudioFileMsg(filename))
+      actor ! SpeakerSoundFinishedMsg()
     }
   }
 }

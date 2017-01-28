@@ -89,13 +89,15 @@ class ConversationSubContext(
 
   private var pronoun = parent.getPersonalPronoun
 
+  private var currentTime = parent.getCurrentTime
+
   override def getActorSystem = parent.getActorSystem
 
   override def getSettings = parent.getSettings
 
   override def getDatabase = parent.getDatabase
 
-  override def getCurrentTime = parent.getCurrentTime
+  override def getCurrentTime = currentTime
 
   override def getTranscript = parent.getTranscript
 
@@ -127,6 +129,11 @@ class ConversationSubContext(
       parent.setPartner(newPartner)
     }
     partner = newPartner
+  }
+
+  def setCurrentTime(newTime : DateTime)
+  {
+    currentTime = newTime
   }
 }
 
