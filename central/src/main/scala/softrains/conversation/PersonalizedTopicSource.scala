@@ -44,15 +44,18 @@ class PersonalizedTopicSource extends ConversationTopicSource
       }
       val now = context.getCurrentTime
       val db = context.getDatabase
-      db.query[PendingNotification].
-        whereEqual("resident.name", personName).
-        whereEqual("receiveTime", None).
-        whereLarger("expirationTime.item", now).
-        fetch.foreach(notification => {
-          // FIXME define and use MessageTopic instead
-          topics += new WarningTopic(notification.message)
-          db.save(notification.copy(receiveTime = Some(now)))
-        })
+      db.fetchWithSql[PendingNotification](
+        "select n.id from pending_notification n, home_resident r " +
+          "where r.id=n.resident$id " +
+          "and r.name=? " +
+          "and receive_time is null " +
+          "and (expiration_time is null or expiration_time > ?)",
+        personName, now
+      ).foreach(notification => {
+        // FIXME define and use MessageTopic instead
+        topics += new WarningTopic(notification.message)
+        db.save(notification.copy(receiveTime = Some(now)))
+      })
       iterator = topics.iterator
     }
   }
