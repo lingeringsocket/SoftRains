@@ -26,6 +26,8 @@ import akka.util._
 import scala.collection._
 import scala.util._
 
+import java.util.concurrent._
+
 class HttpConsumer(actorSystem : ActorSystem)
 {
   private implicit val system = actorSystem
@@ -169,7 +171,7 @@ class HttpConsumer(actorSystem : ActorSystem)
 
   def waitForCompletion()
   {
-    phaser.arriveAndAwaitAdvance
+    phaser.awaitAdvanceInterruptibly(phaser.arrive, 30, TimeUnit.SECONDS)
   }
 
   def ensureSuccess()
