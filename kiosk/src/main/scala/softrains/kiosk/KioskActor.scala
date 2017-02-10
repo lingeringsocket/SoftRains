@@ -46,7 +46,7 @@ class KioskActor extends Actor
       // FIXME share code with CentralService, and make sure
       // we never start two different IntercomActors
       // at once!
-      val intercomActorSelection = 
+      val intercomActorSelection =
         context.system.actorSelection(intercomSpec)
       val intercomActorTimeout =
         FiniteDuration(
