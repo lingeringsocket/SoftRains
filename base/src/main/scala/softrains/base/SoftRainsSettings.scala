@@ -157,6 +157,7 @@ class SoftRainsSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("kiosk")
     val cameraUrl = subConf.getString("camera-url")
+    val cameraWindowTitle = subConf.getString("camera-window-title")
   }
 
   private def readMap(conf : Config, key : String) : Map[String, String] =

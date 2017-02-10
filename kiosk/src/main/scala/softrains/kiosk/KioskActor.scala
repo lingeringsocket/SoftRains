@@ -69,9 +69,16 @@ class KioskActor extends Actor
   override def preStart()
   {
     val cameraUrl = settings.Kiosk.cameraUrl
+    val cameraWindowTitle = settings.Kiosk.cameraWindowTitle
     if (!cameraUrl.isEmpty) {
       val input = new CameraFeedInput(cameraUrl)
-      val view = CameraNullView
+      val view = {
+        if (cameraWindowTitle.isEmpty) {
+          CameraNullView
+        } else {
+          new CameraDesktopView(cameraWindowTitle)
+        }
+      }
       cameraActor ! CameraActor.StartSentinelMsg(input, view)
     }
     intercomActor ! IntercomActor.SetObserverMsg(self)
