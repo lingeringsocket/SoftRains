@@ -71,6 +71,7 @@ class KioskActor extends Actor
       val view = CameraNullView
       cameraActor ! CameraActor.StartSentinelMsg(input, view)
     }
+    intercomActor ! IntercomActor.SetObserverMsg(self)
   }
 
   override def postStop()
