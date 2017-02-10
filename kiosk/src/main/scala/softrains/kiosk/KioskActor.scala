@@ -19,6 +19,7 @@ import softrains.vision._
 import softrains.intercom._
 
 import akka.actor._
+import akka.event._
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -26,6 +27,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class KioskActor extends Actor
 {
+  private val log = Logging(context.system, this)
+
   private val settings = SoftRainsActorSettings(context)
 
   private val modeUrl =
@@ -72,11 +75,13 @@ class KioskActor extends Actor
       cameraActor ! CameraActor.StartSentinelMsg(input, view)
     }
     intercomActor ! IntercomActor.SetObserverMsg(self)
+    log.info("KioskActor started")
   }
 
   override def postStop()
   {
     cameraActor ! CameraActor.StopSentinelMsg
+    log.info("KioskActor stopped")
   }
 
   private def maybeNotify[T](eval : => T) =
@@ -95,6 +100,7 @@ class KioskActor extends Actor
       httpConsumer.ensureSuccess
     }
     case IntercomActor.PairedMsg => {
+      log.info("KioskActor paired")
       cameraActor ! CameraActor.ControlFaceDetectionMsg(false)
       maybeNotify {
         val httpConsumer = new HttpConsumer(context.system)
@@ -103,6 +109,7 @@ class KioskActor extends Actor
       }
     }
     case IntercomActor.UnpairedMsg => {
+      log.info("KioskActor unpaired")
       context.system.scheduler.scheduleOnce(
         10.seconds, cameraActor,
         CameraActor.ControlFaceDetectionMsg(true))
@@ -113,11 +120,13 @@ class KioskActor extends Actor
       }
     }
     case IntercomActor.ListeningStartedMsg => maybeNotify {
+      log.info("KioskActor listening started")
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(modeUrl, "LISTENING") {}
       httpConsumer.ensureSuccess
     }
     case IntercomActor.ListeningDoneMsg => maybeNotify {
+      log.info("KioskActor listening done")
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(modeUrl, "ON") {}
       httpConsumer.ensureSuccess
