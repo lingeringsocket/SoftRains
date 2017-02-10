@@ -86,9 +86,11 @@ class CameraActor extends LoggingFSM[State, Data]
       SentinelData(sentinel, listener)) =>
     {
       sentinel.analyzeFrame
+      val face = sentinel.getLastFace
       if (sentinel.wasFaceDetected) {
+        log.info("CameraActor detected face " + face)
         listener ! FaceDetectedMsg(
-          sentinel.getLastFace, sentinel.getFaceConfidence)
+          face, sentinel.getFaceConfidence)
       }
       context.system.scheduler.scheduleOnce(
         frameInterval, self, AnalyzeFrameMsg)
