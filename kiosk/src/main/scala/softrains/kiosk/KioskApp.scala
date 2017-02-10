@@ -25,11 +25,13 @@ import com.typesafe.config._
 
 object KioskApp extends App
 {
-  val config = ConfigFactory.load
-  val settings = SoftRainsSettings(config)
-  val system = ActorSystem("SoftRainsKiosk", config)
-  val kioskActor =
-    system.actorOf(Props(classOf[KioskActor]), "kioskActor")
+  private val config = ConfigFactory.load
+  private val settings = SoftRainsSettings(config)
+  private val system = ActorSystem("SoftRainsKiosk", config)
+  private val kioskSpec = settings.Actors.kiosk
+  assert (!kioskSpec.isEmpty)
+  private val kioskActor =
+    system.actorOf(Props(classOf[KioskActor]), kioskSpec)
 
   println("Akka listening, press RETURN to stop...")
   StdIn.readLine

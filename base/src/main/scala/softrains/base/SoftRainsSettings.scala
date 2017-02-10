@@ -45,6 +45,7 @@ class SoftRainsSettings(rootConf : Config)
     val intercom = subConf.getString("intercom")
     val echo = subConf.getString("echo")
     val camera = subConf.getString("camera")
+    val kiosk = subConf.getString("kiosk")
   }
 
   object Openhab

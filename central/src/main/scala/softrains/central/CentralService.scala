@@ -18,6 +18,7 @@ import softrains.base._
 import softrains.conversation._
 import softrains.intercom._
 import softrains.network._
+import softrains.kiosk._
 
 import com.typesafe.config._
 
@@ -149,6 +150,11 @@ class CentralService(
       if (!echoSpec.isEmpty) {
         startEcho
       }
+    }
+
+    val kioskSpec = settings.Actors.kiosk
+    if (!kioskSpec.isEmpty) {
+      system.actorOf(Props(classOf[KioskActor]), kioskSpec)
     }
 
     val startTime = readClockTime

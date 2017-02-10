@@ -15,7 +15,6 @@
 package softrains.alexa
 
 import softrains.base._
-import softrains.kiosk._
 import softrains.intercom._
 
 import akka.actor._
@@ -25,22 +24,26 @@ import scala.io._
 
 import com.typesafe.config._
 
-object AlexaKioskApp extends App
+object AlexaApp extends App
 {
   val config = ConfigFactory.load
   val settings = SoftRainsSettings(config)
-  val system = ActorSystem("SoftRainsKiosk", config)
-  val kioskActor =
-    system.actorOf(Props(classOf[KioskActor]), "kioskActor")
+  val system = ActorSystem("SoftRainsAlexa", config)
+
+  private val intercomSpec = settings.Actors.intercom
+  assert (!intercomSpec.isEmpty)
+
+  val intercomActor =
+    system.actorOf(Props(classOf[IntercomActor]), intercomSpec)
 
   val alexaActor = system.actorOf(
     Props(classOf[AlexaActor]), "alexaActor")
   alexaActor ! AlexaActor.StartSessionMsg
-  kioskActor ! IntercomActor.InitializeAlexaMsg(alexaActor)
+  intercomActor ! IntercomActor.InitializeAlexaMsg(alexaActor)
 
   println("Akka listening, press RETURN to stop...")
   StdIn.readLine
-  kioskActor ! PoisonPill
+  intercomActor ! PoisonPill
 
   system.terminate
   Await.result(system.whenTerminated, duration.Duration.Inf)

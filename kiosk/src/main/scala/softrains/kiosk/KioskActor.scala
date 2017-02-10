@@ -20,6 +20,7 @@ import softrains.intercom._
 
 import akka.actor._
 
+import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -40,7 +41,24 @@ class KioskActor extends Actor
   assert (!intercomSpec.isEmpty)
 
   private val intercomActor =
-    context.actorOf(Props(classOf[IntercomActor]), intercomSpec)
+  {
+    if (intercomSpec.startsWith("akka:")) {
+      // FIXME share code with CentralService, and make sure
+      // we never start two different IntercomActors
+      // at once!
+      val intercomActorSelection = 
+        context.system.actorSelection(intercomSpec)
+      val intercomActorTimeout =
+        FiniteDuration(
+          10, java.util.concurrent.TimeUnit.SECONDS)
+      val intercomActorFuture = intercomActorSelection.resolveOne(
+        intercomActorTimeout)
+      Await.result(
+        intercomActorFuture, intercomActorTimeout)
+    } else {
+      context.actorOf(Props(classOf[IntercomActor]), intercomSpec)
+    }
+  }
 
   private val cameraActor =
     context.actorOf(Props(classOf[CameraActor]), cameraSpec)
