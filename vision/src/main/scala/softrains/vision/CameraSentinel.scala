@@ -632,10 +632,14 @@ class CameraSentinel(
         faces.foreach(
           face => {
             cvSetImageROI(img, nestRect(region, face))
-            val outFileName = File.createTempFile(
-              "face", ".jpg", getFacesDir).getCanonicalPath
+            val outFile = File.createTempFile(
+              "face", ".jpg", getFacesDir)
+            val outFileName = outFile.getCanonicalPath
             cvSaveImage(outFileName, img)
             cvResetImageROI(img)
+            val latestLink = new File(getFacesDir, "latest.jpg")
+            latestLink.delete
+            Files.createSymbolicLink(latestLink.toPath, outFile.toPath)
           }
         )
       }
