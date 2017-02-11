@@ -454,7 +454,6 @@ class CentralService(
   {
     val now = readClockTime
     val openhab = new CentralOpenhab(getActorSystem, settings)
-    var update = false
 
     // push out any ripe notification
     db.query[PendingNotification].
@@ -463,7 +462,6 @@ class CentralService(
       fetch.foreach(notification => {
         notification.pushTime.foreach(time => {
           if (time.isBefore(now)) {
-            update = true
             openhab.sendResidentNotification(
               notification.resident,
               notification.message)
@@ -482,12 +480,9 @@ class CentralService(
         "and resident$id = r.id " +
         "and ((expiration_time is null) or (expiration_time > ?)))",
       now).foreach(resident => {
-        update = true
         openhab.updateResidentNotificationFlag(resident, false)
       })
-    if (update) {
-      openhab.ensureSuccess
-    }
+    // don't bother waiting for openhab.ensureSuccess
   }
 
   private def sendMail(resident : HomeResident, subject : String, body : String)
