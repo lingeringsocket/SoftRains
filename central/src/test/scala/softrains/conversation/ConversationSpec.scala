@@ -131,7 +131,7 @@ class ConversationSpec extends Specification
 
     "dispatch to echo loop followed by voice identifier" in
     {
-      val echoLoop = new EchoLoop
+      val echoLoop = new EchoTopic
       val bert = HomeResident("Bert")
       val ernie = HomeResident("Ernie")
       val voiceIdentifier = new VoiceIdentifier(Seq(

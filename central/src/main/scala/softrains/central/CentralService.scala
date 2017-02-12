@@ -136,20 +136,10 @@ class CentralService(
         val props = Props(classOf[IntercomActor])
         intercomActorLocal = Some(system.actorOf(props, intercomSpec))
       }
-      val echoSpec = settings.Actors.echo
       val conversationProps = Props(classOf[ConversationActor], db)
-      val conversationSpec = {
-        if (echoSpec.isEmpty) {
-          "conversationActor"
-        } else {
-          echoSpec
-        }
-      }
+      val conversationSpec = "conversationActor"
       conversationActor =
         system.actorOf(conversationProps, conversationSpec)
-      if (!echoSpec.isEmpty) {
-        startEcho
-      }
     }
 
     val kioskSpec = settings.Actors.kiosk
@@ -289,14 +279,6 @@ class CentralService(
             HttpEntity(contentType, "Yakkety yak yak!")
           })
         }
-      } ~
-      path("echo") {
-        get {
-          complete({
-            startEcho
-            HttpEntity(contentType, "Time to play!")
-          })
-        }
       }
     }
 
@@ -311,14 +293,6 @@ class CentralService(
       .flatMap(_.unbind)
       .onComplete(_ => system.terminate)
     Await.result(system.whenTerminated, duration.Duration.Inf)
-  }
-
-  private def startEcho()
-  {
-    val topic = new EchoLoop
-    conversationActor ! ConversationActor.ActivateMsg(
-      topic,
-      getIntercomActor)
   }
 
   override def getSettings = settings

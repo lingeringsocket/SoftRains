@@ -50,6 +50,10 @@ abstract class ConversationTopic
     utterance : String, personName : String = "",
     context : ConversationContext = NullConversationContext)
 
+  def consumeAlternatives(alternatives : Seq[String])
+  {
+  }
+
   def getPersonName() : String = ""
 
   def useVoiceIdentification() : Boolean = false
@@ -214,6 +218,11 @@ class TopicDispatcher(
       "Well, " + currentPerson + ", it has been nice chatting with you!"))
   }
 
+  override def consumeAlternatives(alternatives : Seq[String])
+  {
+    subTopic.foreach(_.consumeAlternatives(alternatives))
+  }
+
   override def consumeUtterance(
     utterance : String, speakingPerson : String,
     context : ConversationContext) =
@@ -311,42 +320,6 @@ class DailyGreeting(resident : HomeResident)
     "Good morning, " + resident.name + "!"
 
   override def getPriority() = ASAP
-}
-
-class EchoLoop extends ConversationTopic
-{
-  private var done = false
-  private var echo = ""
-
-  override def getPriority() = ASAP
-
-  override def isInProgress() : Boolean = !done
-
-  override def produceUtterance(context : ConversationContext) =
-    delegateToProduceMessage(context)
-
-  override def produceMessage(context : ConversationContext) =
-  {
-    if (echo.isEmpty) {
-      Some(
-        IntercomActor.PartnerUtteranceMsg("Polly wants a cracker!"))
-    } else {
-      if (echo == "terminate") {
-        done = true
-        None
-      } else if ((echo == "ring the bell") || (echo == "big ben")) {
-        Some(IntercomActor.DoorbellMsg)
-      } else {
-        Some(IntercomActor.PartnerUtteranceMsg(echo))
-      }
-    }
-  }
-
-  def consumeUtterance(
-    utterance : String, personName : String, context : ConversationContext) =
-  {
-    echo = utterance.toLowerCase
-  }
 }
 
 class VoiceIdentifier(residents : Seq[HomeResident])

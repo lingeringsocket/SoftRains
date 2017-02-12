@@ -141,13 +141,15 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
       sender ! UnpairMsg
       goto(Inactive) using Empty
     }
-    case Event(PersonUtteranceMsg(utterance, personName, audioFile),
+    case Event(PersonUtteranceMsg(alternatives, personName, audioFile),
       ConvoData(topic, _)) =>
     {
       // FIXME: pass real start time of utterance as part of
       // PersonUtteranceMsg, making sure clocks are synchronized
+      val utterance = alternatives.head
       saveUtterance(personName, utterance, audioFile)
       topic.consumeUtterance(utterance, personName, conversationContext)
+      topic.consumeAlternatives(alternatives)
       topic.produceMessage(conversationContext) match {
         case Some(SpeakerSoundSeqMsg(seq)) => {
           val replies = seq.iterator

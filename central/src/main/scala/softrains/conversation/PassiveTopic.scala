@@ -24,7 +24,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
 {
   private var done = false
 
-  private var echo = ""
+  private var lastUtterance = ""
 
   private var changedTopic : Option[ConversationTopic] = None
 
@@ -104,6 +104,9 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       Seq("message", "record", "voicemail"),
       recordVoicemail),
     ContainsTopicMatcher.string(
+      Seq("echo", "parrot"),
+      startEcho),
+    ContainsTopicMatcher.string(
       Seq("away", "go out", "leave"),
       reportLocation(ASSUME_FALSE)),
     ContainsTopicMatcher.string(
@@ -156,6 +159,12 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         clueless
       }
     }
+  }
+
+  private def startEcho() =
+  {
+    changedTopic = Some(new EchoTopic)
+    ""
   }
 
   private def reportIdentity() =
@@ -236,7 +245,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
   {
     contextOpt = Some(context)
     try {
-      val response = matcher.lift(echo)
+      val response = matcher.lift(lastUtterance)
       catchAll.clearFirst
       if (response.isEmpty) {
         done = true
@@ -269,8 +278,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
   def consumeUtterance(
     utterance : String, personName : String, context : ConversationContext) =
   {
-    echo = utterance.toLowerCase
-    val inputSplit = ContainsTopicMatcher.splitWords(echo)
+    lastUtterance = utterance.toLowerCase
+    val inputSplit = ContainsTopicMatcher.splitWords(lastUtterance)
     if (ContainsTopicMatcher.matchPhrases(
       inputSplit, Seq("sujin", "lee")))
     {

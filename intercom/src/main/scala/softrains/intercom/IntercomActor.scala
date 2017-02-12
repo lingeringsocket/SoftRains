@@ -113,8 +113,20 @@ object IntercomActor
   trait WatsonCompletionMsg extends PeripheralMsg
   trait WatsonHeardMsg extends WatsonCompletionMsg
   final case class PersonUtteranceMsg(
-    utterance : String, personName : String, fileOpt : Option[String] = None)
+    alternatives : Seq[String],
+    personName : String,
+    fileOpt : Option[String])
       extends WatsonHeardMsg
+  {
+    def utterance = alternatives.head
+  }
+  case object PersonUtteranceMsg {
+    def apply(utterance : String, personName : String,
+      fileOpt : Option[String] = None) =
+    {
+      new PersonUtteranceMsg(Seq(utterance), personName, fileOpt)
+    }
+  }
   case object SilenceMsg
       extends WatsonHeardMsg
   final case class SpeakerSoundFinishedMsg(fileOpt : Option[String] = None)

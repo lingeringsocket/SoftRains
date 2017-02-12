@@ -38,8 +38,11 @@ import javax.sound.sampled._
 
 import com.bitsinharmony.recognito._
 
+import scala.collection.JavaConverters._
+
 import scala.concurrent._
 import scala.concurrent.duration._
+
 import scala.sys.process._
 
 import com.ibm.watson.developer_cloud.text_to_speech.v1.model.{
@@ -162,7 +165,7 @@ class WatsonActor extends Actor
       val options = (new RecognizeOptions.Builder).
         contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
         inactivityTimeout(30).
-        maxAlternatives(1).build
+        maxAlternatives(3).build
       val speechPromise = Promise[SpeechResults]()
       val speechFuture = speechPromise.future
       val disconnectPromise = Promise[Object]()
@@ -175,11 +178,11 @@ class WatsonActor extends Actor
             try {
               val transcript =
                 speechResults.getResults.get(speechResults.getResultIndex)
-              val utterance =
-                transcript.getAlternatives.get(0).getTranscript.trim
-              log.info("Heard:  " + utterance)
+              val alternatives = transcript.getAlternatives.asScala.
+                map(_.getTranscript.trim).toSeq
+              log.info("Heard:  " + alternatives.head)
               result = IntercomActor.PersonUtteranceMsg(
-                utterance, personName, Some(wavFile.getAbsolutePath))
+                alternatives, personName, Some(wavFile.getAbsolutePath))
               speechPromise.success(speechResults)
             } catch {
               case ex : Throwable => {
@@ -223,9 +226,9 @@ class WatsonActor extends Actor
               if (!recognitoResults.isEmpty) {
                 val identifiedPersonName = recognitoResults.get(0).getKey
                 result match {
-                  case IntercomActor.PersonUtteranceMsg(utterance, _, _) => {
+                  case IntercomActor.PersonUtteranceMsg(alternatives, _, _) => {
                     result = IntercomActor.PersonUtteranceMsg(
-                      utterance, identifiedPersonName,
+                      alternatives, identifiedPersonName,
                       Some(wavFile.getAbsolutePath))
                   }
                   case _ =>

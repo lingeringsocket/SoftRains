@@ -43,7 +43,6 @@ class SoftRainsSettings(rootConf : Config)
     val subConf = conf.getConfig("actors")
     val central = subConf.getString("central")
     val intercom = subConf.getString("intercom")
-    val echo = subConf.getString("echo")
     val camera = subConf.getString("camera")
     val kiosk = subConf.getString("kiosk")
   }
