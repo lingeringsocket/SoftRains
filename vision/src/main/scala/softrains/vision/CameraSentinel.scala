@@ -280,9 +280,17 @@ class CameraSentinel(
 
   private var faceConfidence = 0.0
 
+  private var lastFaceFile = ""
+
+  private var lastSceneFile = ""
+
   def getLastFace = lastFace
 
   def getFaceConfidence = faceConfidence
+
+  def getFaceFile = lastFaceFile
+
+  def getSceneFile = lastSceneFile
 
   private def createDirs()
   {
@@ -630,6 +638,7 @@ class CameraSentinel(
           val outFile = File.createTempFile(
             "scene", ".jpg", getFacesDir)
           val outFileName = outFile.getCanonicalPath
+          lastSceneFile = outFile.getName
           cvSaveImage(outFileName, img)
           val latestLink = new File(getFacesDir, "latest.jpg")
           latestLink.delete
@@ -644,6 +653,7 @@ class CameraSentinel(
             val outFile = File.createTempFile(
               "face", ".jpg", getFacesDir)
             val outFileName = outFile.getCanonicalPath
+            lastFaceFile = outFile.getName
             cvSaveImage(outFileName, img)
             cvResetImageROI(img)
           }

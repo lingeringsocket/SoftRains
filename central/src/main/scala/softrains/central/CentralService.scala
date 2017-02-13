@@ -18,7 +18,6 @@ import softrains.base._
 import softrains.conversation._
 import softrains.intercom._
 import softrains.network._
-import softrains.kiosk._
 
 import com.typesafe.config._
 
@@ -125,11 +124,6 @@ class CentralService(
   def runActors()
   {
     implicit val system = getActorSystem
-    val centralSpec = settings.Actors.central
-    if (!centralSpec.isEmpty) {
-      val props = Props(classOf[CentralActor], this)
-      system.actorOf(props, centralSpec)
-    }
     val intercomSpec = settings.Actors.intercom
     if (!intercomSpec.isEmpty) {
       if (!intercomSpec.startsWith("akka:")) {
@@ -142,9 +136,10 @@ class CentralService(
         system.actorOf(conversationProps, conversationSpec)
     }
 
-    val kioskSpec = settings.Actors.kiosk
-    if (!kioskSpec.isEmpty) {
-      system.actorOf(Props(classOf[KioskActor]), kioskSpec)
+    val centralSpec = settings.Actors.central
+    if (!centralSpec.isEmpty) {
+      val props = Props(classOf[CentralActor], this)
+      system.actorOf(props, centralSpec)
     }
 
     val startTime = readClockTime

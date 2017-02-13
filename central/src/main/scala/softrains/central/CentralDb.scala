@@ -34,6 +34,13 @@ case class HomeResident(
   name : String
 ) extends CentralDbEntity
 
+case class ResidentAppearance(
+  resident : HomeResident,
+  imageTime : DateTime,
+  faceFile : String,
+  sceneFile : String
+) extends CentralDbEntity
+
 case class LanDevice(
   name : String,
   displayName : String,
@@ -100,6 +107,7 @@ class CentralDb(settings : SoftRainsSettings) extends Instance (
     Entity[PendingNotification](),
     Entity[CameraFeed](unique = Set() + Seq("name")),
     Entity[HomeResident](unique = Set() + Seq("name")),
+    Entity[ResidentAppearance](),
     Entity[HomePresence](),
     Entity[LanDevice](unique = Set() + Seq("name")),
     Entity[LanPresence]()),

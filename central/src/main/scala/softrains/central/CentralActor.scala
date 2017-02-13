@@ -16,6 +16,8 @@ package softrains.central
 
 import softrains.base._
 import softrains.network._
+import softrains.kiosk._
+import softrains.vision._
 
 import akka.actor._
 import akka.event._
@@ -46,6 +48,11 @@ class CentralActor(central : CentralService) extends Actor
     Props(classOf[DeviceMonitorActor], central),
     "deviceMonitorActor")
 
+  private val kioskSpec = settings.Actors.kiosk
+  if (!kioskSpec.isEmpty) {
+    context.actorOf(Props(classOf[KioskActor]), kioskSpec)
+  }
+
   override def preStart()
   {
     if (networkScanInterval.length > 0) {
@@ -62,6 +69,15 @@ class CentralActor(central : CentralService) extends Actor
   {
     case ScanNotificationsMsg => {
       central.scanNotifications
+    }
+    case msg : CameraActor.FaceDetectedMsg => {
+      val db = central.db
+      val residentOpt = db.query[HomeResident].
+        whereEqual("name", msg.name).fetchOne
+      residentOpt.foreach(resident => {
+        db.save(ResidentAppearance(
+          resident, readClockTime, msg.faceFile, msg.sceneFile))
+      })
     }
   }
 }

@@ -100,14 +100,17 @@ class KioskActor extends Actor
 
   def receive =
   {
-    case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
-      log.info("KioskActor detected face " + name + " with confidence " +
-        confidence)
+    case msg : CameraActor.FaceDetectedMsg => {
+      log.info("KioskActor detected face " + msg.name + " with confidence " +
+        msg.confidence)
+      context.parent ! msg
       intercomActor ! IntercomActor.SetObserverMsg(self)
       intercomActor ! IntercomActor.PreWakeMsg
-      val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(faceNameUrl, name) {}
-      httpConsumer.ensureSuccess
+      maybeNotify {
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(faceNameUrl, msg.name) {}
+        httpConsumer.ensureSuccess
+      }
     }
     case IntercomActor.PairedMsg => {
       log.info("KioskActor paired")
@@ -129,17 +132,21 @@ class KioskActor extends Actor
         httpConsumer.ensureSuccess
       }
     }
-    case IntercomActor.ListeningStartedMsg => maybeNotify {
+    case IntercomActor.ListeningStartedMsg => {
       log.info("KioskActor listening started")
-      val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(modeUrl, "LISTENING") {}
-      httpConsumer.ensureSuccess
+      maybeNotify {
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(modeUrl, "LISTENING") {}
+        httpConsumer.ensureSuccess
+      }
     }
-    case IntercomActor.ListeningDoneMsg => maybeNotify {
+    case IntercomActor.ListeningDoneMsg => {
       log.info("KioskActor listening done")
-      val httpConsumer = new HttpConsumer(context.system)
-      httpConsumer.putString(modeUrl, "ON") {}
-      httpConsumer.ensureSuccess
+      maybeNotify {
+        val httpConsumer = new HttpConsumer(context.system)
+        httpConsumer.putString(modeUrl, "ON") {}
+        httpConsumer.ensureSuccess
+      }
     }
     case initializeAlexaMsg : IntercomActor.InitializeAlexaMsg => {
       intercomActor ! initializeAlexaMsg
