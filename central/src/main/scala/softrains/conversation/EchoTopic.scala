@@ -38,7 +38,7 @@ class EchoTopic
       Some(
         IntercomActor.PartnerUtteranceMsg("Polly wants a cracker!"))
     } else {
-      if (echo.contains("terminate")) {
+      if (echo.contains("terminate") || echo.contains("bye")) {
         done = true
         None
       } else {

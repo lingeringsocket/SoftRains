@@ -103,6 +103,7 @@ class KioskActor extends Actor
     case CameraActor.FaceDetectedMsg(name, confidence) => maybeNotify {
       log.info("KioskActor detected face " + name + " with confidence " +
         confidence)
+      intercomActor ! IntercomActor.SetObserverMsg(self)
       intercomActor ! IntercomActor.PreWakeMsg
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.putString(faceNameUrl, name) {}

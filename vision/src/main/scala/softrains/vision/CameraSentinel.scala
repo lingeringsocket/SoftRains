@@ -626,6 +626,15 @@ class CameraSentinel(
       if (!faces.isEmpty) {
         visitorDetected = true
         faceDetected = true
+        if (saveFaces) {
+          val outFile = File.createTempFile(
+            "scene", ".jpg", getFacesDir)
+          val outFileName = outFile.getCanonicalPath
+          cvSaveImage(outFileName, img)
+          val latestLink = new File(getFacesDir, "latest.jpg")
+          latestLink.delete
+          Files.createSymbolicLink(latestLink.toPath, outFile.toPath)
+        }
       }
 
       if (saveFaces) {
@@ -637,9 +646,6 @@ class CameraSentinel(
             val outFileName = outFile.getCanonicalPath
             cvSaveImage(outFileName, img)
             cvResetImageROI(img)
-            val latestLink = new File(getFacesDir, "latest.jpg")
-            latestLink.delete
-            Files.createSymbolicLink(latestLink.toPath, outFile.toPath)
           }
         )
       }

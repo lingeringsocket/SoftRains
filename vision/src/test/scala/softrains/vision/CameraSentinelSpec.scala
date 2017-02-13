@@ -142,7 +142,7 @@ class CameraSentinelSpec extends Specification
       recordings must have size(3)
       recordings.filter(_.endsWith("mkv")) must have size(3)
       val faceDir = new File(dir, faces)
-      faceDir.list must have size(3)
+      faceDir.list must have size(5)
     }
 
     "allow face detection to be enabled and disabled" in
