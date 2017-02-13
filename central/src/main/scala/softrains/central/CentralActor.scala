@@ -73,7 +73,7 @@ class CentralActor(central : CentralService) extends Actor
     case msg : CameraActor.FaceDetectedMsg => {
       val db = central.db
       val residentOpt = db.query[HomeResident].
-        whereEqual("name", msg.name).fetchOne
+        whereEqual("name", msg.name.capitalize).fetchOne
       residentOpt.foreach(resident => {
         db.save(ResidentAppearance(
           resident, readClockTime, msg.faceFile, msg.sceneFile))
