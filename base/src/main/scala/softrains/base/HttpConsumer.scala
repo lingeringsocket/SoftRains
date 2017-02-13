@@ -24,9 +24,16 @@ import akka.stream.scaladsl._
 import akka.util._
 
 import scala.collection._
+import scala.concurrent._
 import scala.util._
 
 import java.util.concurrent._
+
+object HttpConsumer
+{
+  private val threadPool = ExecutionContext.fromExecutorService(
+    Executors.newCachedThreadPool)
+}
 
 class HttpConsumer(actorSystem : ActorSystem)
 {
@@ -35,7 +42,7 @@ class HttpConsumer(actorSystem : ActorSystem)
   private implicit val materializer =
     ActorMaterializer(ActorMaterializerSettings(system))
 
-  private implicit val executionContext = system.dispatcher
+  private implicit val executionContext = HttpConsumer.threadPool
 
   private var failure = ""
 
