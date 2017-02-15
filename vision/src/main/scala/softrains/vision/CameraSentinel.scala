@@ -121,9 +121,8 @@ class CameraFeedInput(feedUrl : String)
 
   override protected def newGrabber =
   {
-    // see https://github.com/bytedeco/javacv/issues/411
     new IPCameraFrameGrabber(
-      url, -1, -1, java.util.concurrent.TimeUnit.SECONDS)
+      url, 10, 10, java.util.concurrent.TimeUnit.SECONDS)
   }
 
   override def nextFrame() =

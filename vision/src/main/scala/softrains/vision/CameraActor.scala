@@ -89,6 +89,8 @@ class CameraActor extends LoggingFSM[State, Data]
     case Event(AnalyzeFrameMsg,
       SentinelData(sentinel, listener)) =>
     {
+      context.system.scheduler.scheduleOnce(
+        frameInterval, self, AnalyzeFrameMsg)
       sentinel.analyzeFrame
       val face = sentinel.getLastFace
       if (sentinel.wasFaceDetected) {
@@ -97,8 +99,6 @@ class CameraActor extends LoggingFSM[State, Data]
           face, sentinel.getFaceConfidence,
           sentinel.getFaceFile, sentinel.getSceneFile)
       }
-      context.system.scheduler.scheduleOnce(
-        frameInterval, self, AnalyzeFrameMsg)
       stay
     }
     case Event(StopSentinelMsg, SentinelData(sentinel, _)) => {
