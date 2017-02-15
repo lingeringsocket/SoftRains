@@ -8,13 +8,7 @@ scalaVersion := Common.scalaVersion
 
 scalacOptions := Common.scalacOptions
 
-classpathTypes += "maven-plugin"
-
 resolvers ++= Common.resolvers
-
-val platform = org.bytedeco.javacpp.Loader.getPlatform
-
-autoCompilerPlugins := true
 
 maxErrors := Common.maxErrors
 
@@ -26,11 +20,9 @@ libraryDependencies ++= Seq(
   "com.meetup" %% "archery" % "0.4.0"
 )
 
-libraryDependencies ++= Common.javacvDeps
-
-libraryDependencies ++= Common.javacvPlatformDeps()
-
-libraryDependencies ++= Common.ffmpegPlatformDeps()
+javaCppPresetLibs ++= Seq(
+  "ffmpeg" -> "3.1.2"
+)
 
 libraryDependencies ++= Common.specs2Deps
 

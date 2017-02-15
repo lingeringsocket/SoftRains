@@ -34,16 +34,6 @@ object Common {
     Resolver.defaultLocal,
     bintray.Opts.resolver.jcenter)
 
-  def opencvVersion = "3.1.0"
-
-  def javacppVersion = "1.2"
-
-  def javacppPointVersion = "1.2.5"
-
-  def ffmpegVersion = "3.0.2"
-
-  lazy val defaultPlatform = org.bytedeco.javacpp.Loader.getPlatform
-
   def scalacOptions = Seq(
     "-unchecked", "-feature", "-Xlint", "-Ywarn-unused-import",
     "-deprecation", "-Xfatal-warnings", "-Yrangepos")
@@ -59,26 +49,6 @@ object Common {
     "com.typesafe.akka" %% "akka-remote" % "2.4.14" exclude("io.netty", "netty"),
     "com.typesafe.akka" %% "akka-http" % "10.0.1",
     "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test")
-
-  def javacvDeps = Seq(
-    "org.bytedeco" % "javacv" % javacppVersion,
-    "org.bytedeco" % "javacpp" % javacppPointVersion)
-
-  def javacvPlatformDeps(
-    scope : String = "compile", platform : String = defaultPlatform) =
-    Seq(
-      "org.bytedeco.javacpp-presets" % "opencv" %
-        (opencvVersion + "-" + javacppVersion) % scope classifier "",
-      "org.bytedeco.javacpp-presets" % "opencv" %
-        (opencvVersion + "-" + javacppVersion) % scope classifier platform)
-
-  def ffmpegPlatformDeps(
-    scope : String = "compile", platform : String = defaultPlatform) =
-    Seq(
-      "org.bytedeco.javacpp-presets" % "ffmpeg" %
-        (ffmpegVersion + "-" + javacppVersion) % scope classifier "",
-      "org.bytedeco.javacpp-presets" % "ffmpeg" %
-        (ffmpegVersion + "-" + javacppVersion) % scope classifier platform)
 
   def maxErrors = 99
 
