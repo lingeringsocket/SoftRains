@@ -91,13 +91,20 @@ class CameraActor extends LoggingFSM[State, Data]
     {
       context.system.scheduler.scheduleOnce(
         frameInterval, self, AnalyzeFrameMsg)
-      sentinel.analyzeFrame
-      val face = sentinel.getLastFace
-      if (sentinel.wasFaceDetected) {
-        log.info("CameraActor detected face " + face)
-        listener ! FaceDetectedMsg(
-          face, sentinel.getFaceConfidence,
-          sentinel.getFaceFile, sentinel.getSceneFile)
+      try {
+        sentinel.analyzeFrame
+        val face = sentinel.getLastFace
+        if (sentinel.wasFaceDetected) {
+          log.info("CameraActor detected face " + face)
+          listener ! FaceDetectedMsg(
+            face, sentinel.getFaceConfidence,
+            sentinel.getFaceFile, sentinel.getSceneFile)
+        }
+      } catch {
+        // keep the actor running even if we miss a frame
+        case ex : Exception => {
+          ex.printStackTrace
+        }
       }
       stay
     }
