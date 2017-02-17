@@ -57,6 +57,9 @@ class CameraSentinelSpec extends Specification
   private def getVideoFile(resource : String) =
     getResourceFile("/video/" + resource)
 
+  private def getStillFile(resource : String) =
+    getResourceFile("/img/" + resource)
+
   "CameraSentinel" should
   {
     "detect faces" >> {
@@ -173,6 +176,22 @@ class CameraSentinelSpec extends Specification
         input, CameraNullView, settings)
       sentinel.enableFaceDetection(false)
       sentinel.inducePareidolia
+      sentinel.startAnalyzer
+      try {
+        sentinel.analyzeFrame
+        sentinel.wasFaceDetected must beFalse
+      } finally {
+        sentinel.stopAnalyzer
+      }
+    }
+
+    "do not detect face in dark" in
+    {
+      val input = new StillFileInput(getStillFile("dark.jpg"))
+      val sentinel = new CameraSentinel(
+        input, CameraNullView, settings)
+      sentinel.disableFaceRecognition
+      sentinel.enableFaceDetection(false)
       sentinel.startAnalyzer
       try {
         sentinel.analyzeFrame

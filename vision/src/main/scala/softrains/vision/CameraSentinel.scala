@@ -28,6 +28,8 @@ import java.awt.event._
 
 import javax.swing._
 
+import java.util.Timer
+
 import org.bytedeco.javacpp.opencv_imgproc._
 import org.bytedeco.javacpp.opencv_imgcodecs._
 import org.bytedeco.javacpp.helper.opencv_core._
@@ -71,13 +73,24 @@ trait CameraView
 
 trait CameraInput
 {
+  def startFeed()
+
+  def stopFeed()
+
+  def nextFrame() : Option[CvFrame]
+
+  def isClosed() : Boolean
+}
+
+trait FrameGrabberInput extends CameraInput
+{
   protected var frameGrabber : Option[FrameGrabber] = None
 
   protected def newGrabber : FrameGrabber
 
   private var closed = false
 
-  def startGrabber()
+  override def startFeed()
   {
     val grabber = newGrabber
     grabber.setBitsPerPixel(CV_8U)
@@ -86,13 +99,13 @@ trait CameraInput
     frameGrabber = Some(grabber)
   }
 
-  def stopGrabber()
+  override def stopFeed()
   {
     frameGrabber.foreach(_.stop)
     frameGrabber = None
   }
 
-  def nextFrame() : Option[CvFrame] =
+  override def nextFrame() : Option[CvFrame] =
   {
     val next = frameGrabber.flatMap(grabber => Option(grabber.grab))
     if (next.isEmpty) {
@@ -101,11 +114,31 @@ trait CameraInput
     next
   }
 
-  def isClosed() = closed
+  override def isClosed() = closed
+}
+
+class StillFileInput(file : File)
+    extends CameraInput
+{
+  override def startFeed()
+  {
+  }
+
+  override def stopFeed()
+  {
+  }
+
+  override def nextFrame() : Option[CvFrame] =
+  {
+    val img = cvLoadImage(file.getAbsolutePath)
+    Some((new OpenCVFrameConverter.ToIplImage).convert(img))
+  }
+
+  override def isClosed() = false
 }
 
 class VideoFileInput(file : File)
-    extends CameraInput
+    extends FrameGrabberInput
 {
   override protected def newGrabber =
   {
@@ -115,31 +148,50 @@ class VideoFileInput(file : File)
 }
 
 class CameraFeedInput(feedUrl : String)
-    extends CameraInput
+    extends FrameGrabberInput
 {
   private val url = new URL(new URL(feedUrl), "videofeed", UrlAuthHandler)
+
+  private val timeout = 10000
 
   override protected def newGrabber =
   {
     new IPCameraFrameGrabber(
-      url, 10, 10, java.util.concurrent.TimeUnit.SECONDS)
+      url, timeout, timeout, java.util.concurrent.TimeUnit.MILLISECONDS)
   }
 
   override def nextFrame() =
   {
-    stopGrabber
-    startGrabber
-    super.nextFrame
+    stopFeed
+    startFeed
+
+    // URLConnection read timeout isn't guaranteed, so we need
+    // this obscenity
+    val currentGrabber = frameGrabber.get
+    val timer = new Timer(true)
+    val task = new TimerTask {
+      def run()
+      {
+        currentGrabber.stop
+      }
+    }
+    timer.schedule(task, timeout)
+
+    try {
+      super.nextFrame
+    } finally {
+      timer.cancel
+    }
   }
 }
 
 class CameraLocalInput
-    extends CameraInput
+    extends FrameGrabberInput
 {
   override def nextFrame() =
   {
-    stopGrabber
-    startGrabber
+    stopFeed
+    startFeed
     super.nextFrame
   }
 
@@ -249,6 +301,8 @@ class CameraSentinel(
 
   private var saveFaces = false
 
+  private var recognizeFaces = true
+
   private var detectVisitors = false
 
   private var pareidolia = false
@@ -322,6 +376,11 @@ class CameraSentinel(
     faceDetected = false
   }
 
+  def disableFaceRecognition()
+  {
+    recognizeFaces = false
+  }
+
   def inducePareidolia()
   {
     pareidolia = true
@@ -332,7 +391,9 @@ class CameraSentinel(
     detectFaces = true
     saveFaces = save
     createDirs
-    if (!settings.Visitors.subConf.getString("training-path").isEmpty) {
+    if (recognizeFaces &&
+      !settings.Visitors.subConf.getString("training-path").isEmpty)
+    {
       trainFaceRecognition
     }
   }
@@ -344,7 +405,7 @@ class CameraSentinel(
 
   private def quit()
   {
-    input.stopGrabber
+    input.stopFeed
     view.quit
     recorder.quit
   }
@@ -461,7 +522,7 @@ class CameraSentinel(
   def startAnalyzer()
   {
     assert(frameAnalyzerOpt.isEmpty)
-    input.startGrabber
+    input.startFeed
     frameAnalyzerOpt = Some(new FrameAnalyzer)
   }
 
@@ -603,10 +664,18 @@ class CameraSentinel(
       cvSetImageROI(gray, region)
       var faces = applyClassifier(
         faceClassifier, faceStorage, gray, blobMinPixels)
+      cvResetImageROI(gray)
+
       if (pareidolia && faces.isEmpty) {
         faces = Seq(region)
+      } else {
+        faces = faces.filter(face => {
+          cvSetImageROI(gray, nestRect(region, face))
+          val brightness = cvSum(gray).getVal(0) / (face.width*face.height)
+          cvResetImageROI(gray)
+          (brightness > 50)
+        })
       }
-      cvResetImageROI(gray)
 
       faceRecognizerOpt match {
         case Some(faceRecognizer) => {
