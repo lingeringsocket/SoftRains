@@ -22,6 +22,10 @@ import QueryAssumption._
 
 class PassiveTopic(residentName : String) extends ConversationTopic
 {
+  private def unknownFaceUrl =
+    "http://pre10.deviantart.net/c51a/th/pre/i/2010/223/1/f/" +
+      "patrick_and_spongebob_by_zero_cool_23.jpg"
+
   private var done = false
 
   private var lastUtterance = ""
@@ -112,6 +116,9 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     ContainsTopicMatcher.string(
       Seq("name", "who", "who", "who", "whose", "who's", "who're"),
       reportIdentity),
+    ContainsTopicMatcher.string(
+      Seq("face"),
+      showFace),
     ContainsTopicMatcher.message(
       Seq("stop", "quiet", "silent", "silence"),
       IntercomActor.StopAudioFileMsg),
@@ -167,6 +174,56 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     ""
   }
 
+  private def showFace() =
+  {
+    val context = getContext
+    var subject = ""
+    var url = ""
+    val resident = searchResident(residentName).get
+    context.getPersonalPronoun match {
+      case PersonalPronoun.I => {
+        subject = "Your Face"
+        url = findFaceUrl(resident)
+      }
+      case PersonalPronoun.YOU => {
+        subject = "My Face"
+        url = "https://enderender.files.wordpress.com/2010/07/" +
+          "vlcsnap-2010-07-25-21h58m13s121.png"
+      }
+      case _ => {
+        subject = "Someone's Face"
+        url = unknownFaceUrl
+        if (!context.getPersonName.isEmpty) {
+          searchResident(context.getPersonName) match {
+            case Some(thirdPerson) => {
+              subject = context.getPersonName + "'s Face"
+              url = findFaceUrl(thirdPerson)
+            }
+            case _ =>
+          }
+        }
+      }
+    }
+    CentralMail.sendMail(context.getSettings, resident, subject, url)
+    "OK, I have sent an image link to your email."
+  }
+
+  private def findFaceUrl(resident : HomeResident with sorm.Persisted) =
+  {
+    getContext.getDatabase.query[ResidentAppearance].
+      whereEqual("resident.id", resident.id).
+      order("imageTime", true).
+      fetchOne.
+      map(_.sceneFile) match {
+        case Some(fileName) => {
+          getContext.getSettings.Visitors.videoUrl + "/faces/" + fileName
+        }
+        case _ => {
+          unknownFaceUrl
+        }
+      }
+  }
+
   private def reportIdentity() =
   {
     val context = getContext
@@ -197,11 +254,14 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     }
   }
 
-  private def loadResident(name : String) =
+  private def searchResident(name : String) =
   {
     getContext.getDatabase.query[HomeResident].whereEqual("name", name).
-      fetchOne.getOrElse(HomeResident("Stranger"))
+      fetchOne
   }
+
+  private def loadResident(name : String) =
+    searchResident(name).getOrElse(HomeResident("Stranger"))
 
   private def reportLocation(assumption : QueryAssumption) =
   {

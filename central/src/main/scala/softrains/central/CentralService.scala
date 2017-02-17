@@ -146,7 +146,7 @@ class CentralService(
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
-    val contentType = ContentTypes.`text/html(UTF-8)`
+    val textContent = ContentTypes.`text/html(UTF-8)`
     val route = {
       pathPrefix("notification") {
         pathEndOrSingleSlash {
@@ -191,7 +191,7 @@ class CentralService(
         get {
           complete({
             getIntercomActor ! IntercomActor.DoorbellMsg
-            HttpEntity(contentType, "<h1>Ding Dong!</h1>")
+            HttpEntity(textContent, "<h1>Ding Dong!</h1>")
           })
         }
       } ~
@@ -200,7 +200,7 @@ class CentralService(
           complete({
             getIntercomActor ! IntercomActor.StartAudioFileMsg(
               file, true)
-            HttpEntity(contentType, s"<h1>Now Looping $file</h1>")
+            HttpEntity(textContent, s"<h1>Now Looping $file</h1>")
           })
         }
       } ~
@@ -209,7 +209,7 @@ class CentralService(
           complete({
             getIntercomActor ! IntercomActor.StartAudioFileMsg(
               file, false)
-            HttpEntity(contentType, s"<h1>Now Playing $file</h1>")
+            HttpEntity(textContent, s"<h1>Now Playing $file</h1>")
           })
         }
       } ~
@@ -217,7 +217,7 @@ class CentralService(
         get {
           complete({
             getIntercomActor ! IntercomActor.StopAudioFileMsg
-            HttpEntity(contentType, "<h1>Silence is Golden</h1>")
+            HttpEntity(textContent, "<h1>Silence is Golden</h1>")
           })
         }
       } ~
@@ -226,7 +226,7 @@ class CentralService(
           complete({
             val checkTime = readClockTime
             val interval = computeUptime(startTime, checkTime)
-            HttpEntity(contentType, "uptime in " + interval)
+            HttpEntity(textContent, "uptime in " + interval)
           })
         }
       } ~
@@ -238,10 +238,10 @@ class CentralService(
               val uptimeFuture = intercomActor.ask(
                 IntercomActor.UptimeRequestMsg)(Timeout(intercomActorTimeout))
               Await.ready(uptimeFuture, intercomActorTimeout)
-              HttpEntity(contentType, "ON")
+              HttpEntity(textContent, "ON")
             } catch {
               case ex : Exception => {
-                HttpEntity(contentType, "OFF")
+                HttpEntity(textContent, "OFF")
               }
             }
           })
@@ -255,7 +255,7 @@ class CentralService(
               lastGreet = now
               startConversation
             }
-            HttpEntity(contentType, "Salutations!")
+            HttpEntity(textContent, "Salutations!")
           })
         }
       } ~
@@ -263,7 +263,7 @@ class CentralService(
         get {
           complete({
             startIdentify
-            HttpEntity(contentType, "Guess Who?")
+            HttpEntity(textContent, "Guess Who?")
           })
         }
       } ~
@@ -271,7 +271,7 @@ class CentralService(
         get {
           complete({
             startConversation
-            HttpEntity(contentType, "Yakkety yak yak!")
+            HttpEntity(textContent, "Yakkety yak yak!")
           })
         }
       }
@@ -452,43 +452,6 @@ class CentralService(
         openhab.updateResidentNotificationFlag(resident, false)
       })
     // don't bother waiting for openhab.ensureSuccess
-  }
-
-  private def sendMail(resident : HomeResident, subject : String, body : String)
-  {
-    import javax.mail._
-    import javax.mail.internet._
-    import java.util.Properties
-
-    val properties = new Properties
-    properties.put("mail.smtp.auth", "true")
-    properties.put("mail.smtp.host", "smtp.gmail.com")
-    properties.put("mail.smtp.socketFactory.port", "465")
-    properties.put(
-      "mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
-    properties.put("mail.smtp.port", "465")
-    val authenticator = new Authenticator {
-      override protected def getPasswordAuthentication =
-      {
-        new PasswordAuthentication(
-          settings.Mail.user,
-          settings.Mail.password)
-      }
-    }
-    val session = Session.getDefaultInstance(properties, authenticator)
-    val message = new MimeMessage(session)
-    message.setFrom(new InternetAddress(settings.Mail.user))
-    settings.Residents.emailMap.get(resident.name) match {
-      case Some(recipient) => {
-        message.setRecipients(
-          Message.RecipientType.TO,
-          recipient)
-        message.setSubject(subject)
-        message.setText(body)
-        Transport.send(message)
-      }
-      case _ =>
-    }
   }
 
   private def updatePresence(
