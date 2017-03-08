@@ -666,6 +666,7 @@ class CameraSentinel(
         faceClassifier, faceStorage, gray, blobMinPixels)
       cvResetImageROI(gray)
 
+      val brightnessMin = settings.Visitors.brightnessMin
       if (pareidolia && faces.isEmpty) {
         faces = Seq(region)
       } else {
@@ -673,10 +674,11 @@ class CameraSentinel(
           cvSetImageROI(gray, nestRect(region, face))
           val brightness = cvSum(gray).getVal(0) / (face.width*face.height)
           cvResetImageROI(gray)
-          (brightness > 50)
+          (brightness > brightnessMin)
         })
       }
 
+      val maxDistance = settings.Visitors.clusterMaxDistance
       faceRecognizerOpt match {
         case Some(faceRecognizer) => {
           faces = faces.filter(face => {
@@ -688,7 +690,7 @@ class CameraSentinel(
             val predicted = pLabel.get
             faceConfidence = pConfidence.get
             cvResetImageROI(gray)
-            if (faceConfidence > 150.0) {
+            if (faceConfidence > maxDistance) {
               false
             } else {
               lastFace = faceLabelsInv.get(predicted).getOrElse("stranger")

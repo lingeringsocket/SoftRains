@@ -130,6 +130,8 @@ class SoftRainsSettings(rootConf : Config)
     val blobMinSize = subConf.getDouble("blob-min-size")
     val bodyMinSize = subConf.getDouble("body-min-size")
     val proximityZone = subConf.getDouble("proximity-zone")
+    val clusterMaxDistance = subConf.getDouble("cluster-max-distance")
+    val brightnessMin = subConf.getInt("brightness-min")
   }
 
   object Test
