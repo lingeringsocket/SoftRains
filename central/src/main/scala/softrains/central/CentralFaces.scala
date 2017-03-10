@@ -35,10 +35,10 @@ class CentralFaces(central : CentralService)
               <img src={sceneUrl}/>
             </td>
             <td>
-              <img src={sceneUrl}/>
+              <img src={faceUrl}/>
             </td>
             <td>
-              appearance.resident.name
+              {appearance.resident.name}
             </td>
           </tr>
         })
