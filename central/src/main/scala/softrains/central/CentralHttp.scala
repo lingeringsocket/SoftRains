@@ -169,6 +169,13 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("facefix" / Segment) { id =>
+      get {
+        complete({
+          new CentralFaces(central).detailPage(id.toInt)
+        })
+      }
+    } ~
     path("conversation") {
       get {
         complete({

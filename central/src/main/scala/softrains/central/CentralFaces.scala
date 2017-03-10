@@ -38,10 +38,33 @@ class CentralFaces(central : CentralService)
               <img src={faceUrl}/>
             </td>
             <td>
-              {appearance.resident.name}
+              <a href={"/facefix/" + appearance.id}>{
+                appearance.resident.name}</a>
             </td>
           </tr>
         })
+    }
+    </table></body></html>
+  }
+
+  def detailPage(id : Int) : NodeSeq =
+  {
+    val appearance = db.fetchById[ResidentAppearance](id)
+    <html><body><table>
+    {
+      val sceneUrl = appearance.generateSceneUrl(central.getSettings)
+      val faceUrl = appearance.generateFaceUrl(central.getSettings)
+      <tr>
+        <td>
+          <img src={sceneUrl}/>
+        </td>
+        <td>
+          <img src={faceUrl}/>
+        </td>
+        <td>
+          {appearance.resident.name}
+        </td>
+      </tr>
     }
     </table></body></html>
   }
