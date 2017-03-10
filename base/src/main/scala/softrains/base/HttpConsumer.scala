@@ -165,6 +165,10 @@ class HttpConsumer(actorSystem : ActorSystem)
             completion(response)
             phaser.arrive
           }
+          case HttpResponse(StatusCodes.Found, _, _, _) => {
+            completion(response)
+            phaser.arrive
+          }
           case HttpResponse(code, _, _, _) => {
             fail("HTTP response code " + code)
           }

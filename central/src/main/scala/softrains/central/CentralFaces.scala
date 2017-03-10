@@ -29,9 +29,18 @@ class CentralFaces(central : CentralService)
         fetch.
         map(appearance => {
           val sceneUrl = appearance.generateSceneUrl(central.getSettings)
-          <tr><td>
-            <img src={sceneUrl}/>
-          </td></tr>
+          val faceUrl = appearance.generateFaceUrl(central.getSettings)
+          <tr>
+            <td>
+              <img src={sceneUrl}/>
+            </td>
+            <td>
+              <img src={sceneUrl}/>
+            </td>
+            <td>
+              appearance.resident.name
+            </td>
+          </tr>
         })
     }
     </table></body></html>

@@ -45,6 +45,11 @@ case class ResidentAppearance(
   {
     settings.Visitors.videoUrl + "/faces/" + sceneFile
   }
+
+  def generateFaceUrl(settings : SoftRainsSettings) : String =
+  {
+    settings.Visitors.videoUrl + "/faces/" + faceFile
+  }
 }
 
 case class LanDevice(
