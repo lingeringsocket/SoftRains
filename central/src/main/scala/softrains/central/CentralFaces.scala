@@ -64,8 +64,20 @@ class CentralFaces(central : CentralService)
         <td>
           {appearance.resident.name}
         </td>
+        <td>
+          <a href={"/facedelete/" + id}>Delete</a>
+        </td>
       </tr>
     }
     </table></body></html>
+  }
+
+  def delete(id : Int) : NodeSeq =
+  {
+    db.delete(db.fetchById[ResidentAppearance](id))
+    <html><body>
+      Face appearance deleted.
+      <a href="/facelabels">Return to label browser.</a>
+    </body></html>
   }
 }

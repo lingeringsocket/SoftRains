@@ -176,6 +176,13 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("facedelete" / Segment) { id =>
+      get {
+        complete({
+          new CentralFaces(central).delete(id.toInt)
+        })
+      }
+    } ~
     path("conversation") {
       get {
         complete({
