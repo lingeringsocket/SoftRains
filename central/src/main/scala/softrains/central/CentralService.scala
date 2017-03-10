@@ -25,18 +25,14 @@ import org.joda.time._
 
 import java.io._
 import scala.io._
-import scala.util._
 
 import scala.concurrent._
 import scala.collection.mutable._
 
 import akka.actor._
-import akka.pattern.ask
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
 import akka.stream._
-import akka.util._
 
 import org.joda.time.DateTime
 
@@ -53,7 +49,7 @@ class CentralService(
 
   private var conversationActor : ActorRef = null
 
-  private var lastGreet : DateTime = readClockTime
+  private val centralHttp = new CentralHttp(this)
 
   def getDeviceMonitor = deviceMonitor
 
@@ -105,10 +101,10 @@ class CentralService(
   }
    */
 
-  private def intercomActorTimeout =
+  private[central] def intercomActorTimeout =
     duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
 
-  private def getIntercomActor =
+  private[central] def getIntercomActor =
   {
     intercomActorLocal.getOrElse {
       val intercomSpec = settings.Actors.intercom
@@ -142,140 +138,10 @@ class CentralService(
       system.actorOf(props, centralSpec)
     }
 
-    val startTime = readClockTime
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
-    val textContent = ContentTypes.`text/html(UTF-8)`
-    val route = {
-      pathPrefix("notification") {
-        pathEndOrSingleSlash {
-          post {
-            formFields(
-              'resident, 'message, 'priority, 'pushAfter, 'expireAfter)
-            { (resident : String, message : String, priority : String,
-              pushAfter : String, expireAfter : String) =>
-              complete {
-                val recipientOpt = db.query[HomeResident].
-                  whereEqual("name", resident).fetchOne
-                val priorityOpt = Try(CommunicationPriority.withName(priority))
-                (recipientOpt, priorityOpt) match {
-                  case (Some(recipient), Success(priority)) => {
-                    val creationTime = readClockTime
-                    val pushTime =
-                      creationTime.plusMinutes(pushAfter.toInt)
-                    val expirationTime =
-                      creationTime.plusMinutes(expireAfter.toInt)
-                    createNotification(PendingNotification(
-                      recipient,
-                      message,
-                      None,
-                      priority,
-                      creationTime,
-                      Some(pushTime),
-                      Some(expirationTime),
-                      None
-                    ))
-                    StatusCodes.OK
-                  }
-                  case _ => {
-                    StatusCodes.NotFound
-                  }
-                }
-              }
-            }
-          }
-        }
-      } ~
-      path("doorbell") {
-        get {
-          complete({
-            getIntercomActor ! IntercomActor.DoorbellMsg
-            HttpEntity(textContent, "<h1>Ding Dong!</h1>")
-          })
-        }
-      } ~
-      path("loop" / Segment) { file =>
-        get {
-          complete({
-            getIntercomActor ! IntercomActor.StartAudioFileMsg(
-              file, true)
-            HttpEntity(textContent, s"<h1>Now Looping $file</h1>")
-          })
-        }
-      } ~
-      path("play" / Segment) { file =>
-        get {
-          complete({
-            getIntercomActor ! IntercomActor.StartAudioFileMsg(
-              file, false)
-            HttpEntity(textContent, s"<h1>Now Playing $file</h1>")
-          })
-        }
-      } ~
-      path("silence") {
-        get {
-          complete({
-            getIntercomActor ! IntercomActor.StopAudioFileMsg
-            HttpEntity(textContent, "<h1>Silence is Golden</h1>")
-          })
-        }
-      } ~
-      path("uptime") {
-        get {
-          complete({
-            val checkTime = readClockTime
-            val interval = computeUptime(startTime, checkTime)
-            HttpEntity(textContent, "uptime in " + interval)
-          })
-        }
-      } ~
-      path("intercom" / "ping") {
-        get {
-          complete({
-            try {
-              val intercomActor = getIntercomActor
-              val uptimeFuture = intercomActor.ask(
-                IntercomActor.UptimeRequestMsg)(Timeout(intercomActorTimeout))
-              Await.ready(uptimeFuture, intercomActorTimeout)
-              HttpEntity(textContent, "ON")
-            } catch {
-              case ex : Exception => {
-                HttpEntity(textContent, "OFF")
-              }
-            }
-          })
-        }
-      } ~
-      path("greet") {
-        get {
-          complete({
-            val now = readClockTime
-            if (lastGreet.isBefore(now.minusSeconds(10))) {
-              lastGreet = now
-              startConversation
-            }
-            HttpEntity(textContent, "Salutations!")
-          })
-        }
-      } ~
-      path("identify") {
-        get {
-          complete({
-            startIdentify
-            HttpEntity(textContent, "Guess Who?")
-          })
-        }
-      } ~
-      path("conversation") {
-        get {
-          complete({
-            startConversation
-            HttpEntity(textContent, "Yakkety yak yak!")
-          })
-        }
-      }
-    }
+    val route = centralHttp.createRoute
 
     val address = settings.Http.address
     val port = settings.Http.port
@@ -296,7 +162,7 @@ class CentralService(
 
   override def getDatabase = db
 
-  private def startConversation()
+  private[central] def startConversation()
   {
     val openhabUrl = settings.Openhab.url
     def greet(name : String) = {
@@ -329,7 +195,7 @@ class CentralService(
     }
   }
 
-  private def startIdentify()
+  private[central] def startIdentify()
   {
     val residents = Seq(
       HomeResident("John"), HomeResident("Sujin"), HomeResident("Lara"))

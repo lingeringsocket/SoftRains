@@ -40,6 +40,12 @@ case class ResidentAppearance(
   faceFile : String,
   sceneFile : String
 ) extends CentralDbEntity
+{
+  def generateSceneUrl(settings : SoftRainsSettings) : String =
+  {
+    settings.Visitors.videoUrl + "/faces/" + sceneFile
+  }
+}
 
 case class LanDevice(
   name : String,

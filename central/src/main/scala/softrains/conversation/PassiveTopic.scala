@@ -214,14 +214,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       whereEqual("resident.id", resident.id).
       order("imageTime", true).
       fetchOne.
-      map(_.sceneFile) match {
-        case Some(fileName) => {
-          getContext.getSettings.Visitors.videoUrl + "/faces/" + fileName
-        }
-        case _ => {
-          unknownFaceUrl
-        }
-      }
+      map(_.generateSceneUrl(getContext.getSettings)).
+      getOrElse(unknownFaceUrl)
   }
 
   private def reportIdentity() =
