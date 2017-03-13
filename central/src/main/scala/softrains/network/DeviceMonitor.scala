@@ -61,7 +61,7 @@ abstract class AbstractCableRouterMonitor
       val connectionType = spanText(3)
       val inputs = form \\ "input"
       val ipAddress = getInputValue(inputs, "staticIPAddress")
-      val macAddress = getInputValue(inputs, "mac_address")
+      val macAddress = spanText(5)
       DeviceState(name + " " + macAddress, name, connectionType, ipAddress,
         macAddress)
     })
