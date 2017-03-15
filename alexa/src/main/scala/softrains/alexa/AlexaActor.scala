@@ -79,7 +79,7 @@ class AlexaActor extends Actor
       this, playerFactory, new AlertManagerFactory,
       clientFactory,
       DialogRequestIdAuthority.getInstance,
-      false, null,
+      deviceConfig.getWakeWordAgentEnabled, new WakeWordIPCFactory,
       this)
 
   override def preStart()
@@ -118,6 +118,7 @@ class AlexaActor extends Actor
 
   override def onWakeWordDetected()
   {
+    log.info("WAKE UP!!!!!")
   }
 
   override def rmsChanged(rms : Int)
