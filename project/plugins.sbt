@@ -5,9 +5,9 @@ resolvers += Resolver.url(
   url("http://dl.bintray.com/giltgroupe/sbt-plugin-releases"))(
       Resolver.ivyStylePatterns)
 
-addSbtPlugin("org.bytedeco" % "sbt-javacpp" % "1.9")
+addSbtPlugin("org.bytedeco" % "sbt-javacpp" % "1.10")
 
-addSbtPlugin("org.bytedeco" % "sbt-javacv" % "1.12")
+addSbtPlugin("org.bytedeco" % "sbt-javacv" % "1.14")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 

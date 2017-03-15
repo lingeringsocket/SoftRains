@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
 )
 
 javaCppPresetLibs ++= Seq(
-  "ffmpeg" -> "3.1.2"
+  "ffmpeg" -> "3.2.1"
 )
 
 libraryDependencies ++= Common.specs2Deps
