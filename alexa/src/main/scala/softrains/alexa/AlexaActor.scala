@@ -44,7 +44,7 @@ object AlexaActor
 }
 import AlexaActor._
 
-class AlexaActor extends Actor
+class AlexaActor(intercomActor : ActorRef) extends Actor
     with ExpectSpeechListener
     with RecordingRMSListener
     with RegCodeDisplayHandler
@@ -66,9 +66,7 @@ class AlexaActor extends Actor
 
   private var expiryCancellable : Option[Cancellable] = None
 
-  private val intercomOff = ActorRef.noSender
-
-  private var intercomActor : ActorRef = intercomOff
+  private var intercomOff = true
 
   private val clientFactory = new ClientFactory(deviceConfig)
 
@@ -119,6 +117,7 @@ class AlexaActor extends Actor
   override def onWakeWordDetected()
   {
     log.info("WAKE UP!!!!!")
+    intercomActor ! IntercomActor.WakeAlexaMsg
   }
 
   override def rmsChanged(rms : Int)
@@ -196,19 +195,19 @@ class AlexaActor extends Actor
     }
 
     case IntercomActor.WakeAlexaMsg => {
-      intercomActor = sender
+      intercomOff = false
       startCapture
     }
     case ExpiryMsg => {
       if (maybeStop) {
         intercomActor ! IntercomActor.AlexaFinishedMsg
-        intercomActor = intercomOff
+        intercomOff = true
         maybeStop = false
       }
     }
   }
 
-  private def isIntercomOff() = (intercomActor == intercomOff)
+  private def isIntercomOff() = intercomOff
 
   class ClientFactory(config : DeviceConfig)
       extends AVSClientFactory(config)

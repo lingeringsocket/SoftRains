@@ -37,7 +37,7 @@ object AlexaApp extends App
     system.actorOf(Props(classOf[IntercomActor]), intercomSpec)
 
   val alexaActor = system.actorOf(
-    Props(classOf[AlexaActor]), "alexaActor")
+    Props(classOf[AlexaActor], intercomActor), "alexaActor")
   alexaActor ! AlexaActor.StartSessionMsg
   intercomActor ! IntercomActor.InitializeAlexaMsg(alexaActor)
 
