@@ -116,8 +116,7 @@ class AlexaActor(intercomActor : ActorRef) extends Actor
 
   override def onWakeWordDetected()
   {
-    log.info("WAKE UP!!!!!")
-    intercomActor ! IntercomActor.WakeAlexaMsg
+    intercomActor ! IntercomActor.PairRequestMsg
   }
 
   override def rmsChanged(rms : Int)
@@ -197,6 +196,12 @@ class AlexaActor(intercomActor : ActorRef) extends Actor
     case IntercomActor.WakeAlexaMsg => {
       intercomOff = false
       startCapture
+    }
+    case IntercomActor.PairAcceptedMsg => {
+      intercomActor ! IntercomActor.WakeAlexaMsg
+    }
+    case msg : IntercomActor.SpeakerSoundFinishedMsg => {
+      intercomActor ! IntercomActor.UnpairMsg
     }
     case ExpiryMsg => {
       if (maybeStop) {
