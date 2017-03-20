@@ -116,7 +116,8 @@ class PassiveTopic(residentName : String) extends ConversationTopic
         IntercomActor.PartnerUtteranceMsg(
           "Restarting the intercom, please wait"),
         IntercomActor.RebootMsg(true)
-      ))),
+      )),
+      true),
     ContainsTopicMatcher.string(
       Seq("away", "go out", "leave"),
       reportLocation(ASSUME_FALSE)),
