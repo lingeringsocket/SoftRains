@@ -110,6 +110,13 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     ContainsTopicMatcher.string(
       Seq("echo", "parrot"),
       startEcho),
+    ContainsTopicMatcher.message(
+      Seq("reboot", "restart"),
+      IntercomActor.SpeakerSoundSeqMsg(Seq(
+        IntercomActor.PartnerUtteranceMsg(
+          "Restarting the intercom, please wait"),
+        IntercomActor.RebootMsg(true)
+      ))),
     ContainsTopicMatcher.string(
       Seq("away", "go out", "leave"),
       reportLocation(ASSUME_FALSE)),

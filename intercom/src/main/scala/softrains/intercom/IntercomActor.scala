@@ -70,6 +70,8 @@ object IntercomActor
       extends SpeakerSoundMsg
   case object DoorbellMsg
       extends SpeakerSoundMsg
+  final case class RebootMsg(soft : Boolean = true)
+      extends SpeakerSoundMsg
   final case class PlayAudioFileMsg(audioFile : String)
       extends SpeakerSoundMsg
   final case class StartAudioFileMsg(audioFile : String, loop : Boolean)
@@ -166,7 +168,7 @@ class IntercomActor extends LoggingFSM[State, Data]
     if (isWatsonEnabled) {
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")
-      watsonActor ! WatsonActor.SpeechSayMsg("Yabba Dabba Doo!", VOICE_DEFAULT)
+      watsonActor ! WatsonActor.SpeechSayMsg("Intercom ready!", VOICE_DEFAULT)
       watsonOpt = Some(watsonActor)
     }
     log.info("IntercomActor started")
@@ -327,6 +329,14 @@ class IntercomActor extends LoggingFSM[State, Data]
     case Event(DoorbellMsg, Partner(partner, _, _)) => {
       log.info("Ding dong")
       val command = settings.Speaker.doorbellCommand
+      if (!command.isEmpty) {
+        command.!
+      }
+      sender ! SpeakerSoundFinishedMsg()
+      stay
+    }
+    case Event(RebootMsg(soft), _) => {
+      val command = settings.Intercom.restartCommand
       if (!command.isEmpty) {
         command.!
       }

@@ -155,6 +155,12 @@ class SoftRainsSettings(rootConf : Config)
     val urlMap = readMap(subConf, "urls")
   }
 
+  object Intercom
+  {
+    val subConf = conf.getConfig("kiosk")
+    val restartCommand = subConf.getString("restart-command")
+  }
+
   object Kiosk
   {
     val subConf = conf.getConfig("kiosk")
