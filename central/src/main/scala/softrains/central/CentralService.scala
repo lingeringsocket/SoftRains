@@ -38,14 +38,12 @@ import org.joda.time.DateTime
 
 class CentralService(
   settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
-    extends ConversationContext
+    extends ConversationContext with IntercomClient
 {
   private var actorSystem : Option[ActorSystem] = None
 
   val db = new CentralDb(settings)
   seedDb
-
-  private var intercomActorLocal : Option[ActorRef] = None
 
   private var conversationActor : ActorRef = null
 
@@ -101,31 +99,11 @@ class CentralService(
   }
    */
 
-  private[central] def intercomActorTimeout =
-    duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
-
-  private[central] def getIntercomActor =
-  {
-    intercomActorLocal.getOrElse {
-      val intercomSpec = settings.Actors.intercom
-      assert(intercomSpec.startsWith("akka:"))
-      val intercomActorSelection = getActorSystem.actorSelection(intercomSpec)
-      val intercomActorFuture = intercomActorSelection.resolveOne(
-        intercomActorTimeout)
-      Await.result(
-        intercomActorFuture, intercomActorTimeout)
-    }
-  }
-
   def runActors()
   {
+    startIntercom
     implicit val system = getActorSystem
-    val intercomSpec = settings.Actors.intercom
     if (!intercomSpec.isEmpty) {
-      if (!intercomSpec.startsWith("akka:")) {
-        val props = Props(classOf[IntercomActor])
-        intercomActorLocal = Some(system.actorOf(props, intercomSpec))
-      }
       val conversationProps = Props(classOf[ConversationActor], db)
       val conversationSpec = "conversationActor"
       conversationActor =

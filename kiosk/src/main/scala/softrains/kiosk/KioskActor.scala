@@ -21,11 +21,10 @@ import softrains.intercom._
 import akka.actor._
 import akka.event._
 
-import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class KioskActor extends Actor
+class KioskActor extends Actor with IntercomClient
 {
   private val log = Logging(context.system, this)
 
@@ -40,34 +39,16 @@ class KioskActor extends Actor
   private val cameraSpec = settings.Actors.camera
   assert (!cameraSpec.isEmpty)
 
-  private val intercomSpec = settings.Actors.intercom
-  assert (!intercomSpec.isEmpty)
-
-  private val intercomActor =
-  {
-    if (intercomSpec.startsWith("akka:")) {
-      // FIXME share code with CentralService, and make sure
-      // we never start two different IntercomActors
-      // at once!
-      val intercomActorSelection =
-        context.system.actorSelection(intercomSpec)
-      val intercomActorTimeout =
-        FiniteDuration(
-          10, java.util.concurrent.TimeUnit.SECONDS)
-      val intercomActorFuture = intercomActorSelection.resolveOne(
-        intercomActorTimeout)
-      Await.result(
-        intercomActorFuture, intercomActorTimeout)
-    } else {
-      context.actorOf(Props(classOf[IntercomActor]), intercomSpec)
-    }
-  }
-
   private val cameraActor =
     context.actorOf(Props(classOf[CameraActor]), cameraSpec)
 
+  override def getActorSystem = context.system
+
+  override def getSettings = settings
+
   override def preStart()
   {
+    assert (!intercomSpec.isEmpty)
     val cameraUrl = settings.Kiosk.cameraUrl
     val cameraWindowTitle = settings.Kiosk.cameraWindowTitle
     if (!cameraUrl.isEmpty) {
@@ -81,6 +62,10 @@ class KioskActor extends Actor
       }
       cameraActor ! CameraActor.StartSentinelMsg(input, view)
     }
+    // FIXME need to make sure we don't try to start another local
+    // IntercomActor instance if CentralService has already done so!
+    startIntercom
+    val intercomActor = getIntercomActor
     intercomActor ! IntercomActor.SetObserverMsg(self)
     log.info("KioskActor started")
   }
@@ -104,6 +89,7 @@ class KioskActor extends Actor
       log.info("KioskActor detected face " + msg.name + " with confidence " +
         msg.confidence)
       context.parent ! msg
+      val intercomActor = getIntercomActor
       intercomActor ! IntercomActor.SetObserverMsg(self)
       intercomActor ! IntercomActor.PreWakeMsg
       maybeNotify {
@@ -149,6 +135,7 @@ class KioskActor extends Actor
       }
     }
     case initializeAlexaMsg : IntercomActor.InitializeAlexaMsg => {
+      val intercomActor = getIntercomActor
       intercomActor ! initializeAlexaMsg
     }
   }
