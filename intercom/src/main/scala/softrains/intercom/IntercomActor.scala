@@ -168,7 +168,8 @@ class IntercomActor extends LoggingFSM[State, Data]
     if (isWatsonEnabled) {
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")
-      watsonActor ! WatsonActor.SpeechSayMsg("Intercom ready!", VOICE_DEFAULT)
+      watsonActor ! WatsonActor.SpeechSayMsg(
+        "Intercom ready!", VOICE_DEFAULT)
       watsonOpt = Some(watsonActor)
     }
     log.info("IntercomActor started")
@@ -336,6 +337,8 @@ class IntercomActor extends LoggingFSM[State, Data]
       stay
     }
     case Event(RebootMsg(soft), _) => {
+      observer ! UnpairedMsg
+      Thread.sleep(5000)
       val command = settings.Intercom.restartCommand
       if (!command.isEmpty) {
         command.!
