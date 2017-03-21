@@ -74,7 +74,8 @@ object IntercomActor
       extends SpeakerSoundMsg
   final case class PlayAudioFileMsg(audioFile : String)
       extends SpeakerSoundMsg
-  final case class StartAudioFileMsg(audioFile : String, loop : Boolean)
+  final case class StartAudioFileMsg(
+    audioFile : String, loop : Boolean, daemonize : Boolean = false)
       extends SpeakerSoundMsg
   case object StopAudioFileMsg
       extends SpeakerSoundMsg
@@ -350,7 +351,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       }
       stay
     }
-    case Event(StartAudioFileMsg(fileName, loop),
+    case Event(StartAudioFileMsg(fileName, loop, daemonize),
       Partner(partner, voice, background)) =>
     {
       background.foreach(_.destroy)
@@ -362,7 +363,14 @@ class IntercomActor extends LoggingFSM[State, Data]
         }
       }
       val absoluteFile = getAbsoluteFile(fileName)
-      val process = command.format(absoluteFile).run
+      val prefixedCommand = {
+        if (daemonize) {
+          "nohup " + command
+        } else {
+          command
+        }
+      }
+      val process = prefixedCommand.format(absoluteFile).run
       sender ! SpeakerSoundFinishedMsg()
       stay using Partner(partner, voice, Some(process))
     }
