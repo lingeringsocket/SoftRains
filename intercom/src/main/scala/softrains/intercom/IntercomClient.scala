@@ -23,7 +23,7 @@ import scala.concurrent._
 trait IntercomClient
 {
   private var intercomActorLocal : Option[ActorRef] = None
-  
+
   def getActorSystem : ActorSystem
 
   def getSettings : SoftRainsSettings
