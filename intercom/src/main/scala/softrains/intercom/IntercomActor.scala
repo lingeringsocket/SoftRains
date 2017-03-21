@@ -366,7 +366,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       val formattedCommand = command.format(absoluteFile)
       val newData = {
         if (daemonize) {
-          val scriptCommand = "/home/pi/bin/runbg " + formattedCommand
+          val scriptCommand = "screen -d -m " + formattedCommand
           scriptCommand.!
           Partner(partner, voice, None)
         } else {
