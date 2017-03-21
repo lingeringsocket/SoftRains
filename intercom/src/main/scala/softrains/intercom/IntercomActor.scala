@@ -365,7 +365,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       val absoluteFile = getAbsoluteFile(fileName)
       val prefixedCommand = {
         if (daemonize) {
-          "nohup " + command + " &"
+          "nohup " + command + " >/dev/null 2>1 &"
         } else {
           command
         }
