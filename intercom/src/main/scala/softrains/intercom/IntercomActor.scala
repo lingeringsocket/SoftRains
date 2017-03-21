@@ -165,6 +165,10 @@ class IntercomActor extends LoggingFSM[State, Data]
 
   override def preStart()
   {
+    val command = settings.Speaker.killAudioCommand
+    if (!command.isEmpty) {
+      command.!
+    }
     if (isWatsonEnabled) {
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")

@@ -115,6 +115,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       IntercomActor.SpeakerSoundSeqMsg(Seq(
         IntercomActor.PartnerUtteranceMsg(
           "Restarting the intercom, please wait"),
+        IntercomActor.StartAudioFileMsg("reboot.mp3", true),
         IntercomActor.RebootMsg(true)
       )),
       true),
