@@ -28,7 +28,7 @@ trait IntercomClient
 
   def getSettings : SoftRainsSettings
 
-  protected val intercomSpec = getSettings.Actors.intercom
+  protected lazy val intercomSpec = getSettings.Actors.intercom
 
   def intercomActorTimeout =
     duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
