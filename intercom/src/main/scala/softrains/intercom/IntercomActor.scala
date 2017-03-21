@@ -338,12 +338,12 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
     case Event(RebootMsg(soft), _) => {
       observer ! UnpairedMsg
+      sender ! SpeakerSoundFinishedMsg()
       Thread.sleep(5000)
       val command = settings.Intercom.restartCommand
       if (!command.isEmpty) {
         command.!
       }
-      sender ! SpeakerSoundFinishedMsg()
       stay
     }
     case Event(StartAudioFileMsg(fileName, loop),
