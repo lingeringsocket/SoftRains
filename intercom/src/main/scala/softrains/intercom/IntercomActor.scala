@@ -363,16 +363,19 @@ class IntercomActor extends LoggingFSM[State, Data]
         }
       }
       val absoluteFile = getAbsoluteFile(fileName)
-      val prefixedCommand = {
+      val formattedCommand = command.format(absoluteFile)
+      val newData = {
         if (daemonize) {
-          "nohup " + command + " >/dev/null 2>1 &"
+          val scriptCommand = "/home/pi/bin/runbg " + formattedCommand
+          scriptCommand.!
+          Partner(partner, voice, None)
         } else {
-          command
+          val process = formattedCommand.run
+          Partner(partner, voice, Some(process))
         }
       }
-      val process = prefixedCommand.format(absoluteFile).run
       sender ! SpeakerSoundFinishedMsg()
-      stay using Partner(partner, voice, Some(process))
+      stay using newData
     }
     case Event(PlayAudioFileMsg(fileName),
       Partner(partner, voice, background)) =>
