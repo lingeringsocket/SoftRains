@@ -38,7 +38,8 @@ case class ResidentAppearance(
   resident : HomeResident,
   imageTime : DateTime,
   faceFile : String,
-  sceneFile : String
+  sceneFile : String,
+  reviewed : Boolean = false
 ) extends CentralDbEntity
 {
   def generateSceneUrl(settings : SoftRainsSettings) : String =
