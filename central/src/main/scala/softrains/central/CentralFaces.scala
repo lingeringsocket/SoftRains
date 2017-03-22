@@ -20,11 +20,13 @@ class CentralFaces(central : CentralService)
 {
   private val db = central.db
 
-  def labelsPage() : NodeSeq =
+  def labelsPage(unreviewedOnly : Boolean) : NodeSeq =
   {
     <html><body><table>
     {
-      db.query[ResidentAppearance].
+      val query = db.query[ResidentAppearance] |> (
+        q => if (unreviewedOnly) q.whereEqual("reviewed", false) else q)
+      query.
         order("imageTime", true).
         fetch.
         map(appearance => {
@@ -38,7 +40,7 @@ class CentralFaces(central : CentralService)
               <img src={faceUrl}/>
             </td>
             <td>
-              <a href={"/facefix/" + appearance.id}>{
+              <a href={"/faces/" + appearance.id}>{
                 appearance.resident.name}</a>
             </td>
           </tr>
@@ -65,7 +67,7 @@ class CentralFaces(central : CentralService)
           {appearance.resident.name}
         </td>
         <td>
-          <a href={"/facedelete/" + id}>Delete</a>
+          <a href={"/faces/" + id + "/delete"}>Delete</a>
         </td>
       </tr>
     }

@@ -47,4 +47,8 @@ package object base
   def readResource(resource : String) : String =
     Source.fromFile(getResourcePath(resource)).
       getLines.mkString("\n")
+
+  implicit class PipedObject[A](value: A) {
+    def |>[B](f: A => B): B = f(value)
+  }
 }

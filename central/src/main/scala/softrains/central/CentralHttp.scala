@@ -162,21 +162,28 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
-    path("facelabels") {
+    path("faces" / "all") {
       get {
         complete({
-          new CentralFaces(central).labelsPage
+          new CentralFaces(central).labelsPage(false)
         })
       }
     } ~
-    path("facefix" / Segment) { id =>
+    path("faces" / "unreviewed") {
+      get {
+        complete({
+          new CentralFaces(central).labelsPage(true)
+        })
+      }
+    } ~
+    path("faces" / Segment) { id =>
       get {
         complete({
           new CentralFaces(central).detailPage(id.toInt)
         })
       }
     } ~
-    path("facedelete" / Segment) { id =>
+    path("faces" / Segment / "delete") { id =>
       get {
         complete({
           new CentralFaces(central).delete(id.toInt)
