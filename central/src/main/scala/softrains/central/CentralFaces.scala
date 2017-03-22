@@ -84,15 +84,23 @@ class CentralFaces(central : CentralService)
           <a href={"/faces/" + id + "/delete"}>Delete</a>
         </td>
         <td>
-          <a href={"/faces/" + id + "/relabel/-1"}>Guest</a>
+          <a href={"/faces/" + id + "/relabel/0"}>Guest</a>
         </td>
       </tr>
     }
     </table><table>
     {
-      db.query[HomeResident].
+      val query = db.query[HomeResident] |> (
+        q => appearance.resident match {
+          case Some(resident) => {
+            q.whereNotEqual("name", resident.name)
+          }
+          case _ => {
+            q
+          }
+        })
+      query.
         fetch.
-        filterNot(_ == appearance.resident).
         map(resident => {
           <tr>
             <td>
@@ -127,7 +135,7 @@ class CentralFaces(central : CentralService)
   {
     val updatedResident = {
       residentId match {
-        case -1 => {
+        case 0 => {
           None
         }
         case _ => {
