@@ -74,6 +74,20 @@ class CentralFaces(central : CentralService)
         </td>
       </tr>
     }
+    </table><table>
+    {
+      db.query[HomeResident].
+        fetch.
+        filterNot(_ == appearance.resident).
+        map(resident => {
+          <tr>
+            <td>
+              <a href={"/faces/" + id + "/relabel/" + resident.id}>
+                {resident.name}</a>
+            </td>
+          </tr>
+        })
+    }
     </table></body></html>
   }
 
@@ -91,6 +105,17 @@ class CentralFaces(central : CentralService)
     db.save(db.fetchById[ResidentAppearance](id).copy(reviewed = true))
     <html><body>
       Face label accepted.
+      <a href="/faces/unreviewed">Return to label browser.</a>
+    </body></html>
+  }
+
+  def relabel(id : Int, residentId : Int) : NodeSeq =
+  {
+    val updatedResident = db.fetchById[HomeResident](residentId)
+    db.save(db.fetchById[ResidentAppearance](id).copy(
+      reviewed = true, resident = updatedResident))
+    <html><body>
+      Face relabeled.
       <a href="/faces/unreviewed">Return to label browser.</a>
     </body></html>
   }
