@@ -67,6 +67,9 @@ class CentralFaces(central : CentralService)
           {appearance.resident.name}
         </td>
         <td>
+          <a href={"/faces/" + id + "/accept"}>Accept</a>
+        </td>
+        <td>
           <a href={"/faces/" + id + "/delete"}>Delete</a>
         </td>
       </tr>
@@ -79,7 +82,16 @@ class CentralFaces(central : CentralService)
     db.delete(db.fetchById[ResidentAppearance](id))
     <html><body>
       Face appearance deleted.
-      <a href="/facelabels">Return to label browser.</a>
+      <a href="/faces/unreviewed">Return to label browser.</a>
+    </body></html>
+  }
+
+  def accept(id : Int) : NodeSeq =
+  {
+    db.save(db.fetchById[ResidentAppearance](id).copy(reviewed = true))
+    <html><body>
+      Face label accepted.
+      <a href="/faces/unreviewed">Return to label browser.</a>
     </body></html>
   }
 }

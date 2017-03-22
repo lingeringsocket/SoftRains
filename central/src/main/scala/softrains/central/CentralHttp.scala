@@ -190,6 +190,13 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("faces" / Segment / "accept") { id =>
+      get {
+        complete({
+          new CentralFaces(central).accept(id.toInt)
+        })
+      }
+    } ~
     path("conversation") {
       get {
         complete({
