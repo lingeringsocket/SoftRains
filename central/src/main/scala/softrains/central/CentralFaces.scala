@@ -34,7 +34,7 @@ class CentralFaces(central : CentralService)
 
   def labelsPage(unreviewedOnly : Boolean) : NodeSeq =
   {
-    <html><body><table>
+    <html><body><a href="/faces/accept">Accept All</a><table>
     {
       val query = db.query[ResidentAppearance] |> (
         q => if (unreviewedOnly) q.whereEqual("reviewed", false) else q)
@@ -149,5 +149,19 @@ class CentralFaces(central : CentralService)
       Face relabeled.
       <a href="/faces/unreviewed">Return to label browser.</a>
     </body></html>
+  }
+
+  def acceptAll() : NodeSeq =
+  {
+    db.query[ResidentAppearance].
+      whereEqual("reviewed", false).
+      fetch.foreach(appearance => {
+        db.save(appearance.copy(reviewed = true))
+      })
+    <html><body>
+      All unreviewed relabels accepted.
+      <a href="/faces/unreviewed">Return to label browser.</a>
+    </body></html>
+
   }
 }

@@ -169,6 +169,13 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("faces" / "accept") {
+      get {
+        complete({
+          new CentralFaces(central).acceptAll()
+        })
+      }
+    } ~
     path("faces" / "unreviewed") {
       get {
         complete({
