@@ -230,13 +230,12 @@ class CentralService(
 
   private def markInactiveDevices(scanTime : DateTime)
   {
-    val presences = db.query[LanPresence].
+    db.query[LanPresence].
       whereEqual("active", true).
       whereSmaller("endTime", scanTime).
-      fetch
-    for (presence <- presences) {
-      db.save(presence.copy(active = false))
-    }
+      fetch.foreach(presence => {
+        db.save(presence.copy(active = false))
+      })
   }
 
   private def markInactiveResidents(
@@ -245,13 +244,12 @@ class CentralService(
     val presences = db.query[HomePresence].
       whereEqual("active", true).
       whereSmaller("endTime", scanTime).
-      fetch
-    for (presence <- presences) {
-      val resident = presence.resident
-      db.save(presence.copy(active = false))
-      logEvent("Resident departed:  " + resident.name)
-      openhab.updateResidentPhoneRadio(resident, "OFF")
-    }
+      fetch.foreach(presence => {
+        val resident = presence.resident
+        db.save(presence.copy(active = false))
+        logEvent("Resident departed:  " + resident.name)
+        openhab.updateResidentPhoneRadio(resident, "OFF")
+      })
   }
 
   def findNewDevices(lastTallyTime : DateTime) =

@@ -162,6 +162,5 @@ class CentralFaces(central : CentralService)
       All unreviewed relabels accepted.
       <a href="/faces/unreviewed">Return to label browser.</a>
     </body></html>
-
   }
 }
