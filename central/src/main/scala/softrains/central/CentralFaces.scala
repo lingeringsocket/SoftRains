@@ -20,6 +20,18 @@ class CentralFaces(central : CentralService)
 {
   private val db = central.db
 
+  private def getAppearanceName(residentOpt : Option[HomeResident]) =
+  {
+    residentOpt match {
+      case Some(resident) => {
+        resident.name
+      }
+      case _ => {
+        "Guest"
+      }
+    }
+  }
+
   def labelsPage(unreviewedOnly : Boolean) : NodeSeq =
   {
     <html><body><table>
@@ -39,10 +51,9 @@ class CentralFaces(central : CentralService)
             <td>
               <img src={faceUrl}/>
             </td>
-            <td>
-              <a href={"/faces/" + appearance.id}>{
-                appearance.resident.name}</a>
-            </td>
+            <td><a href={"/faces/" + appearance.id}>{
+              getAppearanceName(appearance.resident)
+            }</a></td>
           </tr>
         })
     }
@@ -64,13 +75,16 @@ class CentralFaces(central : CentralService)
           <img src={faceUrl}/>
         </td>
         <td>
-          {appearance.resident.name}
+          {getAppearanceName(appearance.resident)}
         </td>
         <td>
           <a href={"/faces/" + id + "/accept"}>Accept</a>
         </td>
         <td>
           <a href={"/faces/" + id + "/delete"}>Delete</a>
+        </td>
+        <td>
+          <a href={"/faces/" + id + "/relabel/-1"}>Guest</a>
         </td>
       </tr>
     }
@@ -111,7 +125,16 @@ class CentralFaces(central : CentralService)
 
   def relabel(id : Int, residentId : Int) : NodeSeq =
   {
-    val updatedResident = db.fetchById[HomeResident](residentId)
+    val updatedResident = {
+      residentId match {
+        case -1 => {
+          None
+        }
+        case _ => {
+          Some(db.fetchById[HomeResident](residentId))
+        }
+      }
+    }
     db.save(db.fetchById[ResidentAppearance](id).copy(
       reviewed = true, resident = updatedResident))
     <html><body>

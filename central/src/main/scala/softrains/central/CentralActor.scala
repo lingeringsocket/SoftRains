@@ -76,7 +76,7 @@ class CentralActor(central : CentralService) extends Actor
         whereEqual("name", msg.name.capitalize).fetchOne
       residentOpt.foreach(resident => {
         db.save(ResidentAppearance(
-          resident, readClockTime, msg.faceFile, msg.sceneFile))
+          Some(resident), readClockTime, msg.faceFile, msg.sceneFile))
       })
     }
   }

@@ -35,7 +35,7 @@ case class HomeResident(
 ) extends CentralDbEntity
 
 case class ResidentAppearance(
-  resident : HomeResident,
+  resident : Option[HomeResident],
   imageTime : DateTime,
   faceFile : String,
   sceneFile : String,
