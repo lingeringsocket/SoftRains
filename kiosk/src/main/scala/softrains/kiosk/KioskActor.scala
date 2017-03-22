@@ -24,7 +24,8 @@ import akka.event._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class KioskActor extends Actor with IntercomClient
+class KioskActor(faceExampleLoader : Option[FaceExampleLoader])
+    extends Actor with IntercomClient
 {
   private val log = Logging(context.system, this)
 
@@ -60,7 +61,7 @@ class KioskActor extends Actor with IntercomClient
           new CameraDesktopView(cameraWindowTitle)
         }
       }
-      cameraActor ! CameraActor.StartSentinelMsg(input, view)
+      cameraActor ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader)
     }
     // FIXME need to make sure we don't try to start another local
     // IntercomActor instance if CentralService has already done so!

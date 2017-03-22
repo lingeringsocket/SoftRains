@@ -31,7 +31,7 @@ object KioskApp extends App
   private val kioskSpec = settings.Actors.kiosk
   assert (!kioskSpec.isEmpty)
   private val kioskActor =
-    system.actorOf(Props(classOf[KioskActor]), kioskSpec)
+    system.actorOf(Props(classOf[KioskActor], None), kioskSpec)
 
   println("Akka listening, press RETURN to stop...")
   StdIn.readLine

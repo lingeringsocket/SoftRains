@@ -123,8 +123,8 @@ class SoftRainsSettings(rootConf : Config)
   object Visitors
   {
     val subConf = conf.getConfig("visitors")
-    val trainingPath =
-      new File(subConf.getString("training-path")).getAbsoluteFile
+    val trainingPathString = subConf.getString("training-path")
+    val trainingPath = new File(trainingPathString).getAbsoluteFile
     val videoUrl = subConf.getString("video-url")
     val frameInterval = getMillis(subConf, "frame-interval")
     val blobMergeDistance = subConf.getDouble("blob-merge-distance")

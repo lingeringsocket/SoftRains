@@ -319,6 +319,9 @@ class CameraSentinel(
 
   private var faceDetected = false
 
+  private var faceExampleLoader : FaceExampleLoader =
+    new FaceExampleDirectory(settings)
+
   private var lastMotion = 0
 
   private var frameAnalyzerOpt : Option[FrameAnalyzer] = None
@@ -391,8 +394,7 @@ class CameraSentinel(
     detectFaces = true
     saveFaces = save
     createDirs
-    if (recognizeFaces &&
-      !settings.Visitors.subConf.getString("training-path").isEmpty)
+    if (recognizeFaces && faceRecognizerOpt.isEmpty)
     {
       trainFaceRecognition
     }
@@ -410,27 +412,28 @@ class CameraSentinel(
     recorder.quit
   }
 
+  def setFaceExampleLoader(loader : FaceExampleLoader)
+  {
+    faceExampleLoader = loader
+  }
+
   private def trainFaceRecognition()
   {
-    val root = settings.Visitors.trainingPath
-    val imgFilter = new FilenameFilter {
-      override def accept(dir : File, nameOrig : String) =
-      {
-        val name = nameOrig.toLowerCase
-        name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png")
-      }
+    val examples = faceExampleLoader.load
+    if (examples.isEmpty) {
+      return
     }
-
-    val imageFiles = root.listFiles(imgFilter)
-    val images = new MatVector(2*imageFiles.length)
-    val labels = new Mat(2*imageFiles.length, 1, CV_32SC1)
+    val images = new MatVector(2*examples.length)
+    val labels = new Mat(2*examples.length, 1, CV_32SC1)
     val labelsBuf = labels.createBuffer[IntBuffer]
 
     var counter = 0
 
-    for (image <- imageFiles) {
-      val img = imread(image.getAbsolutePath, CV_LOAD_IMAGE_GRAYSCALE)
-      val labelString = image.getName.split("\\-")(0)
+    for (example <- examples) {
+      val img = imread(
+        example.imgFile.getAbsolutePath,
+        CV_LOAD_IMAGE_GRAYSCALE)
+      val labelString = example.label
       val labelOpt = faceLabels.get(labelString)
       val label = labelOpt match {
         case Some(l) => l

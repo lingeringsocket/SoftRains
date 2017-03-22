@@ -14,7 +14,11 @@
 // limitations under the License.
 package softrains.central
 
+import softrains.vision._
+
 import scala.xml._
+
+import java.io._
 
 class CentralFaces(central : CentralService)
 {
@@ -162,5 +166,24 @@ class CentralFaces(central : CentralService)
       All unreviewed relabels accepted.
       <a href="/faces/unreviewed">Return to label browser.</a>
     </body></html>
+  }
+
+  def getExampleLoader() : FaceExampleLoader =
+  {
+    new FaceExampleLoader {
+      override def load() =
+      {
+        val dir = new FaceExampleDirectory(central.getSettings)
+        val dbExamples = db.query[ResidentAppearance].
+          whereEqual("reviewed", true).
+          whereNotEqual("resident", None).
+          fetch.map(appearance => {
+            FaceExample(
+              appearance.resident.get.name,
+              new File(appearance.faceFile))
+          })
+        dir.load ++ dbExamples
+      }
+    }
   }
 }

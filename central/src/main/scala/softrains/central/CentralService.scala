@@ -84,21 +84,6 @@ class CentralService(
     }
   }
 
-  /*
-  def runCamera()
-  {
-    db.query[CameraFeed].fetchOne.foreach(feed => {
-      val view = new CameraDesktopView(feed.name)
-      val input = new CameraFeedInput(feed.url)
-      val sentinel = new CameraSentinel(input, view, settings)
-      sentinel.enableFaceDetection(true)
-      sentinel.enableVisitorDetection
-      sentinel.enableMotionRecording
-      sentinel.run
-    })
-  }
-   */
-
   def runActors()
   {
     startIntercom

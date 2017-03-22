@@ -28,7 +28,8 @@ object CameraActor
   // received messages
   final case class StartSentinelMsg(
     input : CameraInput,
-    view : CameraView) extends SoftRainsMsg
+    view : CameraView,
+    faceExampleLoader : Option[FaceExampleLoader] = None) extends SoftRainsMsg
   case object AnalyzeFrameMsg extends SoftRainsMsg
   case object StopSentinelMsg extends SoftRainsMsg
   final case class ControlFaceDetectionMsg(enable : Boolean)
@@ -72,8 +73,9 @@ class CameraActor extends LoggingFSM[State, Data]
   }
 
   when(Inactive) {
-    case Event(StartSentinelMsg(input, view), _) => {
+    case Event(StartSentinelMsg(input, view, loaderOpt), _) => {
       val sentinel = new CameraSentinel(input, view, settings)
+      loaderOpt.foreach(sentinel.setFaceExampleLoader(_))
       sentinel.enableFaceDetection(true)
       sentinel.startAnalyzer
       self ! AnalyzeFrameMsg
