@@ -51,7 +51,8 @@ class CentralActor(central : CentralService) extends Actor
   private val kioskSpec = settings.Actors.kiosk
   if (!kioskSpec.isEmpty) {
     val faceExampleLoader = new CentralFaces(central).getExampleLoader
-    context.actorOf(Props(classOf[KioskActor], faceExampleLoader), kioskSpec)
+    context.actorOf(
+      Props(classOf[KioskActor], Some(faceExampleLoader)), kioskSpec)
   }
 
   override def preStart()
