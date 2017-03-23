@@ -176,8 +176,7 @@ class CentralFaces(central : CentralService)
         val dir = new FaceExampleDirectory(central.getSettings)
         val dbExamples = db.query[ResidentAppearance].
           whereEqual("reviewed", true).
-          whereNotEqual("resident", None).
-          fetch.map(appearance => {
+          fetch.filterNot(_.resident.isEmpty).map(appearance => {
             FaceExample(
               appearance.resident.get.name,
               new File(appearance.faceFile))
