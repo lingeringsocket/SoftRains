@@ -18,8 +18,6 @@ import softrains.vision._
 
 import scala.xml._
 
-import java.io._
-
 class CentralFaces(central : CentralService)
 {
   private val db = central.db
@@ -173,13 +171,14 @@ class CentralFaces(central : CentralService)
     new FaceExampleLoader {
       override def load() =
       {
-        val dir = new FaceExampleDirectory(central.getSettings)
+        val settings = central.getSettings
+        val dir = new FaceExampleDirectory(settings)
         val dbExamples = db.query[ResidentAppearance].
           whereEqual("reviewed", true).
           fetch.filterNot(_.resident.isEmpty).map(appearance => {
             FaceExample(
               appearance.resident.get.name,
-              new File(appearance.faceFile))
+              appearance.generateFacePath(settings))
           })
         dir.load ++ dbExamples
       }

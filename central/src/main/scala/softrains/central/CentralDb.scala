@@ -19,6 +19,8 @@ import softrains.base._
 import sorm._
 import org.joda.time._
 
+import java.io._
+
 object CommunicationPriority extends Enumeration
 {
   type CommunicationPriority = Value
@@ -50,6 +52,11 @@ case class ResidentAppearance(
   def generateFaceUrl(settings : SoftRainsSettings) : String =
   {
     settings.Visitors.videoUrl + "/faces/" + faceFile
+  }
+
+  def generateFacePath(settings : SoftRainsSettings) : File =
+  {
+    new File(settings.Files.videoPath + "/faces/" + faceFile)
   }
 }
 
