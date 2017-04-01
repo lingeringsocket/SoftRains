@@ -142,6 +142,18 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("intercom" / "softreboot") {
+      get {
+        complete({
+          val intercomActor = getIntercomActor
+          intercomActor !
+            IntercomActor.StartAudioFileMsg("reboot.mp3", true, true)
+          intercomActor !
+            IntercomActor.RebootMsg(true)
+          HttpEntity(textContent, "<h1>Rebooted</h1>")
+        })
+      }
+    } ~
     path("greet") {
       get {
         complete({
