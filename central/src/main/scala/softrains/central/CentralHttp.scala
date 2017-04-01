@@ -26,6 +26,7 @@ import akka.util._
 
 import scala.concurrent._
 import scala.util._
+import scala.sys.process._
 
 import org.joda.time.DateTime
 
@@ -150,7 +151,18 @@ class CentralHttp(central : CentralService)
             IntercomActor.StartAudioFileMsg("reboot.mp3", true, true)
           intercomActor !
             IntercomActor.RebootMsg(true)
-          HttpEntity(textContent, "<h1>Rebooted</h1>")
+          HttpEntity(textContent, "<h1>Soft reboot requested</h1>")
+        })
+      }
+    } ~
+    path("intercom" / "hardreboot") {
+      get {
+        complete({
+          val command = central.getSettings.Kiosk.restartCommand
+          if (!command.isEmpty) {
+            command.!!
+          }
+          HttpEntity(textContent, "<h1>Hard reboot requested</h1>")
         })
       }
     } ~
