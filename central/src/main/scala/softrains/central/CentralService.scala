@@ -112,7 +112,15 @@ class CentralService(
 
     println(s"Akka started, HTTP listening at http://$address:$port/")
     println("Press RETURN to stop...")
+
+    getIntercomActor ! IntercomActor.SystemUtteranceMsg(
+      "Soft Rains central service ready")
+
     StdIn.readLine
+
+    getIntercomActor ! IntercomActor.SystemUtteranceMsg(
+      "Soft Rains central service shutting down")
+    
     bindingFuture
       .flatMap(_.unbind)
       .onComplete(_ => system.terminate)
