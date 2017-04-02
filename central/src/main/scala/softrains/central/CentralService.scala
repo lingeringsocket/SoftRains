@@ -114,12 +114,12 @@ class CentralService(
     println("Press RETURN to stop...")
 
     getIntercomActor ! IntercomActor.SystemUtteranceMsg(
-      "Soft Rains central service ready")
+      "Central service ready")
 
     StdIn.readLine
 
     getIntercomActor ! IntercomActor.SystemUtteranceMsg(
-      "Soft Rains central service shutting down")
+      "Central service shutting down")
     
     bindingFuture
       .flatMap(_.unbind)
