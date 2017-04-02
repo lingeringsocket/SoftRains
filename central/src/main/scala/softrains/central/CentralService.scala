@@ -120,7 +120,7 @@ class CentralService(
 
     getIntercomActor ! IntercomActor.SystemUtteranceMsg(
       "Central service shutting down")
-    
+
     bindingFuture
       .flatMap(_.unbind)
       .onComplete(_ => system.terminate)
