@@ -148,6 +148,9 @@ class CentralHttp(central : CentralService)
         complete({
           val intercomActor = getIntercomActor
           intercomActor !
+            IntercomActor.SystemUtteranceMsg(
+              "Restarting the intercom, please wait")
+          intercomActor !
             IntercomActor.StartAudioFileMsg("reboot.mp3", true, true)
           intercomActor !
             IntercomActor.RebootMsg(true)

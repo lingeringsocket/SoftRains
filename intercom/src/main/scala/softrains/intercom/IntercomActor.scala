@@ -51,6 +51,8 @@ object IntercomActor
       extends PeripheralMsg
   final case class PartnerUtteranceMsg(utterance : String, voice : String = "")
       extends SpeakerSoundMsg
+  final case class SystemUtteranceMsg(utterance : String, voice : String = "")
+      extends SpeakerSoundMsg
   final case class PartnerListenMsg(
     personName : String = "", identifyVoice : Boolean = false)
       extends PeripheralMsg
@@ -296,6 +298,19 @@ class IntercomActor extends LoggingFSM[State, Data]
         sender ! ProtocolErrorMsg(PROTOCOL_UTTERANCE_WITHOUT_PAIR)
         stay
       }
+    }
+    case Event(SystemUtteranceMsg(utterance, systemVoice),
+      Partner(partner, oldVoice, bg)) =>
+    {
+      val voice = {
+        if (systemVoice.isEmpty) {
+          "en-US_LisaVoice"
+        } else {
+          systemVoice
+        }
+      }
+      watsonSay(utterance, voice, unpaired)
+      stay
     }
     case Event(
       PartnerListenMsg(personName, identifyVoice),
