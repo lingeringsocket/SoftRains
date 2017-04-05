@@ -195,6 +195,7 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   private def startConversation(
     topic : ConversationTopic, channel : ActorRef)
   {
+    partner = ConversationPartner.ALLISON
     val startTime = readClockTime
     val transcript = db.save(ConversationTranscript(startTime))
     currentTranscript = Some(transcript)
