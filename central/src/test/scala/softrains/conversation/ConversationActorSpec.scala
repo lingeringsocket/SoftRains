@@ -82,7 +82,8 @@ class ConversationActorSpec
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
-      expectMsg(PartnerUtteranceMsg(utterance2))
+      expectMsg(PartnerUtteranceMsg(
+        utterance2, ConversationPartner.ALLISON.voiceName))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
@@ -114,9 +115,11 @@ class ConversationActorSpec
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
-      expectMsg(PartnerUtteranceMsg(utterance2))
+      expectMsg(PartnerUtteranceMsg(
+        utterance2, ConversationPartner.ALLISON.voiceName))
       actor ! SpeakerSoundFinishedMsg()
-      expectMsg(PartnerUtteranceMsg(utterance3, "en-GB_KateVoice"))
+      expectMsg(PartnerUtteranceMsg(
+        utterance3, ConversationPartner.KATE.voiceName))
       actor ! SpeakerSoundFinishedMsg()
 
       db.query[ConversationTranscript].fetch.size must be equalTo 1
@@ -165,15 +168,16 @@ class ConversationActorSpec
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(sender, false))
       actor ! PersonUtteranceMsg(utterance1, "")
-      expectMsg(PartnerUtteranceMsg(utterance2))
+      val voice = ConversationPartner.ALLISON.voiceName
+      expectMsg(PartnerUtteranceMsg(utterance2, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(sender, false))
       actor ! PersonUtteranceMsg(utterance3, "", Some(filename))
-      expectMsg(PartnerUtteranceMsg(utterance4))
+      expectMsg(PartnerUtteranceMsg(utterance4, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(sender, false))
       actor ! PersonUtteranceMsg(utterance5, "")
-      expectMsg(PartnerUtteranceMsg(utterance6))
+      expectMsg(PartnerUtteranceMsg(utterance6, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
@@ -201,7 +205,7 @@ class ConversationActorSpec
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(recipient, false))
       actor ! PersonUtteranceMsg(utterance8, "")
-      expectMsg(PartnerUtteranceMsg(utterance9))
+      expectMsg(PartnerUtteranceMsg(utterance9, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PlayAudioFileMsg(filename))
       actor ! SpeakerSoundFinishedMsg()

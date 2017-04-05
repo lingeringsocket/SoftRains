@@ -52,7 +52,7 @@ class CommonPersona(topic : PassiveTopic)
     context.setPartner(newPartner)
     IntercomActor.SpeakerSoundSeqMsg(Seq(
       IntercomActor.PartnerUtteranceMsg(
-        oldPartner.transferFrom),
+        oldPartner.transferFrom, oldPartner.voiceName),
       IntercomActor.PartnerUtteranceMsg(
         newPartner.transferTo, newPartner.voiceName)))
   }

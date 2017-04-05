@@ -223,14 +223,19 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 
   private def sendReply(reply : SpeakerSoundMsg)
   {
-    // FIXME:  use correct voice name
     reply match {
-      case PartnerUtteranceMsg(utterance, _) => {
+      case PartnerUtteranceMsg(utterance, voice) => {
         saveUtterance("SoftRains", utterance)
+        if (voice.isEmpty) {
+          sender ! PartnerUtteranceMsg(utterance, partner.voiceName)
+        } else {
+          sender ! reply
+        }
       }
-      case _ =>
+      case _ => {
+        sender ! reply
+      }
     }
-    sender ! reply
   }
 
   initialize()
