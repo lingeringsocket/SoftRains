@@ -24,7 +24,7 @@ class CommonPersona(topic : PassiveTopic)
   def getContext = topic.getContext
 
   def getResidentName = topic.getResidentName
-  
+
   def getMatcher() : Seq[TopicMatcher] =
   {
     Seq[TopicMatcher](
