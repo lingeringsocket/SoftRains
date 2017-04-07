@@ -90,6 +90,22 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("volume" / "up") {
+      get {
+        complete({
+          getIntercomActor ! IntercomActor.VolumeUpMsg
+          HttpEntity(textContent, "<h1>Volume Increased!</h1>")
+        })
+      }
+    } ~
+    path("volume" / "down") {
+      get {
+        complete({
+          getIntercomActor ! IntercomActor.VolumeDownMsg
+          HttpEntity(textContent, "<h1>Volume Decreased!</h1>")
+        })
+      }
+    } ~
     path("loop" / Segment) { file =>
       get {
         complete({

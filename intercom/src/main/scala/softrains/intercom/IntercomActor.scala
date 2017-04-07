@@ -60,6 +60,10 @@ object IntercomActor
       extends PeripheralMsg
   case object PreWakeMsg
       extends PeripheralMsg
+  case object VolumeUpMsg
+      extends PeripheralMsg
+  case object VolumeDownMsg
+      extends PeripheralMsg
   case object UptimeRequestMsg
       extends PeripheralMsg
   final case class InitializeAlexaMsg(alexaActor : ActorRef)
@@ -354,6 +358,20 @@ class IntercomActor extends LoggingFSM[State, Data]
         command.!
       }
       sender ! SpeakerSoundFinishedMsg()
+      stay
+    }
+    case Event(VolumeUpMsg, _) => {
+      val command = settings.Speaker.volumeUpCommand
+      if (!command.isEmpty) {
+        command.!
+      }
+      stay
+    }
+    case Event(VolumeDownMsg, _) => {
+      val command = settings.Speaker.volumeDownCommand
+      if (!command.isEmpty) {
+        command.!
+      }
       stay
     }
     case Event(RebootMsg(soft), _) => {

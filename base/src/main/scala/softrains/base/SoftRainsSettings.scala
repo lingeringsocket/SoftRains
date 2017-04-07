@@ -109,6 +109,8 @@ class SoftRainsSettings(rootConf : Config)
     val ringtoneCommand = subConf.getString("ringtone-command")
     val sleepCommand = subConf.getString("sleep-command")
     val wakeCommand = subConf.getString("wake-command")
+    val volumeUpCommand = subConf.getString("volume-up-command")
+    val volumeDownCommand = subConf.getString("volume-down-command")
     val sleepTimeout = getMillis(subConf, "sleep-timeout")
     val soundPath = new File(subConf.getString("sound-path")).getAbsoluteFile
   }
