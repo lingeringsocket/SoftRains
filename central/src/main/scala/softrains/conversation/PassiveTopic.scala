@@ -56,6 +56,9 @@ class PassiveTopic(residentName : String) extends ConversationTopic
       case ConversationPartner.LISA => {
         new SystemPersona(this)
       }
+      case ConversationPartner.MICHAEL => {
+        new ProfessorPersona(this)
+      }
       case _ => {
         new CommonPersona(this)
       }

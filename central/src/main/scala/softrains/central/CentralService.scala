@@ -133,6 +133,15 @@ class CentralService(
 
   override def getDatabase = db
 
+  private[central] def startProfessor()
+  {
+    val topicSource = new SequentialTopicSource(Seq.empty)
+    val dispatcher = new TopicDispatcher(topicSource, "", "At your service!")
+    conversationActor ! ConversationActor.ActivateMsg(
+      dispatcher,
+      getIntercomActor)
+  }
+
   private[central] def startConversation()
   {
     val openhabUrl = settings.Openhab.url

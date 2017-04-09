@@ -103,14 +103,14 @@ class TopicDispatcher(
 
   private var pending : Option[IntercomActor.SpeakerSoundMsg] = Some(
     IntercomActor.PartnerUtteranceMsg(
-      if (personName.isEmpty) {
-        "Who goes there?"
-      } else {
-        if (intro.isEmpty) {
-          "Hello, " + personName + ".  How are you?"
+      if (intro.isEmpty) {
+        if (personName.isEmpty) {
+          "Who goes there?"
         } else {
-          intro
+          "Hello, " + personName + ".  How are you?"
         }
+      } else {
+        intro
       }
     )
   )

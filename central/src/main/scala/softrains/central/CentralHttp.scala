@@ -197,6 +197,14 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("professor") {
+      get {
+        complete({
+          central.startProfessor
+          HttpEntity(textContent, "Yo!")
+        })
+      }
+    } ~
     path("identify") {
       get {
         complete({
