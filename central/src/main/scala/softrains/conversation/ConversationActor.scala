@@ -41,7 +41,7 @@ object ConversationActor
 
   case object Empty extends Data
   final case class PairingData(
-    topic : ConversationTopic, channel : ActorRef)
+    topic : ConversationTopic, channel : ActorRef, partner : ConversationPartner)
       extends Data
   final case class ConvoData(
     topic : ConversationTopic,
@@ -83,14 +83,13 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
 
   when(Inactive) {
     case Event(ActivateMsg(topic, channel, newPartner), _) => {
-      setPartner(newPartner)
       channel ! PairRequestMsg
-      goto(Pairing) using PairingData(topic, channel)
+      goto(Pairing) using PairingData(topic, channel, newPartner)
     }
   }
 
   when(Pairing) {
-    case Event(BusyMsg, PairingData(topic, channel)) => {
+    case Event(BusyMsg, PairingData(topic, channel, _)) => {
       topic.getPriority match {
         case EMERGENCY => {
           channel ! PairPreemptMsg
@@ -102,16 +101,16 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
         }
       }
     }
-    case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
-      startConversation(topic, channel)
+    case Event(PairAcceptedMsg, PairingData(topic, channel, newPartner)) => {
+      startConversation(topic, channel, newPartner)
       goto(Paired) using ConvoData(topic)
     }
   }
 
   when(Preempting) {
-    case Event(PairAcceptedMsg, PairingData(topic, channel)) => {
+    case Event(PairAcceptedMsg, PairingData(topic, channel, newPartner)) => {
       // TODO:  insert apology for interrupting
-      startConversation(topic, channel)
+      startConversation(topic, channel, newPartner)
       goto(Paired) using ConvoData(topic)
     }
   }
@@ -195,9 +194,10 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   }
 
   private def startConversation(
-    topic : ConversationTopic, channel : ActorRef)
+    topic : ConversationTopic, channel : ActorRef,
+    newPartner : ConversationPartner)
   {
-    partner = ConversationPartner.ALLISON
+    setPartner(newPartner)
     val startTime = readClockTime
     val transcript = db.save(ConversationTranscript(startTime))
     currentTranscript = Some(transcript)
