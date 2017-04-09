@@ -139,7 +139,8 @@ class CentralService(
     val dispatcher = new TopicDispatcher(topicSource, "", "At your service!")
     conversationActor ! ConversationActor.ActivateMsg(
       dispatcher,
-      getIntercomActor)
+      getIntercomActor,
+      ConversationPartner.MICHAEL)
   }
 
   private[central] def startConversation()

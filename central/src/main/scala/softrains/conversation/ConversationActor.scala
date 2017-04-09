@@ -24,7 +24,8 @@ object ConversationActor
 {
   // received messages
   final case class ActivateMsg(
-    topic : ConversationTopic, channel : ActorRef)
+    topic : ConversationTopic, channel : ActorRef,
+    partner : ConversationPartner = ConversationPartner.ALLISON)
       extends SoftRainsMsg
 
   // sent messages
@@ -81,7 +82,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   }
 
   when(Inactive) {
-    case Event(ActivateMsg(topic, channel), _) => {
+    case Event(ActivateMsg(topic, channel, newPartner), _) => {
+      setPartner(newPartner)
       channel ! PairRequestMsg
       goto(Pairing) using PairingData(topic, channel)
     }
