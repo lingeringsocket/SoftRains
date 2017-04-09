@@ -49,7 +49,8 @@ class ConversationActorSpec
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg(utterance0))
+      val voice = ConversationPartner.ALLISON.voiceName
+      expectMsg(PartnerUtteranceMsg(utterance0, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
@@ -78,7 +79,8 @@ class ConversationActorSpec
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg(utterance0))
+      val voice = ConversationPartner.ALLISON.voiceName
+      expectMsg(PartnerUtteranceMsg(utterance0, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
@@ -111,7 +113,8 @@ class ConversationActorSpec
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg(utterance0))
+      expectMsg(PartnerUtteranceMsg(
+        utterance0, ConversationPartner.ALLISON.voiceName))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
       actor ! PersonUtteranceMsg(utterance1, "")
@@ -164,11 +167,11 @@ class ConversationActorSpec
       actor ! ActivateMsg(senderDispatcher, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg(utterance0))
+      val voice = ConversationPartner.ALLISON.voiceName
+      expectMsg(PartnerUtteranceMsg(utterance0, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(sender, false))
       actor ! PersonUtteranceMsg(utterance1, "")
-      val voice = ConversationPartner.ALLISON.voiceName
       expectMsg(PartnerUtteranceMsg(utterance2, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(sender, false))
@@ -201,7 +204,7 @@ class ConversationActorSpec
       actor ! ActivateMsg(recipientDispatcher, self)
       expectMsg(PairRequestMsg)
       actor ! PairAcceptedMsg
-      expectMsg(PartnerUtteranceMsg(utterance7))
+      expectMsg(PartnerUtteranceMsg(utterance7, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg(recipient, false))
       actor ! PersonUtteranceMsg(utterance8, "")

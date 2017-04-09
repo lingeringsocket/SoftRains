@@ -41,7 +41,8 @@ object ConversationActor
 
   case object Empty extends Data
   final case class PairingData(
-    topic : ConversationTopic, channel : ActorRef, partner : ConversationPartner)
+    topic : ConversationTopic, channel : ActorRef,
+    partner : ConversationPartner)
       extends Data
   final case class ConvoData(
     topic : ConversationTopic,
@@ -204,13 +205,19 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
     conversationContext = new ConversationSubContext(this, true)
     topic.produceMessage(conversationContext).foreach({ msg =>
       msg match {
-        case PartnerUtteranceMsg(utterance, _) => {
+        case PartnerUtteranceMsg(utterance, voice) => {
           lastUtterance = Some(db.save(ConversationUtterance(
             transcript, startTime, "SoftRains", utterance)))
+          if (voice.isEmpty) {
+            channel ! PartnerUtteranceMsg(utterance, partner.voiceName)
+          } else {
+            channel ! msg
+          }
         }
-        case _ =>
+        case _ => {
+          channel ! msg
+        }
       }
-      channel ! msg
     })
   }
 
