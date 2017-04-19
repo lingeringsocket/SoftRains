@@ -105,40 +105,54 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     context.setPersonName("")
   }
 
-  def consumeUtterance(
-    utterance : String, personName : String, context : ConversationContext) =
+  override def consumeUtterance(
+    utterance : String, personName : String, context : ConversationContext)
   {
     lastUtterance = utterance.toLowerCase
     val inputSplit = ContainsTopicMatcher.splitWords(lastUtterance)
+    val settings = context.getSettings
+    val pronounMap = settings.Residents.pronounMap
+    val aliasMap = settings.Residents.aliasMap
+    val referenceMap = settings.Residents.referenceMap
+
+    aliasMap.foreach({
+      case (aliasedName, aliasList) => {
+        if (ContainsTopicMatcher.matchPhrases(
+          inputSplit, aliasList.split(",").toSeq))
+        {
+          context.setPersonalPronoun(
+            pronounMap.get(aliasedName).map(
+              PersonalPronoun.withName(_)).
+              getOrElse(PersonalPronoun.HE))
+          context.setPersonName(aliasedName)
+          return
+        }
+      }
+    })
+
+    referenceMap.foreach({
+      case (reference, aliasList) => {
+        if (ContainsTopicMatcher.matchPhrases(
+          inputSplit, aliasList.split(",").toSeq))
+        {
+          val refPair = reference.split(" calls ")
+          val referencer = refPair.head
+          val referenced = refPair.last
+          if (referencer == residentName) {
+            context.setPersonalPronoun(
+              pronounMap.get(referenced).map(
+                PersonalPronoun.withName(_)).
+                getOrElse(PersonalPronoun.HE))
+            context.setPersonName(referenced)
+          } else {
+            forgetPerson(context)
+          }
+          return
+        }
+      }
+    })
+
     if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("sujin", "lee")))
-    {
-      context.setPersonalPronoun(PersonalPronoun.SHE)
-      context.setPersonName("Sujin")
-    } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("my wife")))
-    {
-      if (residentName == "John") {
-        context.setPersonalPronoun(PersonalPronoun.SHE)
-        context.setPersonName("Sujin")
-      } else {
-        forgetPerson(context)
-      }
-    } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("john", "sichi", "see key")))
-    {
-      context.setPersonalPronoun(PersonalPronoun.HE)
-      context.setPersonName("John")
-    } else if (ContainsTopicMatcher.matchPhrases(
-      inputSplit, Seq("my husband")))
-    {
-      if (residentName == "Sujin") {
-        context.setPersonalPronoun(PersonalPronoun.HE)
-        context.setPersonName("John")
-      } else {
-        forgetPerson(context)
-      }
-    } else if (ContainsTopicMatcher.matchPhrases(
       inputSplit, Seq("he", "his", "him")))
     {
       if (context.getPersonalPronoun != PersonalPronoun.HE) {

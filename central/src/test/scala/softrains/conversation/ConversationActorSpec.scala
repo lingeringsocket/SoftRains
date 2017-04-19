@@ -139,24 +139,24 @@ class ConversationActorSpec
 
     "process a voicemail flow" in new AkkaActorExample
     {
-      val utterance0 = "Hello, John.  How are you?"
+      val utterance0 = "Hello, Brad.  How are you?"
       val utterance1 = "I want to leave a message for my wife."
       val utterance2 = "Okay, please tell me your message now."
       val utterance3 = "Hodor!"
       val utterance4 = "Should I play back your message, or send it now?"
       val utterance5 = "Send it."
       val utterance6 = "Bombs away!"
-      val utterance7 = "Good morning, Sujin! Ready for another week?" +
+      val utterance7 = "Good morning, Angelina! Ready for another week?" +
         " I have some updates for you."
       val utterance8 = "Let's hear it."
-      val utterance9 = "Here is a message from John."
+      val utterance9 = "Here is a message from Brad."
 
       val db = new CentralDb(settings)
 
       val actor = TestActorRef(new ConversationActor(db))
 
-      val sender = "John"
-      val recipient = "Sujin"
+      val sender = "Brad"
+      val recipient = "Angelina"
       val filename = "hodor.mp3"
 
       db.save(HomeResident(sender))

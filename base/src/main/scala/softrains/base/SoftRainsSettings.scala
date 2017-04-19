@@ -150,6 +150,9 @@ class SoftRainsSettings(rootConf : Config)
       subConf, "notification-scan-interval")
     val deviceMap = readMap(subConf, "devices")
     val emailMap = readMap(subConf, "email")
+    val pronounMap = readMap(subConf, "pronouns")
+    val aliasMap = readMap(subConf, "aliases")
+    val referenceMap = readMap(subConf, "references")
   }
 
   object Cameras

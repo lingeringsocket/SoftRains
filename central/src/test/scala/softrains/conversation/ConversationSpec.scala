@@ -46,16 +46,20 @@ class ConversationSpec extends Specification
         new WarningTopic("The house is on fire!")
       ))
       val dispatcher = new TopicDispatcher(topicSource, personName)
-      dispatcher.produceUtterance() must be equalTo(
+      val context = new ConversationSubContext(TestConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Hello, Ash.  How are you?"))
-      dispatcher.consumeUtterance("Very well, thank you.")
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.consumeUtterance(
+        "Very well, thank you.", personName, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("The house is on fire!"))
-      dispatcher.consumeUtterance("Thanks for letting me know.")
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.consumeUtterance(
+        "Thanks for letting me know.", personName, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("So, what is on your mind?"))
-      dispatcher.consumeUtterance("Goodbye")
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.consumeUtterance(
+        "Goodbye", personName, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Talk to you later!"))
       dispatcher.isInProgress must beFalse
     }
@@ -65,13 +69,16 @@ class ConversationSpec extends Specification
       val personName = "Ash"
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource, personName)
-      dispatcher.produceUtterance() must be equalTo(
+      val context = new ConversationSubContext(TestConversationContext)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Hello, Ash.  How are you?"))
-      dispatcher.consumeUtterance("Thanks a million.")
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.consumeUtterance(
+        "Thanks a million.", personName, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("You are very welcome!"))
-      dispatcher.consumeUtterance("Goodbye")
-      dispatcher.produceUtterance() must be equalTo(
+      dispatcher.consumeUtterance(
+        "Goodbye", personName, context)
+      dispatcher.produceUtterance(context) must be equalTo(
         Some("Talk to you later!"))
       dispatcher.isInProgress must beFalse
     }
@@ -98,7 +105,7 @@ class ConversationSpec extends Specification
     {
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource)
-      val context = new ConversationSubContext(NullConversationContext)
+      val context = new ConversationSubContext(TestConversationContext)
       dispatcher.produceUtterance(context) must be equalTo(
         Some("Who goes there?"))
       dispatcher.consumeUtterance(
@@ -113,7 +120,7 @@ class ConversationSpec extends Specification
       val greeting = new DailyGreeting(frodo)
       val topicSource = new SequentialTopicSource(Seq(greeting))
       val dispatcher = new TopicDispatcher(topicSource)
-      val context = new ConversationSubContext(NullConversationContext)
+      val context = new ConversationSubContext(TestConversationContext)
       dispatcher.produceUtterance(context) must be equalTo(
         Some("Who goes there?"))
       dispatcher.consumeUtterance(
@@ -179,12 +186,12 @@ class ConversationSpec extends Specification
 
     "answer some personal questions" in
     {
-      val resident = new HomeResident("John")
+      val resident = new HomeResident("Brad")
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource, resident.name)
-      val context = new ConversationSubContext(NullConversationContext)
+      val context = new ConversationSubContext(TestConversationContext)
       dispatcher.produceUtterance(context) must be equalTo(
-        Some("Hello, John.  How are you?"))
+        Some("Hello, Brad.  How are you?"))
       dispatcher.consumeUtterance(
         "Who are you?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
@@ -196,7 +203,7 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "Who am I?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
-        "I am fairly sure you are John")
+        "I am fairly sure you are Brad")
       dispatcher.consumeUtterance(
         "Who is Donald Trump?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
@@ -206,13 +213,13 @@ class ConversationSpec extends Specification
       dispatcher.produceUtterance(context).get must startWith(
         "Silly human")
       dispatcher.consumeUtterance(
-        "Who is Sujin?", resident.name, context)
+        "Who is Angelina?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
-        "Sujin is my favorite")
+        "Angelina is my favorite")
       dispatcher.consumeUtterance(
         "Who is she?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
-        "Sujin is my favorite")
+        "Angelina is my favorite")
       dispatcher.consumeUtterance(
         "Where is he?", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
@@ -221,12 +228,12 @@ class ConversationSpec extends Specification
 
     "record voicemail" in
     {
-      val resident = new HomeResident("John")
+      val resident = new HomeResident("Brad")
       val topicSource = new SequentialTopicSource(Seq.empty)
       val dispatcher = new TopicDispatcher(topicSource, resident.name)
       val context = new ConversationSubContext(TestConversationContext)
       dispatcher.produceUtterance(context) must be equalTo(
-        Some("Hello, John.  How are you?"))
+        Some("Hello, Brad.  How are you?"))
       dispatcher.consumeUtterance(
         "I want to leave a message for my wife.", resident.name, context)
       dispatcher.produceUtterance(context).get must startWith(
