@@ -118,8 +118,7 @@ class CentralHttp(central : CentralService)
     path("play" / Segment) { file =>
       get {
         complete({
-          getIntercomActor ! IntercomActor.StartAudioFileMsg(
-            file, false)
+          getIntercomActor ! IntercomActor.PlayAudioFileMsg(file)
           HttpEntity(textContent, s"<h1>Now Playing $file</h1>")
         })
       }

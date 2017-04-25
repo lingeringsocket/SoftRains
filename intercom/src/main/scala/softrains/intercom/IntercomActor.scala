@@ -410,15 +410,12 @@ class IntercomActor extends LoggingFSM[State, Data]
       sender ! SpeakerSoundFinishedMsg()
       stay using newData
     }
-    case Event(PlayAudioFileMsg(fileName),
-      Partner(partner, voice, background)) =>
-    {
-      background.foreach(_.destroy)
+    case Event(PlayAudioFileMsg(fileName), _) => {
       val command = settings.Speaker.playFileCommand
       val absoluteFile = getAbsoluteFile(fileName)
       command.format(absoluteFile).!
       sender ! SpeakerSoundFinishedMsg()
-      stay using Partner(partner, voice, None)
+      stay
     }
     case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {
       sender ! SpeakerSoundFinishedMsg()
