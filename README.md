@@ -19,6 +19,7 @@ Features under development:
 * recording database for all conversations
 * optional Alexa Voice Services integration
 * network monitoring for human presence tracking
+* avoid annoying my wife too much
 
 Wiki
 
