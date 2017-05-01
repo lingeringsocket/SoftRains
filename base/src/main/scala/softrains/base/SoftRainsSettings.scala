@@ -38,6 +38,13 @@ class SoftRainsSettings(rootConf : Config)
     val port = subConf.getInt("port")
   }
 
+  object Telnet
+  {
+    val subConf = conf.getConfig("telnet")
+    val address = subConf.getString("address")
+    val port = subConf.getInt("port")
+  }
+
   object Actors
   {
     val subConf = conf.getConfig("actors")

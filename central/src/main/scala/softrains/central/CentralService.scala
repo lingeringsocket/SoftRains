@@ -101,6 +101,8 @@ class CentralService(
       system.actorOf(props, centralSpec)
     }
 
+    system.actorOf(Props(classOf[CentralTelnetServer], this))
+
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
