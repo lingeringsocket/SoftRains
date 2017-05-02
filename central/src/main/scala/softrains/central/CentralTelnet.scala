@@ -30,13 +30,13 @@ class CentralTelnetConnection(conversationActor : ActorRef, peer : ActorRef)
 
   private def say(voice : String, utterance : String)
   {
-    peer ! Write(ByteString(voice + ":  " + utterance + "\n"))
+    peer ! Write(ByteString("[" + voice + "]  " + utterance + "\n"))
   }
 
   def receive =
   {
     case Received(data) => {
-      val utterance = data.decodeString("utf-8")
+      val utterance = data.decodeString("utf-8").trim
       conversationActor ! PersonUtteranceMsg(utterance, "")
     }
     case PeerClosed => {
@@ -57,9 +57,6 @@ class CentralTelnetConnection(conversationActor : ActorRef, peer : ActorRef)
     case SystemUtteranceMsg(utterance, voice) => {
       say(voice, utterance)
       sender ! SpeakerSoundFinishedMsg()
-    }
-    case x => {
-      log.info("WOOOOO " + x)
     }
   }
 }
