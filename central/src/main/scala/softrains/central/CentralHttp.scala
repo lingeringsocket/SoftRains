@@ -85,7 +85,7 @@ class CentralHttp(central : CentralService)
     path("doorbell") {
       get {
         complete({
-          getIntercomActor ! IntercomActor.DoorbellMsg
+          central.broadcastIntercom(IntercomActor.DoorbellMsg)
           HttpEntity(textContent, "<h1>Ding Dong!</h1>")
         })
       }
@@ -93,7 +93,7 @@ class CentralHttp(central : CentralService)
     path("volume" / "up") {
       get {
         complete({
-          getIntercomActor ! IntercomActor.VolumeUpMsg
+          central.broadcastIntercom(IntercomActor.VolumeUpMsg)
           HttpEntity(textContent, "<h1>Volume Increased!</h1>")
         })
       }
@@ -101,7 +101,7 @@ class CentralHttp(central : CentralService)
     path("volume" / "down") {
       get {
         complete({
-          getIntercomActor ! IntercomActor.VolumeDownMsg
+          central.broadcastIntercom(IntercomActor.VolumeDownMsg)
           HttpEntity(textContent, "<h1>Volume Decreased!</h1>")
         })
       }
@@ -109,8 +109,8 @@ class CentralHttp(central : CentralService)
     path("loop" / Segment) { file =>
       get {
         complete({
-          getIntercomActor ! IntercomActor.StartAudioFileMsg(
-            file, true)
+          central.broadcastIntercom(IntercomActor.StartAudioFileMsg(
+            file, true))
           HttpEntity(textContent, s"<h1>Now Looping $file</h1>")
         })
       }
@@ -118,7 +118,7 @@ class CentralHttp(central : CentralService)
     path("play" / Segment) { file =>
       get {
         complete({
-          getIntercomActor ! IntercomActor.PlayAudioFileMsg(file)
+          central.broadcastIntercom(IntercomActor.PlayAudioFileMsg(file))
           HttpEntity(textContent, s"<h1>Now Playing $file</h1>")
         })
       }
@@ -126,7 +126,7 @@ class CentralHttp(central : CentralService)
     path("silence") {
       get {
         complete({
-          getIntercomActor ! IntercomActor.StopAudioFileMsg
+          central.broadcastIntercom(IntercomActor.StopAudioFileMsg)
           HttpEntity(textContent, "<h1>Silence is Golden</h1>")
         })
       }
@@ -201,14 +201,6 @@ class CentralHttp(central : CentralService)
         complete({
           central.startProfessor
           HttpEntity(textContent, "Yo!")
-        })
-      }
-    } ~
-    path("identify") {
-      get {
-        complete({
-          central.startIdentify
-          HttpEntity(textContent, "Guess Who?")
         })
       }
     } ~

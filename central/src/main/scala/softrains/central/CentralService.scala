@@ -28,6 +28,7 @@ import scala.io._
 
 import scala.concurrent._
 import scala.collection.mutable._
+import scala.collection.concurrent._
 
 import akka.actor._
 import akka.http.scaladsl._
@@ -45,15 +46,37 @@ class CentralService(
   val db = new CentralDb(settings)
   seedDb
 
-  private var conversationActor : ActorRef = null
-
   private val centralHttp = new CentralHttp(this)
+
+  private val intercoms = new TrieMap[String, CentralIntercom]
 
   def getDeviceMonitor = deviceMonitor
 
   def setActorSystem(system : ActorSystem)
   {
     actorSystem = Some(system)
+  }
+
+  def addIntercom(intercom : CentralIntercom)
+  {
+    intercoms.put(intercom.getName, intercom)
+  }
+
+  def removeIntercom(intercom : CentralIntercom)
+  {
+    intercoms.remove(intercom.getName)
+  }
+
+  def broadcastIntercom(msg : PeripheralMsg)
+  {
+    intercoms.values.foreach(
+      _.getIntercomActor ! msg)
+  }
+
+  def broadcastSystemUtterance(utterance : String)
+  {
+    broadcastIntercom(IntercomActor.SystemUtteranceMsg(
+      utterance, ConversationPartner.LISA.voiceName))
   }
 
   def seedDb()
@@ -87,13 +110,10 @@ class CentralService(
   def runActors()
   {
     startIntercom
+    addIntercom(new CentralIntercom(
+      getActorSystem, this, getIntercomActor, true))
     implicit val system = getActorSystem
-    if (!intercomSpec.isEmpty) {
-      val conversationProps = Props(classOf[ConversationActor], db)
-      val conversationSpec = "conversationActor"
-      conversationActor =
-        system.actorOf(conversationProps, conversationSpec)
-    }
+    assert(!intercomSpec.isEmpty)
 
     val centralSpec = settings.Actors.central
     if (!centralSpec.isEmpty) {
@@ -115,13 +135,11 @@ class CentralService(
     println(s"Akka started, HTTP listening at http://$address:$port/")
     println("Press RETURN to stop...")
 
-    getIntercomActor ! IntercomActor.SystemUtteranceMsg(
-      "Central service ready")
+    broadcastSystemUtterance("Central service ready")
 
     StdIn.readLine
 
-    getIntercomActor ! IntercomActor.SystemUtteranceMsg(
-      "Central service shutting down")
+    broadcastSystemUtterance("Central service shutting down")
 
     bindingFuture
       .flatMap(_.unbind)
@@ -135,13 +153,25 @@ class CentralService(
 
   override def getDatabase = db
 
+  private def getPrimaryIntercom = intercoms.values.find(_.isPrimary).get
+
+  private[central] def activateConversation(
+    intercom : CentralIntercom,
+    dispatcher : TopicDispatcher,
+    partner : ConversationPartner)
+  {
+    intercom.getConversationActor ! ConversationActor.ActivateMsg(
+      dispatcher,
+      intercom.getIntercomActor,
+      partner)
+  }
+
   private[central] def startProfessor()
   {
     val topicSource = new SequentialTopicSource(Seq.empty)
     val dispatcher = new TopicDispatcher(topicSource, "", "At your service!")
-    conversationActor ! ConversationActor.ActivateMsg(
-      dispatcher,
-      getIntercomActor,
+    activateConversation(
+      getPrimaryIntercom, dispatcher,
       ConversationPartner.MICHAEL)
   }
 
@@ -156,9 +186,9 @@ class CentralService(
       scanNotifications
       val intro = topicSource.generateGreeting(context)
       val dispatcher = new TopicDispatcher(topicSource, name, intro)
-      conversationActor ! ConversationActor.ActivateMsg(
-        dispatcher,
-        getIntercomActor)
+      activateConversation(
+        getPrimaryIntercom, dispatcher,
+        ConversationPartner.ALLISON)
     }
     if (openhabUrl.isEmpty) {
       greet("Stranger")
@@ -176,16 +206,6 @@ class CentralService(
       }
       httpConsumer.ensureSuccess
     }
-  }
-
-  private[central] def startIdentify()
-  {
-    val residents = Seq(
-      HomeResident("John"), HomeResident("Sujin"), HomeResident("Lara"))
-    val topic = new VoiceIdentifier(residents)
-    conversationActor ! ConversationActor.ActivateMsg(
-      topic,
-      getIntercomActor)
   }
 
   def logEvent(msg : String)
