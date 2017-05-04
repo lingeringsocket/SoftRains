@@ -30,8 +30,7 @@ object AlexaApp extends App
   val settings = SoftRainsSettings(config)
   val system = ActorSystem("SoftRainsAlexa", config)
 
-  private val intercomSpec = settings.Actors.intercom
-  assert (!intercomSpec.isEmpty)
+  private val intercomSpec = "intercomActor"
 
   val intercomActor =
     system.actorOf(Props(classOf[IntercomActor]), intercomSpec)

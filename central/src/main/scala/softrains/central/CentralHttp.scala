@@ -38,8 +38,6 @@ class CentralHttp(central : CentralService)
 
   private var lastGreet : DateTime = readClockTime
 
-  private def getIntercomActor = central.getIntercomActor
-
   def createRoute() =
   {
     val textContent = ContentTypes.`text/html(UTF-8)`
@@ -140,11 +138,11 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
-    path("intercom" / "ping") {
+    path("intercom" / Segment / "ping") { intercomName =>
       get {
         complete({
           try {
-            val intercomActor = getIntercomActor
+            val intercomActor = central.accessIntercomActor(intercomName)
             val intercomActorTimeout = central.intercomActorTimeout
             val uptimeFuture = intercomActor.ask(
               IntercomActor.UptimeRequestMsg)(Timeout(intercomActorTimeout))
@@ -158,10 +156,10 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
-    path("intercom" / "softreboot") {
+    path("intercom" / Segment / "softreboot") { intercomName =>
       get {
         complete({
-          val intercomActor = getIntercomActor
+          val intercomActor = central.accessIntercomActor(intercomName)
           intercomActor !
             IntercomActor.SystemUtteranceMsg(
               "Restarting the intercom, please wait")

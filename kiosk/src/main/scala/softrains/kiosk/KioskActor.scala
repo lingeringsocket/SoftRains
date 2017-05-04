@@ -49,7 +49,6 @@ class KioskActor(faceExampleLoader : Option[FaceExampleLoader])
 
   override def preStart()
   {
-    assert (!intercomSpec.isEmpty)
     val cameraUrl = settings.Kiosk.cameraUrl
     val cameraWindowTitle = settings.Kiosk.cameraWindowTitle
     if (!cameraUrl.isEmpty) {
@@ -63,13 +62,13 @@ class KioskActor(faceExampleLoader : Option[FaceExampleLoader])
       }
       cameraActor ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader)
     }
-    // FIXME need to make sure we don't try to start another local
-    // IntercomActor instance if CentralService has already done so!
-    startIntercom
+    startLocalIntercoms
     val intercomActor = getIntercomActor
     intercomActor ! IntercomActor.SetObserverMsg(self)
     log.info("KioskActor started")
   }
+
+  private def getIntercomActor = accessIntercomActor("kiosk")
 
   override def postStop()
   {

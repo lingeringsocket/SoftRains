@@ -49,10 +49,19 @@ class SoftRainsSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("actors")
     val central = subConf.getString("central")
-    val intercom = subConf.getString("intercom")
     val camera = subConf.getString("camera")
     val kiosk = subConf.getString("kiosk")
   }
+
+  class IntercomEntry(subConf : Config)
+  {
+    val name = subConf.getString("name")
+    val actor = subConf.getString("actor")
+  }
+
+  val intercoms =
+    conf.getObjectList("intercoms").asScala.map(
+      configObj => new IntercomEntry(configObj.toConfig))
 
   object Openhab
   {

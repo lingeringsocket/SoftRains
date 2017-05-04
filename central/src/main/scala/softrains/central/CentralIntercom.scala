@@ -19,10 +19,10 @@ import softrains.conversation._
 import akka.actor._
 
 class CentralIntercom(
+  name : String,
   actorRefFactory : ActorRefFactory,
   central : CentralService,
-  intercomActor : ActorRef,
-  primary : Boolean)
+  intercomActorLookup : () => ActorRef)
 {
   private val conversationActor =
     actorRefFactory.actorOf(
@@ -31,9 +31,7 @@ class CentralIntercom(
 
   def getConversationActor = conversationActor
 
-  def getIntercomActor = intercomActor
+  def getIntercomActor = intercomActorLookup()
 
-  def getName = getIntercomActor.toString
-
-  def isPrimary = primary
+  def getName = name
 }

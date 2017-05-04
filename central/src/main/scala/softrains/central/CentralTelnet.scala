@@ -22,6 +22,18 @@ import akka.actor._
 import akka.util._
 import java.net._
 
+import java.util.concurrent.atomic._
+
+object CentralTelnetConnection
+{
+  private val nextId = new AtomicLong
+
+  def generateName() =
+  {
+    "telnet" + nextId.incrementAndGet
+  }
+}
+
 class CentralTelnetConnection(
   peer : ActorRef,
   central : CentralService)
@@ -30,7 +42,9 @@ class CentralTelnetConnection(
   import Tcp._
   import IntercomActor._
 
-  val intercom = new CentralIntercom(context, central, self, false)
+  val intercom = new CentralIntercom(
+    CentralTelnetConnection.generateName,
+    context, central, () => { self })
 
   override def preStart()
   {

@@ -28,30 +28,33 @@ trait IntercomClient
 
   def getSettings : SoftRainsSettings
 
-  protected lazy val intercomSpec = getSettings.Actors.intercom
-
   def intercomActorTimeout =
     duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
 
-  protected def startIntercom()
+  protected def startLocalIntercoms()
   {
-    if (!intercomSpec.isEmpty) {
-      if (!intercomSpec.startsWith("akka:")) {
+    getSettings.intercoms.foreach(intercom => {
+      val intercomSpec = intercom.actor
+      if (!intercomSpec.startsWith("akka:") && intercomActorLocal.isEmpty) {
         val props = Props(classOf[IntercomActor])
         intercomActorLocal = Some(getActorSystem.actorOf(props, intercomSpec))
       }
-    }
+    })
   }
 
-  def getIntercomActor() =
+  def accessIntercomActor(name : String) : ActorRef =
   {
-    intercomActorLocal.getOrElse {
-      assert(intercomSpec.startsWith("akka:"))
+    val intercom =
+      getSettings.intercoms.find(_.name == name).get
+    val intercomSpec = intercom.actor
+    if (intercomSpec.startsWith("akka:")) {
       val intercomActorSelection = getActorSystem.actorSelection(intercomSpec)
       val intercomActorFuture = intercomActorSelection.resolveOne(
         intercomActorTimeout)
       Await.result(
         intercomActorFuture, intercomActorTimeout)
+    } else {
+      intercomActorLocal.get
     }
   }
 }

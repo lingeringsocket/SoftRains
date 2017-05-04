@@ -109,11 +109,13 @@ class CentralService(
 
   def runActors()
   {
-    startIntercom
-    addIntercom(new CentralIntercom(
-      getActorSystem, this, getIntercomActor, true))
+    startLocalIntercoms
+    getSettings.intercoms.foreach(intercom => {
+      addIntercom(new CentralIntercom(
+        intercom.name, getActorSystem, this,
+        () => accessIntercomActor(intercom.name)))
+    })
     implicit val system = getActorSystem
-    assert(!intercomSpec.isEmpty)
 
     val centralSpec = settings.Actors.central
     if (!centralSpec.isEmpty) {
@@ -153,7 +155,8 @@ class CentralService(
 
   override def getDatabase = db
 
-  private def getPrimaryIntercom = intercoms.values.find(_.isPrimary).get
+  def getPrimaryIntercom =
+    intercoms.values.find(_.getName == "kiosk").get
 
   private[central] def activateConversation(
     intercom : CentralIntercom,
