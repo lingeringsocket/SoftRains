@@ -27,7 +27,7 @@ class CentralIntercom(
   private val conversationActor =
     actorRefFactory.actorOf(
       Props(classOf[ConversationActor], central.getDatabase),
-      "conversationActor")
+      "conversationActor-" + name)
 
   def getConversationActor = conversationActor
 
