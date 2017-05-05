@@ -24,7 +24,9 @@ import akka.event._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class KioskActor(faceExampleLoader : Option[FaceExampleLoader])
+class KioskActor(
+  faceExampleLoader : Option[FaceExampleLoader],
+  startLocalIntercom : Boolean)
     extends Actor with IntercomClient
 {
   private val log = Logging(context.system, this)
@@ -62,7 +64,9 @@ class KioskActor(faceExampleLoader : Option[FaceExampleLoader])
       }
       cameraActor ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader)
     }
-    startLocalIntercoms
+    if (startLocalIntercom) {
+      startLocalIntercoms
+    }
     val intercomActor = getIntercomActor
     intercomActor ! IntercomActor.SetObserverMsg(self)
     log.info("KioskActor started")
