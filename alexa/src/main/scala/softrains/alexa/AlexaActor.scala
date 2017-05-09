@@ -116,7 +116,7 @@ class AlexaActor(intercomActor : ActorRef) extends Actor
 
   override def onWakeWordDetected()
   {
-    intercomActor ! IntercomActor.PairRequestMsg
+    intercomActor ! IntercomActor.ConversationRequestedMsg
   }
 
   override def rmsChanged(rms : Int)

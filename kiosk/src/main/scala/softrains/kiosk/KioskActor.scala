@@ -36,6 +36,9 @@ class KioskActor(
   private val modeUrl =
     settings.Openhab.url + "/rest/items/facetime_mode/state"
 
+  private val conversationUrl =
+    "http://" + settings.Http.address + ":" + settings.Http.port + "/professor"
+
   private val faceNameUrl =
     settings.Openhab.url + "/rest/items/face_name/state"
 
@@ -137,6 +140,12 @@ class KioskActor(
         httpConsumer.putString(modeUrl, "ON") {}
         httpConsumer.ensureSuccess
       }
+    }
+    case IntercomActor.ConversationRequestedMsg => {
+      log.info("KioskActor starting conversation")
+      val httpConsumer = new HttpConsumer(context.system)
+      httpConsumer.fetchString(conversationUrl) {result => }
+      httpConsumer.ensureSuccess
     }
     case initializeAlexaMsg : IntercomActor.InitializeAlexaMsg => {
       val intercomActor = getIntercomActor

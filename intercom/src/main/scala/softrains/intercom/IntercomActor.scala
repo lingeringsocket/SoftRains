@@ -113,6 +113,8 @@ object IntercomActor
       extends PeripheralMsg
   trait ListeningNotificationMsg
       extends PeripheralMsg
+  case object ConversationRequestedMsg
+      extends ListeningNotificationMsg
   case object ListeningStartedMsg
       extends ListeningNotificationMsg
   case object ListeningDoneMsg
