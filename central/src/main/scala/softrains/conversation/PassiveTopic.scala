@@ -41,7 +41,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
   override def produceUtterance(context : ConversationContext) =
     delegateToProduceMessage(context)
 
-  private val matcher = (constructMatcherForPersona ++
+  private def constructMatcher = (constructMatcherForPersona ++
     Seq[TopicMatcher](catchAll)
   ).reduce {
     (a : TopicMatcher, b : TopicMatcher) => a orElse b
@@ -70,7 +70,7 @@ class PassiveTopic(residentName : String) extends ConversationTopic
   {
     contextOpt = Some(context)
     try {
-      val response = matcher.lift(lastUtterance)
+      val response = constructMatcher.lift(lastUtterance)
       catchAll.clearFirst
       if (response.isEmpty) {
         done = true
