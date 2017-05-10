@@ -397,7 +397,9 @@ class IntercomActor extends LoggingFSM[State, Data]
     case Event(StartAudioFileMsg(fileName, loop, daemonize),
       Partner(partner, voice, background)) =>
     {
-      background.foreach(_.destroy)
+      if (!daemonize) {
+        background.foreach(_.destroy)
+      }
       val command = {
         if (loop) {
           settings.Speaker.loopFileCommand
@@ -411,7 +413,7 @@ class IntercomActor extends LoggingFSM[State, Data]
         if (daemonize) {
           val scriptCommand = "screen -d -m " + formattedCommand
           scriptCommand.!
-          Partner(partner, voice, None)
+          Partner(partner, voice, background)
         } else {
           val process = formattedCommand.run
           Partner(partner, voice, Some(process))

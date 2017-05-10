@@ -104,6 +104,15 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("spawn" / Segment) { file =>
+      get {
+        complete({
+          central.broadcastIntercom(IntercomActor.StartAudioFileMsg(
+            file, false, true))
+          HttpEntity(textContent, s"<h1>Now Spawning $file</h1>")
+        })
+      }
+    } ~
     path("loop" / Segment) { file =>
       get {
         complete({
