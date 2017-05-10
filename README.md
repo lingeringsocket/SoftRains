@@ -16,6 +16,7 @@ Features under development:
 * voice message/notification recording/playback
 * audio playback for ambience (e.g. baby white noise generator) or event sound effects (door opening)
 * smart light control for conversation status (listening vs speaking)
+* privacy settings
 * recording database for all conversations
 * optional Alexa Voice Services integration
 * network monitoring for human presence tracking
