@@ -138,6 +138,14 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("intercom" / Segment / "ready") { intercomName =>
+      get {
+        complete({
+          central.intercomReady(intercomName)
+          HttpEntity(textContent, "OK")
+        })
+      }
+    } ~
     path("intercom" / Segment / "ping") { intercomName =>
       get {
         complete({

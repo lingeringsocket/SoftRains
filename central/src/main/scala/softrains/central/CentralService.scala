@@ -18,6 +18,7 @@ import softrains.base._
 import softrains.conversation._
 import softrains.intercom._
 import softrains.network._
+import softrains.kiosk._
 
 import com.typesafe.config._
 
@@ -49,6 +50,8 @@ class CentralService(
   private val centralHttp = new CentralHttp(this)
 
   private val intercoms = new TrieMap[String, CentralIntercom]
+
+  private var centralActor : Option[ActorRef] = None
 
   def getDeviceMonitor = deviceMonitor
 
@@ -120,7 +123,7 @@ class CentralService(
     val centralSpec = settings.Actors.central
     if (!centralSpec.isEmpty) {
       val props = Props(classOf[CentralActor], this)
-      system.actorOf(props, centralSpec)
+      centralActor = Some(system.actorOf(props, centralSpec))
     }
 
     system.actorOf(Props(classOf[CentralTelnetServer], this))
@@ -156,7 +159,12 @@ class CentralService(
   override def getDatabase = db
 
   def getPrimaryIntercom =
-    intercoms.values.find(_.getName == "kiosk").get
+    intercoms.values.find(_.getName == KioskActor.PRIMARY_INTERCOM_NAME).get
+
+  private[central] def intercomReady(name : String)
+  {
+    centralActor.foreach(_ ! IntercomActor.ReadyMsg(name))
+  }
 
   private[central] def activateConversation(
     intercom : CentralIntercom,

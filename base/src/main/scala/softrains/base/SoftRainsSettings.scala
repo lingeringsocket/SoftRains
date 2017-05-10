@@ -181,6 +181,7 @@ class SoftRainsSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("intercom")
     val restartCommand = subConf.getString("restart-command")
+    val readyUrl = subConf.getString("ready-url")
   }
 
   object Kiosk

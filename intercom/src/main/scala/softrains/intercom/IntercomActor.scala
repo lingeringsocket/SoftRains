@@ -103,6 +103,8 @@ object IntercomActor
       extends PeripheralMsg
 
   // sent messages (to parent)
+  final case class ReadyMsg(name : String)
+      extends PeripheralMsg
   case object WokeUpMsg
       extends PeripheralMsg
   case object FellAsleepMsg
@@ -184,6 +186,12 @@ class IntercomActor extends LoggingFSM[State, Data]
       watsonActor ! WatsonActor.SpeechSayMsg(
         "Intercom ready!", VOICE_DEFAULT)
       watsonOpt = Some(watsonActor)
+    }
+    val readyUrl = settings.Intercom.readyUrl
+    if (!readyUrl.isEmpty) {
+      val httpConsumer = new HttpConsumer(context.system)
+      httpConsumer.fetchString(readyUrl) {result => }
+      httpConsumer.ensureSuccess
     }
     log.info("IntercomActor started")
   }

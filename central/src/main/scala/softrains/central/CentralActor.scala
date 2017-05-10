@@ -18,6 +18,7 @@ import softrains.base._
 import softrains.network._
 import softrains.kiosk._
 import softrains.vision._
+import softrains.intercom._
 
 import akka.actor._
 import akka.event._
@@ -48,11 +49,17 @@ class CentralActor(central : CentralService) extends Actor
     Props(classOf[DeviceMonitorActor], central),
     "deviceMonitorActor")
 
+
   private val kioskSpec = settings.Actors.kiosk
-  if (!kioskSpec.isEmpty) {
-    val faceExampleLoader = new CentralFaces(central).getExampleLoader
-    context.actorOf(
-      Props(classOf[KioskActor], Some(faceExampleLoader), false), kioskSpec)
+
+  private val kioskActor : Option[ActorRef] = {
+    if (!kioskSpec.isEmpty) {
+      val faceExampleLoader = new CentralFaces(central).getExampleLoader
+      Some(context.actorOf(
+        Props(classOf[KioskActor], Some(faceExampleLoader), false), kioskSpec))
+    } else {
+      None
+    }
   }
 
   override def preStart()
@@ -69,16 +76,19 @@ class CentralActor(central : CentralService) extends Actor
 
   def receive =
   {
+    case readyMsg : IntercomActor.ReadyMsg => {
+      kioskActor.foreach(_ ! readyMsg)
+    }
     case ScanNotificationsMsg => {
       central.scanNotifications
     }
-    case msg : CameraActor.FaceDetectedMsg => {
+    case faceMsg : CameraActor.FaceDetectedMsg => {
       val db = central.db
       val residentOpt = db.query[HomeResident].
-        whereEqual("name", msg.name.capitalize).fetchOne
+        whereEqual("name", faceMsg.name.capitalize).fetchOne
       residentOpt.foreach(resident => {
         db.save(ResidentAppearance(
-          Some(resident), readClockTime, msg.faceFile, msg.sceneFile))
+          Some(resident), readClockTime, faceMsg.faceFile, faceMsg.sceneFile))
       })
     }
   }

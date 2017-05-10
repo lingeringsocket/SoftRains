@@ -24,11 +24,18 @@ import akka.event._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
+object KioskActor
+{
+  val PRIMARY_INTERCOM_NAME = "kiosk"
+}
+
 class KioskActor(
   faceExampleLoader : Option[FaceExampleLoader],
   startLocalIntercom : Boolean)
     extends Actor with IntercomClient
 {
+  import KioskActor._
+
   private val log = Logging(context.system, this)
 
   private val settings = SoftRainsActorSettings(context)
@@ -75,7 +82,7 @@ class KioskActor(
     log.info("KioskActor started")
   }
 
-  private def getIntercomActor = accessIntercomActor("kiosk")
+  private def getIntercomActor = accessIntercomActor(PRIMARY_INTERCOM_NAME)
 
   override def postStop()
   {
@@ -92,16 +99,22 @@ class KioskActor(
 
   def receive =
   {
-    case msg : CameraActor.FaceDetectedMsg => {
-      log.info("KioskActor detected face " + msg.name + " with confidence " +
-        msg.confidence)
-      context.parent ! msg
+    case IntercomActor.ReadyMsg(name) => {
+      if (name == PRIMARY_INTERCOM_NAME) {
+        val intercomActor = getIntercomActor
+        intercomActor ! IntercomActor.SetObserverMsg(self)
+      }
+    }
+    case faceMsg : CameraActor.FaceDetectedMsg => {
+      log.info("KioskActor detected face " + faceMsg.name +
+        " with confidence " + faceMsg.confidence)
+      context.parent ! faceMsg
       val intercomActor = getIntercomActor
       intercomActor ! IntercomActor.SetObserverMsg(self)
       intercomActor ! IntercomActor.PreWakeMsg
       maybeNotify {
         val httpConsumer = new HttpConsumer(context.system)
-        httpConsumer.putString(faceNameUrl, msg.name) {}
+        httpConsumer.putString(faceNameUrl, faceMsg.name) {}
         httpConsumer.ensureSuccess
       }
     }
