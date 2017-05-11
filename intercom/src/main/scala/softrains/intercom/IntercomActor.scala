@@ -193,7 +193,8 @@ class IntercomActor extends LoggingFSM[State, Data]
     if (!readyUrl.isEmpty) {
       val httpConsumer = new HttpConsumer(context.system)
       httpConsumer.fetchString(readyUrl) {result => }
-      httpConsumer.ensureSuccess
+      // note that we intentionally skip httpConsumer.ensureSuccess
+      // since central may not currently be up
     }
     log.info("IntercomActor started")
   }
