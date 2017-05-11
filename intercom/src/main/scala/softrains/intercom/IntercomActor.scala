@@ -38,6 +38,8 @@ object IntercomActor
 
   val VOICE_DEFAULT = "en-US_AllisonVoice"
 
+  private val ps = IntercomPhraseSet(DefaultPhraseContext)
+
   sealed trait State
   sealed trait Data
 
@@ -184,7 +186,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")
       watsonActor ! WatsonActor.SpeechSayMsg(
-        "Intercom ready!", VOICE_DEFAULT)
+        ps.ready, VOICE_DEFAULT)
       watsonOpt = Some(watsonActor)
     }
     val readyUrl = settings.Intercom.readyUrl
@@ -446,7 +448,7 @@ class IntercomActor extends LoggingFSM[State, Data]
       stay
     }
     case Event(AlexaFinishedMsg, Partner(partner, voice, _)) => {
-      watsonSay("Did you enjoy chatting with Alexa?", voice, partner)
+      watsonSay(ps.alexaDone, voice, partner)
       stay
     }
     case Event(msg : ListeningNotificationMsg, _) => {
