@@ -32,42 +32,50 @@ class ProfessorPersona(topic : PassiveTopic)
         Seq("white noise"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, hope you find it calming"),
-          IntercomActor.StartAudioFileMsg("vacuum.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("vacuum.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("lullaby", "brahms"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, enjoy your nap!"),
-          IntercomActor.StartAudioFileMsg("lullaby.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("lullaby.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("korean"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, on young ha say yo!"),
-          IntercomActor.StartAudioFileMsg("korean.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("korean.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("vivaldi", "relax", "four seasons"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, let your stress melt away!"),
-          IntercomActor.StartAudioFileMsg("vivaldi.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("vivaldi.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("shark", "pink fong"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, I love this one!"),
-          IntercomActor.StartAudioFileMsg("pinkfong.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("pinkfong.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("play time", "playtime", "muffin man"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, everybody dance!"),
-          IntercomActor.StartAudioFileMsg("playtime.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("playtime.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("folk", "kingston trio"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.PartnerUtteranceMsg("OK, groovy!"),
-          IntercomActor.StartAudioFileMsg("folk.mp3", true)))),
+          IntercomActor.StartAudioFileMsg("folk.mp3", true))),
+        true),
       ContainsTopicMatcher.message(
         Seq("stop", "quiet", "silent", "silence"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
           IntercomActor.StopAudioFileMsg,
-          IntercomActor.PartnerUtteranceMsg("OK, enjoy the silence")))),
+          IntercomActor.PartnerUtteranceMsg("OK, enjoy the silence"))),
+        true),
       ContainsTopicMatcher.message(
         Seq("alexa", "amazon"),
         IntercomActor.SpeakerSoundSeqMsg(Seq(
