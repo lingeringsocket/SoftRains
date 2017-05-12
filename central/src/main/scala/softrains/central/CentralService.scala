@@ -180,7 +180,7 @@ class CentralService(
   private[central] def startProfessor()
   {
     val topicSource = new SequentialTopicSource(Seq.empty)
-    val dispatcher = new TopicDispatcher(topicSource, "", "Yes?")
+    val dispatcher = new TopicDispatcher(topicSource, "", "Hello, yes?")
     activateConversation(
       getPrimaryIntercom, dispatcher,
       ConversationPartner.MICHAEL)

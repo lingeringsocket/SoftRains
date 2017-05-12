@@ -14,11 +14,23 @@
 // limitations under the License.
 package softrains.conversation
 
+import softrains.base._
 import softrains.intercom._
 
 class ProfessorPersona(topic : PassiveTopic)
     extends CommonPersona(topic)
 {
+  private val stateUrl = getContext.getSettings.Openhab.url +
+    "/rest/items/baby_sound/state"
+
+  private def selectSoundTrack(utterance : String, soundtrack : String) =
+  {
+    val httpConsumer = new HttpConsumer(getContext.getActorSystem)
+    httpConsumer.putString(stateUrl, soundtrack) {}
+    httpConsumer.ensureSuccess
+    IntercomActor.PartnerUtteranceMsg(utterance)
+  }
+
   override def getMatcher() : Seq[TopicMatcher] =
   {
     super.getMatcher ++ Seq[TopicMatcher](
@@ -30,51 +42,50 @@ class ProfessorPersona(topic : PassiveTopic)
         changePartner(getContext, ConversationPartner.LISA)),
       ContainsTopicMatcher.message(
         Seq("white noise"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, hope you find it calming"),
-          IntercomActor.StartAudioFileMsg("vacuum.mp3", true))),
+        selectSoundTrack(
+          "OK. Hope you find it calming",
+          "WHITE_NOISE"),
         true),
       ContainsTopicMatcher.message(
         Seq("lullaby", "brahms"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, enjoy your nap!"),
-          IntercomActor.StartAudioFileMsg("lullaby.mp3", true))),
+        selectSoundTrack("OK. Enjoy your nap!",
+          "LULLABY"),
         true),
       ContainsTopicMatcher.message(
         Seq("korean"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, on young ha say yo!"),
-          IntercomActor.StartAudioFileMsg("korean.mp3", true))),
+        selectSoundTrack(
+          "OK. On young ha say yo!",
+          "KOREAN"),
         true),
       ContainsTopicMatcher.message(
         Seq("vivaldi", "relax", "four seasons"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, let your stress melt away!"),
-          IntercomActor.StartAudioFileMsg("vivaldi.mp3", true))),
+        selectSoundTrack(
+          "OK. Let your stress melt away!",
+          "RELAX"),
         true),
       ContainsTopicMatcher.message(
         Seq("shark", "pink fong"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, I love this one!"),
-          IntercomActor.StartAudioFileMsg("pinkfong.mp3", true))),
+        selectSoundTrack(
+          "OK. I love this one!",
+          "PINKFONG"),
         true),
       ContainsTopicMatcher.message(
         Seq("play time", "playtime", "muffin man"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, everybody dance!"),
-          IntercomActor.StartAudioFileMsg("playtime.mp3", true))),
+        selectSoundTrack(
+          "OK. Everybody dance!",
+          "PLAYTIME"),
         true),
       ContainsTopicMatcher.message(
         Seq("folk", "kingston trio"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.PartnerUtteranceMsg("OK, groovy!"),
-          IntercomActor.StartAudioFileMsg("folk.mp3", true))),
+        selectSoundTrack(
+          "OK. Groovy!",
+          "FOLK"),
         true),
       ContainsTopicMatcher.message(
         Seq("stop", "quiet", "silent", "silence"),
-        IntercomActor.SpeakerSoundSeqMsg(Seq(
-          IntercomActor.StopAudioFileMsg,
-          IntercomActor.PartnerUtteranceMsg("OK, enjoy the silence"))),
+        selectSoundTrack(
+          "OK. Enjoy the sound of silence.",
+          "OFF"),
         true),
       ContainsTopicMatcher.message(
         Seq("alexa", "amazon"),
