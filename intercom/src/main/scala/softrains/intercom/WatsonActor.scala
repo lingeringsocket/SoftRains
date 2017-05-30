@@ -164,7 +164,8 @@ class WatsonActor extends Actor
       val audio = AudioSystem.getAudioInputStream(pipedInputStream)
       val options = (new RecognizeOptions.Builder).
         contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
-        inactivityTimeout(30).
+        inactivityTimeout(2).
+        interimResults(false).
         maxAlternatives(3).build
       val speechPromise = Promise[SpeechResults]()
       val speechFuture = speechPromise.future
