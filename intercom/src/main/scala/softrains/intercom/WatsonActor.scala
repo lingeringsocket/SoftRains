@@ -165,10 +165,8 @@ class WatsonActor extends Actor
       val options = (new RecognizeOptions.Builder).
         contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
         inactivityTimeout(2).
-        interimResults(false).
+        interimResults(true).
         maxAlternatives(3).build
-      val speechPromise = Promise[SpeechResults]()
-      val speechFuture = speechPromise.future
       val disconnectPromise = Promise[Object]()
       val disconnectFuture = disconnectPromise.future
       stt.recognizeUsingWebSocket(
@@ -184,42 +182,37 @@ class WatsonActor extends Actor
               log.info("Heard:  " + alternatives.head)
               result = IntercomActor.PersonUtteranceMsg(
                 alternatives, personName, Some(wavFile.getAbsolutePath))
-              speechPromise.success(speechResults)
             } catch {
               case ex : Throwable => {
-                speechPromise.failure(ex)
+                // treat as silence
               }
             }
           }
 
           override def onError(e : Exception)
           {
+            // treat as silence
             audio.close
-            // FIXME proper error handling
-            speechPromise.failure(e)
           }
 
           override def onDisconnected()
           {
-            speechPromise.tryFailure(new TimeoutException)
             disconnectPromise.success(null)
           }
         })
       val duration = FiniteDuration(30, java.util.concurrent.TimeUnit.SECONDS)
-      var timeout = false
       try {
         Await.ready(disconnectFuture, duration)
-        Await.ready(speechFuture, duration)
         Await.ready(pipeFuture, duration)
       } catch {
         case ex : TimeoutException => {
-          timeout = true
+          // treat as silence
         }
       }
       teeOutputStream.close
       (s"sox $rawFile $wavFile").!
       rawFile.delete
-      if (!timeout) {
+      if (result != IntercomActor.SilenceMsg) {
         if (identifyVoice) {
           if (personName.isEmpty) {
             if (personCount > 0) {
