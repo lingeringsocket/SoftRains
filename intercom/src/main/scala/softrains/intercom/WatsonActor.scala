@@ -193,6 +193,7 @@ class WatsonActor extends Actor
           {
             // treat as silence
             audio.close
+            disconnectPromise.success(null)
           }
 
           override def onDisconnected()
