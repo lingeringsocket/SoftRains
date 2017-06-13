@@ -234,10 +234,11 @@ class IntercomActor extends LoggingFSM[State, Data]
   private def getAbsoluteFile(fileName : String) =
   {
     val file = new File(fileName)
-    if (file.isAbsolute) {
+    val soundPath = settings.Speaker.soundPath
+    if (file.isAbsolute || soundPath.getName.isEmpty) {
       file
     } else {
-      new File(settings.Speaker.soundPath, fileName)
+      new File(soundPath, fileName)
     }
   }
 
@@ -433,6 +434,10 @@ class IntercomActor extends LoggingFSM[State, Data]
       stay
     }
     case Event(StopAudioFileMsg, Partner(partner, voice, background)) => {
+      val command = settings.Speaker.killAudioCommand
+      if (!command.isEmpty) {
+        command.!
+      }
       sender ! SpeakerSoundFinishedMsg()
       background match {
         case Some(process) => {

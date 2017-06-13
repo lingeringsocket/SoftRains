@@ -33,10 +33,10 @@ class FaceExampleDirectory(settings : SoftRainsSettings)
 {
   override def load() : Seq[FaceExample] =
   {
-    if (settings.Visitors.trainingPathString.isEmpty) {
+    val root = settings.Visitors.trainingPath
+    if (root.getName.isEmpty) {
       return Seq.empty
     }
-    val root = settings.Visitors.trainingPath
     val imgFilter = new FilenameFilter {
       override def accept(dir : File, nameOrig : String) =
       {

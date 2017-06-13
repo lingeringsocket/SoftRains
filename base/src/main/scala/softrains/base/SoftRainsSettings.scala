@@ -111,7 +111,7 @@ class SoftRainsSettings(rootConf : Config)
   object Alexa
   {
     val subConf = conf.getConfig("alexa")
-    val confFile = new File(subConf.getString("conf-file")).getAbsoluteFile
+    val confFile = readPath(subConf, "conf-file")
   }
 
   object Speaker
@@ -128,21 +128,20 @@ class SoftRainsSettings(rootConf : Config)
     val volumeUpCommand = subConf.getString("volume-up-command")
     val volumeDownCommand = subConf.getString("volume-down-command")
     val sleepTimeout = getMillis(subConf, "sleep-timeout")
-    val soundPath = new File(subConf.getString("sound-path")).getAbsoluteFile
+    val soundPath = readPath(subConf, "sound-path")
   }
 
   object Files
   {
     val subConf = conf.getConfig("files")
-    val videoPath = new File(subConf.getString("video-path")).getAbsoluteFile
-    val audioPath = new File(subConf.getString("audio-path")).getAbsoluteFile
+    val videoPath = readPath(subConf, "video-path")
+    val audioPath = readPath(subConf, "audio-path")
   }
 
   object Visitors
   {
     val subConf = conf.getConfig("visitors")
-    val trainingPathString = subConf.getString("training-path")
-    val trainingPath = new File(trainingPathString).getAbsoluteFile
+    val trainingPath = readPath(subConf, "training-path")
     val videoUrl = subConf.getString("video-url")
     val frameInterval = getMillis(subConf, "frame-interval")
     val blobMergeDistance = subConf.getDouble("blob-merge-distance")
@@ -190,6 +189,17 @@ class SoftRainsSettings(rootConf : Config)
     val cameraUrl = subConf.getString("camera-url")
     val cameraWindowTitle = subConf.getString("camera-window-title")
     val restartCommand = subConf.getString("restart-command")
+  }
+
+  private def readPath(conf : Config, key : String) : File =
+  {
+    val name = conf.getString(key)
+    val file = new File(name)
+    if (name.isEmpty) {
+      file
+    } else {
+      file.getAbsoluteFile
+    }
   }
 
   private def readMap(conf : Config, key : String) : Map[String, String] =
