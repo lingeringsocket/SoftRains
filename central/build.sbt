@@ -22,8 +22,11 @@ libraryDependencies ++= Seq(
   "nu.validator" % "htmlparser" % "1.4.4",
   "org.sorm-framework" % "sorm" % "0.3.20",
   "com.h2database" % "h2" % "1.3.168",
-  "org.postgresql" % "postgresql" % "9.4.1210"
+  "org.postgresql" % "postgresql" % "9.4.1210",
+  "com.lingeringsocket.shlurd" %% "shlurd" % "0.1-SNAPSHOT"
 )
+
+libraryDependencies ++= Common.scalazDeps
 
 parallelExecution in Test := false
 

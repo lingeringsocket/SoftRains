@@ -14,32 +14,38 @@
 // limitations under the License.
 package softrains.conversation
 
-// FIXME replace with Shlurd
-object QueryAssumption extends Enumeration
+import shlurd.parser._
+import shlurd.world._
+
+class PersonaWorld extends ShlurdWorld
 {
-  type QueryAssumption = Value
-
-  val ASSUME_TRUE, ASSUME_FALSE, ASSUME_NOTHING = Value
-
-  def generateConfirmation(assumption : QueryAssumption, truth : Boolean)
-      : String =
+  override def resolveReference(
+    reference : ShlurdReference,
+    context : ShlurdReferenceContext) =
   {
-    assumption match {
-      case ASSUME_TRUE => {
-        if (truth) {
-          "Yes, "
-        } else {
-          "No, "
-        }
-      }
-      case ASSUME_FALSE => {
-        if (truth) {
-          "No, "
-        } else {
-          "Yes, "
-        }
-      }
-      case _ => ""
-    }
+    fail("Huh?")
+  }
+
+  override def resolveProperty(
+    entity : ShlurdEntity,
+    lemma : String) =
+  {
+    fail("Huh?")
+  }
+
+  override def evaluateEntityPropertyPredicate(
+    entity : ShlurdEntity,
+    property : ShlurdProperty,
+    lemma : String) =
+  {
+    fail("Huh?")
+  }
+
+  override def evaluateEntityLocationPredicate(
+    entity : ShlurdEntity,
+    location : ShlurdEntity,
+    locative : ShlurdLocative) =
+  {
+    fail("Huh?")
   }
 }

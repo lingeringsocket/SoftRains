@@ -66,11 +66,16 @@ class PassiveTopic(residentName : String) extends ConversationTopic
     persona.getMatcher
   }
 
+  private def processUtterance(utterance : String) =
+  {
+    constructMatcher.lift(utterance)
+  }
+
   override def produceMessage(context : ConversationContext) =
   {
     contextOpt = Some(context)
     try {
-      val response = constructMatcher.lift(lastUtterance)
+      val response = processUtterance(lastUtterance)
       catchAll.clearFirst
       if (response.isEmpty) {
         done = true

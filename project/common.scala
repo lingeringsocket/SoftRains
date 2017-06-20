@@ -38,6 +38,9 @@ object Common {
     "-unchecked", "-feature", "-Xlint", "-Ywarn-unused-import",
     "-deprecation", "-Xfatal-warnings", "-Yrangepos")
 
+  def scalazDeps = Seq(
+    "org.scalaz" %% "scalaz-core" % "7.2.13")
+
   def specs2Deps = Seq(
     "org.specs2" %% "specs2-core" % "3.8.5" % "test")
 

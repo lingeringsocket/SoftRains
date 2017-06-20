@@ -17,10 +17,16 @@ package softrains.conversation
 import softrains.intercom._
 import softrains.central._
 
+import shlurd.parser._
+import shlurd.world._
+
 import QueryAssumption._
 
 class CommonPersona(topic : PassiveTopic)
 {
+  private val shlurdInterpreter =
+    new ShlurdInterpreter(new PersonaWorld)
+
   def getContext = topic.getContext
 
   def getResidentName = topic.getResidentName
@@ -28,6 +34,7 @@ class CommonPersona(topic : PassiveTopic)
   def getMatcher() : Seq[TopicMatcher] =
   {
     Seq[TopicMatcher](
+      new ShlurdTopicMatcher(this),
       ContainsTopicMatcher.string(
         Seq("name", "who", "who", "who", "whose", "who's", "who're"),
         reportIdentity),
@@ -42,6 +49,12 @@ class CommonPersona(topic : PassiveTopic)
         Seq("thanks", "thank you"),
         "You are very welcome!")
     )
+  }
+
+  def shlurdRespond(sentence : ShlurdSentence) =
+  {
+    val response = shlurdInterpreter.interpret(sentence)
+    (IntercomActor.PartnerUtteranceMsg(response), false)
   }
 
   protected def changePartner(

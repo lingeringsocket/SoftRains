@@ -16,6 +16,10 @@ package softrains.conversation
 
 import softrains.intercom._
 
+import shlurd.parser._
+
+import scalaz._
+
 class ContainsTopicMatcher(
   phrases : Seq[String], response : => IntercomActor.SpeakerSoundMsg,
   done : Boolean = false)
@@ -87,5 +91,27 @@ class CatchAllTopicMatcher extends TopicMatcher
     } else {
       (IntercomActor.PartnerUtteranceMsg("I think you said, " + input), false)
     }
+  }
+}
+
+class ShlurdTopicMatcher(persona : CommonPersona) extends TopicMatcher
+{
+  val sentenceMemo : String => ShlurdSentence = Memo.mutableHashMapMemo {
+    // FIXME:  deal with parseAll
+    ShlurdParser(_).parseFirst
+  }
+
+  override def isDefinedAt(input : String) =
+  {
+    if (input.isEmpty) {
+      false
+    } else {
+      !sentenceMemo(input).hasUnknown
+    }
+  }
+
+  override def apply(input : String) =
+  {
+    persona.shlurdRespond(sentenceMemo(input))
   }
 }
