@@ -37,7 +37,8 @@ class PersonaWorld(openhab : CentralOpenhab) extends ShlurdWorld
         val items = openhab.readItems
         items.get(entity.lemma) match {
           case Some(item) => Success(ItemEntity(item.itemName))
-          case _ => fail("I don't know about this named entity: " + entity.lemma)
+          case _ => fail(
+            "I don't know about this named entity: " + entity.lemma)
         }
       }
       case _ => fail("I don't know about this entity reference: " + reference)

@@ -155,6 +155,68 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("intercom" / Segment / "volume" / "up") { intercomName =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.VolumeUpMsg
+          HttpEntity(
+            textContent, s"<h1>Volume Increased on $intercomName!</h1>")
+        })
+      }
+    } ~
+    path("intercom" / Segment / "volume" / "down") { intercomName =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.VolumeDownMsg
+          HttpEntity(
+            textContent, s"<h1>Volume Decreased on $intercomName!</h1>")
+        })
+      }
+    } ~
+    path("intercom" / Segment / "spawn" / Segment) { (intercomName, file) =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.StartAudioFileMsg(
+            file, false, true)
+          HttpEntity(
+            textContent, s"<h1>Now Spawning $file on $intercomName</h1>")
+        })
+      }
+    } ~
+    path("intercom" / Segment / "loop" / Segment) { (intercomName, file) =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.StartAudioFileMsg(
+            file, true)
+          HttpEntity(
+            textContent, s"<h1>Now Looping $file on $intercomName</h1>")
+        })
+      }
+    } ~
+    path("intercom" / Segment / "play" / Segment) { (intercomName, file) =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.PlayAudioFileMsg(file)
+          HttpEntity(
+            textContent, s"<h1>Now Playing $file on $intercomName</h1>")
+        })
+      }
+    } ~
+    path("intercom" / Segment / "silence") { intercomName =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.StopAudioFileMsg
+          HttpEntity(
+            textContent, s"<h1>Silence is Golden on $intercomName</h1>")
+        })
+      }
+    } ~
     path("intercom" / Segment / "ping") { intercomName =>
       get {
         complete({
