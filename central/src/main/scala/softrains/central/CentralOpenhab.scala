@@ -22,12 +22,59 @@ import org.joda.time._
 
 import scala.collection._
 
+import scala.util.parsing.json._
+
+case class OpenhabItem(
+  itemName : String,
+  itemType : String,
+  itemLabel : Option[String])
+{
+}
+
+object CentralOpenhab
+{
+  def parseItems(json : String) : Map[String, OpenhabItem] =
+  {
+    val tree = JSON.parseFull(json)
+    tree match {
+      case Some(list : List[Any]) => {
+        val items = list.map(obj => {
+          val map = obj.asInstanceOf[Map[String, Any]]
+          val itemName = map("name").toString
+          val itemType = map("type").toString
+          val itemLabel = map.get("label").map(_.toString)
+          OpenhabItem(itemName, itemType, itemLabel)
+        })
+        Map(items.map(item => (item.itemName, item)).toSeq:_*)
+      }
+      case _ => {
+        throw new RuntimeException("Unexpected Openhab items JSON")
+      }
+    }
+  }
+}
+
 class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     extends HttpConsumer(actorSystem)
 {
+  import CentralOpenhab._
+
   private val results = new mutable.ArrayBuffer[String]
 
   private val now = readClockTime
+
+  def readItems() : Map[String, OpenhabItem] =
+  {
+    val itemsUrl = settings.Openhab.url + "/rest/items"
+    var result = Map[String, OpenhabItem]()
+    fetchString(itemsUrl) {
+      json => {
+        result = parseItems(json)
+      }
+    }
+    ensureSuccess
+    result
+  }
 
   def checkDoor(itemName : String, spokenName : String)
   {

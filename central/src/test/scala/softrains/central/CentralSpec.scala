@@ -131,5 +131,14 @@ class CentralSpec extends AkkaActorSpecification with DateTimeOrderingImplicit
       report.catchTime must beBetween(startTime, endTime)
       report.catchTime must beGreaterThanOrEqualTo(report.tryTime)
     }
+
+    "refresh openhab items" in new AkkaActorExample
+    {
+      val json = readResource("/items.json")
+      val items = CentralOpenhab.parseItems(json)
+      items("Light_Garden_Terrace") must be equalTo OpenhabItem(
+        "Light_Garden_Terrace", "Switch", Some("Terrace"))
+      items.size must be equalTo 101
+    }
   }
 }

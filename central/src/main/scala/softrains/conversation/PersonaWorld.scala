@@ -14,15 +14,34 @@
 // limitations under the License.
 package softrains.conversation
 
+import softrains.central._
+
 import shlurd.parser._
 import shlurd.world._
 
-class PersonaWorld extends ShlurdWorld
+import scala.util._
+
+case class ItemEntity(itemName : String) extends ShlurdEntity
+{
+}
+
+class PersonaWorld(openhab : CentralOpenhab) extends ShlurdWorld
 {
   override def resolveReference(
     reference : ShlurdReference,
     context : ShlurdReferenceContext) =
   {
+    reference match {
+      case ShlurdEntityReference(entity, determiner, count) => {
+        // FIXME cache, and derive lemmas from names+labels+tags
+        val items = openhab.readItems
+        items.get(entity.lemma) match {
+          case Some(item) => Success(ItemEntity(item.itemName))
+          case _ => fail("I don't know about this named entity: " + entity.lemma)
+        }
+      }
+      case _ => fail("I don't know about this entity reference: " + reference)
+    }
     fail("Huh?")
   }
 

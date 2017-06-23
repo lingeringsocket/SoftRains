@@ -24,9 +24,6 @@ import QueryAssumption._
 
 class CommonPersona(topic : PassiveTopic)
 {
-  private val shlurdInterpreter =
-    new ShlurdInterpreter(new PersonaWorld)
-
   def getContext = topic.getContext
 
   def getResidentName = topic.getResidentName
@@ -53,6 +50,12 @@ class CommonPersona(topic : PassiveTopic)
 
   def shlurdRespond(sentence : ShlurdSentence) =
   {
+    val shlurdInterpreter =
+      new ShlurdInterpreter(
+        new PersonaWorld(
+          new CentralOpenhab(
+            getContext.getActorSystem,
+            getContext.getSettings)))
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }
