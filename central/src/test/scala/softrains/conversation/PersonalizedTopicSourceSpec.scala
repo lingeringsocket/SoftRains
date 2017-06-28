@@ -132,6 +132,8 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
   {
     private val db = new CentralDb(settings)
 
+    private val ontology = new CentralOntology()
+
     private var transcriptOpt :
         Option[ConversationTranscript with sorm.Persisted] = None
 
@@ -140,6 +142,8 @@ class PersonalizedTopicSourceSpec extends AkkaActorSpecification
     override def getActorSystem = system
 
     override def getSettings = settings
+
+    override def getOntology = ontology
 
     override def getDatabase = db
 

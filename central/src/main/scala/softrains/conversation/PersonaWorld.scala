@@ -25,7 +25,7 @@ case class ItemEntity(itemName : String) extends ShlurdEntity
 {
 }
 
-class PersonaWorld(openhab : CentralOpenhab) extends ShlurdWorld
+class PersonaWorld(ontology : CentralOntology) extends ShlurdWorld
 {
   override def resolveReference(
     reference : ShlurdReference,
@@ -33,8 +33,8 @@ class PersonaWorld(openhab : CentralOpenhab) extends ShlurdWorld
   {
     reference match {
       case ShlurdEntityReference(entity, determiner, count) => {
-        // FIXME cache, and derive lemmas from names+labels+tags
-        val items = openhab.readItems
+        // FIXME derive lemmas from names+labels+tags
+        val items = ontology.getItems
         items.get(entity.lemma) match {
           case Some(item) => Success(ItemEntity(item.itemName))
           case _ => fail(

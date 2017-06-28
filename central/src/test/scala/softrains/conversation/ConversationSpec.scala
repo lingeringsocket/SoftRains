@@ -260,6 +260,11 @@ class ConversationSpec extends Specification
       throw new UnsupportedOperationException("TestConversationContext")
     }
 
+    override def getOntology =
+    {
+      throw new UnsupportedOperationException("TestConversationContext")
+    }
+
     override def getSettings = settings
 
     override def getDatabase = db

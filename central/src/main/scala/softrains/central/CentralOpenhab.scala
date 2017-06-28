@@ -54,6 +54,38 @@ object CentralOpenhab
   }
 }
 
+class CentralOntology
+{
+  def getItems() : Map[String, OpenhabItem] = Map.empty
+}
+
+// FIXME synchronization
+class CentralOpenhabOntology(
+  actorSystem : ActorSystem, settings : SoftRainsSettings)
+    extends CentralOntology
+{
+  private val items = new mutable.HashMap[String, OpenhabItem]
+
+  private def load()
+  {
+    items ++= new CentralOpenhab(actorSystem, settings).readItems
+  }
+
+  def refresh()
+  {
+    items.clear
+    load
+  }
+
+  override def getItems() =
+  {
+    if (items.isEmpty) {
+      load
+    }
+    items
+  }
+}
+
 class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     extends HttpConsumer(actorSystem)
 {

@@ -53,6 +53,9 @@ class CentralService(
 
   private var centralActor : Option[ActorRef] = None
 
+  private lazy val ontology =
+    new CentralOpenhabOntology(getActorSystem, getSettings)
+
   def getDeviceMonitor = deviceMonitor
 
   def setActorSystem(system : ActorSystem)
@@ -151,6 +154,8 @@ class CentralService(
       .onComplete(_ => system.terminate)
     Await.result(system.whenTerminated, duration.Duration.Inf)
   }
+
+  override def getOntology = ontology
 
   override def getSettings = settings
 

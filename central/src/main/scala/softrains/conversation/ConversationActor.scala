@@ -52,7 +52,8 @@ object ConversationActor
 import ConversationActor._
 import CommunicationPriority._
 
-class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
+class ConversationActor(
+  db : CentralDb, ontology : CentralOntology) extends LoggingFSM[State, Data]
     with ConversationContext
 {
   import IntercomActor._
@@ -182,6 +183,8 @@ class ConversationActor(db : CentralDb) extends LoggingFSM[State, Data]
   override def getSettings = settings
 
   override def getActorSystem = context.system
+
+  override def getOntology = ontology
 
   override def getDatabase = db
 

@@ -36,6 +36,8 @@ class ConversationActorSpec
 
   private val typhlosion = new HomeResident("Typhlosion")
 
+  private val ontology = new CentralOntology
+
   "ConversationActor" should
   {
     "have a one-way conversation" in new AkkaActorExample
@@ -44,7 +46,7 @@ class ConversationActorSpec
       val db = new CentralDb(settings)
 
       // use TestActorRef for synchronous end transition
-      val actor = TestActorRef(new ConversationActor(db))
+      val actor = TestActorRef(new ConversationActor(db, ontology))
       val greeting = new DailyGreeting(typhlosion)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
@@ -74,7 +76,9 @@ class ConversationActorSpec
       val utterance2 = "Talk to you later!"
 
       val db = new CentralDb(settings)
-      val actor = system.actorOf(Props(classOf[ConversationActor], db))
+
+      val actor = system.actorOf(
+        Props(classOf[ConversationActor], db, ontology))
       val greeting = new PassiveTopic(typhlosion.name)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
@@ -108,7 +112,8 @@ class ConversationActorSpec
       val utterance3 = "Blimey, would you like to try the bangers and mash?"
 
       val db = new CentralDb(settings)
-      val actor = system.actorOf(Props(classOf[ConversationActor], db))
+      val actor = system.actorOf(
+        Props(classOf[ConversationActor], db, ontology))
       val greeting = new PassiveTopic(typhlosion.name)
       actor ! ActivateMsg(greeting, self)
       expectMsg(PairRequestMsg)
@@ -153,7 +158,7 @@ class ConversationActorSpec
 
       val db = new CentralDb(settings)
 
-      val actor = TestActorRef(new ConversationActor(db))
+      val actor = TestActorRef(new ConversationActor(db, ontology))
 
       val sender = "Brad"
       val recipient = "Angelina"

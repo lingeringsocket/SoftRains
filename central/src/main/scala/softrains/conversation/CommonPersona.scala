@@ -53,9 +53,7 @@ class CommonPersona(topic : PassiveTopic)
     val shlurdInterpreter =
       new ShlurdInterpreter(
         new PersonaWorld(
-          new CentralOpenhab(
-            getContext.getActorSystem,
-            getContext.getSettings)))
+          getContext.getOntology))
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }

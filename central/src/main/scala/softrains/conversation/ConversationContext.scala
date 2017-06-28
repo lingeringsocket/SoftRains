@@ -34,6 +34,8 @@ trait ConversationContext
 
   def getSettings : SoftRainsSettings
 
+  def getOntology : CentralOntology
+
   def getDatabase : CentralDb
 
   def getCurrentTime : DateTime = readClockTime
@@ -95,6 +97,8 @@ class ConversationSubContext(
 
   override def getSettings = parent.getSettings
 
+  override def getOntology = parent.getOntology
+
   override def getDatabase = parent.getDatabase
 
   override def getCurrentTime = currentTime
@@ -149,6 +153,8 @@ object NullConversationContext extends ConversationContext
   override def getSettings = unsupported
 
   override def getDatabase = unsupported
+
+  override def getOntology = unsupported
 
   override def setPersonName(name : String)
   {
