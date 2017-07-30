@@ -25,36 +25,31 @@ case class ItemEntity(itemName : String) extends ShlurdEntity
 {
 }
 
-class PersonaWorld(ontology : CentralOntology) extends ShlurdWorld
+class PersonaWorld(ontology : CentralOntology)
+    extends ShlurdWorld[ItemEntity, ShlurdProperty]
 {
-  override def resolveReference(
-    reference : ShlurdReference,
+  override def resolveUnqualifiedEntity(
+    lemma : String,
     context : ShlurdReferenceContext) =
   {
-    reference match {
-      case ShlurdEntityReference(entity, determiner, count) => {
-        // FIXME derive lemmas from names+labels+tags
-        val items = ontology.getItems
-        items.get(entity.lemma) match {
-          case Some(item) => Success(ItemEntity(item.itemName))
-          case _ => fail(
-            "I don't know about this named entity: " + entity.lemma)
-        }
-      }
-      case _ => fail("I don't know about this entity reference: " + reference)
+    // FIXME:  something real
+    val items = ontology.getItems
+    items.get(lemma) match {
+      case Some(item) => Success(Set(ItemEntity(item.itemName)))
+      case _ => fail(
+        "I don't know about this named entity: " + lemma)
     }
-    fail("Huh?")
   }
 
   override def resolveProperty(
-    entity : ShlurdEntity,
+    entity : ItemEntity,
     lemma : String) =
   {
     fail("Huh?")
   }
 
   override def evaluateEntityPropertyPredicate(
-    entity : ShlurdEntity,
+    entity : ItemEntity,
     property : ShlurdProperty,
     lemma : String) =
   {
@@ -62,8 +57,8 @@ class PersonaWorld(ontology : CentralOntology) extends ShlurdWorld
   }
 
   override def evaluateEntityLocationPredicate(
-    entity : ShlurdEntity,
-    location : ShlurdEntity,
+    entity : ItemEntity,
+    location : ItemEntity,
     locative : ShlurdLocative) =
   {
     fail("Huh?")
