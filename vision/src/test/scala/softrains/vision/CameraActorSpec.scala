@@ -31,7 +31,7 @@ class CameraActorSpec extends AkkaActorSpecification
   {
     "detect face" in new AkkaActorExample
     {
-      val timeout = 10.seconds
+      val timeout = 30.seconds
       val input = new VideoFileInput(getVideoFile("johnArriving.mkv"))
       val actor = system.actorOf(Props(classOf[CameraActor]))
       actor ! StartSentinelMsg(input, CameraNullView)
