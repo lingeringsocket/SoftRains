@@ -80,64 +80,6 @@ class CentralHttp(central : CentralService)
         }
       }
     } ~
-    path("doorbell") {
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.DoorbellMsg)
-          HttpEntity(textContent, "<h1>Ding Dong!</h1>")
-        })
-      }
-    } ~
-    path("volume" / "up") {
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.VolumeUpMsg)
-          HttpEntity(textContent, "<h1>Volume Increased!</h1>")
-        })
-      }
-    } ~
-    path("volume" / "down") {
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.VolumeDownMsg)
-          HttpEntity(textContent, "<h1>Volume Decreased!</h1>")
-        })
-      }
-    } ~
-    path("spawn" / Segment) { file =>
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.StartAudioFileMsg(
-            file, false, true))
-          HttpEntity(textContent, s"<h1>Now Spawning $file</h1>")
-        })
-      }
-    } ~
-    path("loop" / Segment) { file =>
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.StartAudioFileMsg(
-            file, true))
-          HttpEntity(textContent, s"<h1>Now Looping $file</h1>")
-        })
-      }
-    } ~
-    path("play" / Segment) { file =>
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.PlayAudioFileMsg(file))
-          HttpEntity(textContent, s"<h1>Now Playing $file</h1>")
-        })
-      }
-    } ~
-    path("silence") {
-      get {
-        complete({
-          central.broadcastIntercom(IntercomActor.StopAudioFileMsg)
-          HttpEntity(textContent, "<h1>Silence is Golden</h1>")
-        })
-      }
-    } ~
     path("uptime") {
       get {
         complete({
