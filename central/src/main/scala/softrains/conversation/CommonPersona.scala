@@ -17,8 +17,8 @@ package softrains.conversation
 import softrains.intercom._
 import softrains.central._
 
-import shlurd.parser._
-import shlurd.world._
+import com.lingeringsocket.shlurd.parser._
+import com.lingeringsocket.shlurd.world._
 
 import QueryAssumption._
 

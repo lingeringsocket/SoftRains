@@ -16,10 +16,11 @@ package softrains.conversation
 
 import softrains.central._
 
-import shlurd.parser._
-import shlurd.world._
+import com.lingeringsocket.shlurd.parser._
+import com.lingeringsocket.shlurd.world._
 
 import scala.util._
+import scala.collection._
 
 case class ItemEntity(itemName : String) extends ShlurdEntity
 {
@@ -28,9 +29,10 @@ case class ItemEntity(itemName : String) extends ShlurdEntity
 class PersonaWorld(ontology : CentralOntology)
     extends ShlurdWorld[ItemEntity, ShlurdProperty]
 {
-  override def resolveUnqualifiedEntity(
+  override def resolveEntity(
     lemma : String,
-    context : ShlurdReferenceContext) =
+    context : ShlurdReferenceContext,
+    qualifiers : Set[String]) : Try[Set[ItemEntity]] =
   {
     // FIXME:  something real
     val items = ontology.getItems
@@ -62,5 +64,13 @@ class PersonaWorld(ontology : CentralOntology)
     locative : ShlurdLocative) =
   {
     fail("Huh?")
+  }
+
+  override def specificReference(
+    entity : ItemEntity,
+    determiner : ShlurdDeterminer) : ShlurdReference =
+  {
+    ShlurdEntityReference(
+      ShlurdWord(entity.itemName, entity.itemName), determiner)
   }
 }

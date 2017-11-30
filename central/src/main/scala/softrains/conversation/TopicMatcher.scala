@@ -16,7 +16,7 @@ package softrains.conversation
 
 import softrains.intercom._
 
-import shlurd.parser._
+import com.lingeringsocket.shlurd.parser._
 
 import scalaz._
 
