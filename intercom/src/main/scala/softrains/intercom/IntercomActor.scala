@@ -23,6 +23,7 @@ import scala.sys.process._
 import org.joda.time.Seconds
 
 import java.io._
+import java.net._
 
 object IntercomActor
 {
@@ -231,14 +232,17 @@ class IntercomActor extends LoggingFSM[State, Data]
     }
   }
 
-  private def getAbsoluteFile(fileName : String) =
+  private def getAbsoluteFile(fileName : String) : String =
   {
+    if (fileName.startsWith("http")) {
+      return URLDecoder.decode(fileName, "UTF-8")
+    }
     val file = new File(fileName)
     val soundPath = settings.Speaker.soundPath
     if (file.isAbsolute || soundPath.getName.isEmpty) {
-      file
+      file.toString
     } else {
-      new File(soundPath, fileName)
+      new File(soundPath, fileName).toString
     }
   }
 
