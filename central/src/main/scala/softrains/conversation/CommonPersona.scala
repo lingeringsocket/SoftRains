@@ -50,10 +50,10 @@ class CommonPersona(topic : PassiveTopic)
 
   def shlurdRespond(sentence : ShlurdSentence) =
   {
-    val shlurdInterpreter =
-      new ShlurdInterpreter(
-        new PersonaWorld(
-          getContext.getOntology))
+    val world = new PersonaWorld(getContext.getOntology)
+    // FIXME need to loadBeliefs from somewhere
+    world.loadItems
+    val shlurdInterpreter = new ShlurdInterpreter(world)
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }

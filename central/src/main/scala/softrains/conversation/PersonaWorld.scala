@@ -16,61 +16,30 @@ package softrains.conversation
 
 import softrains.central._
 
-import com.lingeringsocket.shlurd.parser._
 import com.lingeringsocket.shlurd.world._
 
 import scala.util._
-import scala.collection._
 
-case class ItemEntity(itemName : String) extends ShlurdEntity
-{
-}
+import spire.math._
 
 class PersonaWorld(ontology : CentralOntology)
-    extends ShlurdWorld[ItemEntity, ShlurdProperty]
+    extends ShlurdOpenhabWorld
 {
-  override def resolveEntity(
-    lemma : String,
-    context : ShlurdReferenceContext,
-    qualifiers : Set[String]) : Try[Set[ItemEntity]] =
+  def loadItems()
   {
-    // FIXME:  something real
-    val items = ontology.getItems
-    items.get(lemma) match {
-      case Some(item) => Success(Set(ItemEntity(item.itemName)))
-      case _ => fail(
-        "I don't know about this named entity: " + lemma)
-    }
+    ontology.getItems.values.foreach(item => {
+      item.itemLabel.foreach(itemLabel => {
+        addItem(
+          item.itemName, itemLabel,
+          item.itemType == "Group",
+          item.groupNames)
+      })
+    })
   }
 
-  override def resolveProperty(
-    entity : ItemEntity,
-    lemma : String) =
+  protected def evaluateState(
+    entity : ShlurdPlatonicEntity, stateName : String) =
   {
-    fail("Huh?")
-  }
-
-  override def evaluateEntityPropertyPredicate(
-    entity : ItemEntity,
-    property : ShlurdProperty,
-    lemma : String) =
-  {
-    fail("Huh?")
-  }
-
-  override def evaluateEntityLocationPredicate(
-    entity : ItemEntity,
-    location : ItemEntity,
-    locative : ShlurdLocative) =
-  {
-    fail("Huh?")
-  }
-
-  override def specificReference(
-    entity : ItemEntity,
-    determiner : ShlurdDeterminer) : ShlurdReference =
-  {
-    ShlurdEntityReference(
-      ShlurdWord(entity.itemName, entity.itemName), determiner)
+    Try(Trilean(ontology.getState(entity.name).map(_ == stateName)))
   }
 }

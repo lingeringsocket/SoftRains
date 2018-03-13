@@ -27,7 +27,8 @@ import scala.util.parsing.json._
 case class OpenhabItem(
   itemName : String,
   itemType : String,
-  itemLabel : Option[String])
+  itemLabel : Option[String],
+  groupNames : Seq[String])
 {
 }
 
@@ -43,7 +44,11 @@ object CentralOpenhab
           val itemName = map("name").toString
           val itemType = map("type").toString
           val itemLabel = map.get("label").map(_.toString)
-          OpenhabItem(itemName, itemType, itemLabel)
+          val groupNames = map("groupNames") match {
+            case list : Seq[_] => list.map(_.toString)
+            case _ => Seq.empty
+          }
+          OpenhabItem(itemName, itemType, itemLabel, groupNames)
         })
         Map(items.map(item => (item.itemName, item)).toSeq:_*)
       }
@@ -57,33 +62,45 @@ object CentralOpenhab
 class CentralOntology
 {
   def getItems() : Map[String, OpenhabItem] = Map.empty
+
+  def refresh() {}
+
+  def getState(itemName : String) : Option[String] = None
 }
 
-// FIXME synchronization
 class CentralOpenhabOntology(
   actorSystem : ActorSystem, settings : SoftRainsSettings)
     extends CentralOntology
 {
-  private val items = new mutable.HashMap[String, OpenhabItem]
+  private val items = new mutable.LinkedHashMap[String, OpenhabItem]
+
+  def newCentralOpenhab = new CentralOpenhab(actorSystem, settings)
 
   private def load()
   {
-    items ++= new CentralOpenhab(actorSystem, settings).readItems
+    items ++= newCentralOpenhab.readItems
   }
 
-  def refresh()
+  override def refresh()
   {
-    items.clear
-    load
+    items.synchronized {
+      items.clear
+      load
+    }
   }
 
   override def getItems() =
   {
-    if (items.isEmpty) {
-      load
+    items.synchronized {
+      if (items.isEmpty) {
+        load
+      }
+      (new mutable.LinkedHashMap ++= items)
     }
-    items
   }
+
+  override def getState(itemName : String) =
+    newCentralOpenhab.getState(itemName)
 }
 
 class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
@@ -106,6 +123,21 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     }
     ensureSuccess
     result
+  }
+
+  def getState(itemName : String) : Option[String] =
+  {
+    if (unavailable) {
+      return None
+    }
+    var fetchedState : Option[String] = None
+    val stateUrl = settings.Openhab.url + "/rest/items/" +
+      itemName + "/state"
+    fetchString(stateUrl) { state =>
+      fetchedState = Some(state)
+    }
+    ensureSuccess
+    fetchedState
   }
 
   def checkDoor(itemName : String, spokenName : String)
