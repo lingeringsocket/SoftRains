@@ -101,7 +101,8 @@ class CentralHttp(central : CentralService)
       (intercomName, utterance) =>
       get {
         complete({
-          val intercomActor = central.accessIntercomActor(intercomName)
+          val intercomActor =
+            central.accessIntercom(intercomName).getIntercomActor
           intercomActor ! IntercomActor.PersonUtteranceMsg(
             utterance,
             "")

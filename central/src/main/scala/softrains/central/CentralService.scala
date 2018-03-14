@@ -73,6 +73,8 @@ class CentralService(
     intercoms.remove(intercom.getName)
   }
 
+  def accessIntercom(intercomName : String) = intercoms(intercomName)
+
   def broadcastIntercom(msg : PeripheralMsg)
   {
     intercoms.values.foreach(

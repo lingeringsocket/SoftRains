@@ -37,6 +37,7 @@ class CentralHotlineActor(
 
   override def preStart()
   {
+    log.info("Starting hotline")
     central.addIntercom(intercom)
     val topicSource = new SequentialTopicSource(Seq(new EchoTopic))
     val dispatcher = new TopicDispatcher(
