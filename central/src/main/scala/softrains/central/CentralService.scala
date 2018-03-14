@@ -129,6 +129,7 @@ class CentralService(
       centralActor = Some(system.actorOf(props, centralSpec))
     }
 
+    system.actorOf(Props(classOf[CentralHotlineActor], this))
     system.actorOf(Props(classOf[CentralTelnetServer], this))
 
     implicit val materializer = ActorMaterializer()

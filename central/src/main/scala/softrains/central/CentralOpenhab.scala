@@ -140,6 +140,16 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
     fetchedState
   }
 
+  def sendCommand(itemName : String, command : String)
+  {
+    if (unavailable) {
+      return
+    }
+    val itemUrl = settings.Openhab.url + "/rest/items/" + itemName
+    postString(itemUrl, command) { }
+    ensureSuccess
+  }
+
   def checkDoor(itemName : String, spokenName : String)
   {
     if (unavailable) {

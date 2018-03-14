@@ -97,6 +97,18 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
+    path("intercom" / Segment / "interpret" / Segment) { (intercomName, utterance) =>
+      get {
+        complete({
+          val intercomActor = central.accessIntercomActor(intercomName)
+          intercomActor ! IntercomActor.PersonUtteranceMsg(
+            utterance,
+            "")
+          HttpEntity(
+            textContent, s"<h1>Interpreted $utterance on $intercomName</h1>")
+        })
+      }
+    } ~
     path("intercom" / Segment / "volume" / "up") { intercomName =>
       get {
         complete({
