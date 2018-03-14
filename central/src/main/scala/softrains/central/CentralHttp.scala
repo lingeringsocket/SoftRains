@@ -97,7 +97,8 @@ class CentralHttp(central : CentralService)
         })
       }
     } ~
-    path("intercom" / Segment / "interpret" / Segment) { (intercomName, utterance) =>
+    path("intercom" / Segment / "interpret" / Segment) {
+      (intercomName, utterance) =>
       get {
         complete({
           val intercomActor = central.accessIntercomActor(intercomName)

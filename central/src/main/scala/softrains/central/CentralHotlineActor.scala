@@ -39,7 +39,8 @@ class CentralHotlineActor(
   {
     central.addIntercom(intercom)
     val topicSource = new SequentialTopicSource(Seq(new EchoTopic))
-    val dispatcher = new TopicDispatcher(topicSource, "", "Polly wants a cracker!")
+    val dispatcher = new TopicDispatcher(
+      topicSource, "", "Polly wants a cracker!")
     central.activateConversation(
       intercom,
       dispatcher,
@@ -53,7 +54,8 @@ class CentralHotlineActor(
 
   private def say(voice : String, utterance : String)
   {
-    val openhab = new CentralOpenhab(central.getActorSystem, central.getSettings)
+    val openhab = new CentralOpenhab(
+      central.getActorSystem, central.getSettings)
     openhab.sendCommand("VoiceResponse", utterance)
   }
 
