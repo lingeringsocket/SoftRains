@@ -30,6 +30,8 @@ import scala.sys.process._
 
 import org.joda.time.DateTime
 
+import java.net._
+
 class CentralHttp(central : CentralService)
 {
   private val db = central.db
@@ -98,9 +100,10 @@ class CentralHttp(central : CentralService)
       }
     } ~
     path("intercom" / Segment / "interpret" / Segment) {
-      (intercomName, utterance) =>
+      (intercomName, encodedUtterance) =>
       get {
         complete({
+          val utterance = URLDecoder.decode(encodedUtterance, "UTF-8")
           val intercomActor =
             central.accessIntercom(intercomName).getIntercomActor
           intercomActor ! IntercomActor.PersonUtteranceMsg(
