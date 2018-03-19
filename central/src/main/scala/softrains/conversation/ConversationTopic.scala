@@ -242,6 +242,7 @@ class TopicDispatcher(
           changeTopic(context)
           subTopic match {
             case Some(topic) => {
+              topic.consumeUtterance(utterance, currentPerson, context)
               topic.produceMessage(context) match {
                 case Some(message) => {
                   pending = Some(message)

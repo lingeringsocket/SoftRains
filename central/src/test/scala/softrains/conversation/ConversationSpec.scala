@@ -151,7 +151,7 @@ class ConversationSpec extends Specification
       dispatcher.consumeUtterance(
         "It's me, Bert", bert.name)
       dispatcher.produceUtterance() must be equalTo(
-        Some("Polly wants a cracker!"))
+        Some("it's me, bert"))
       dispatcher.isInProgress must beTrue
       dispatcher.consumeUtterance("here you go.", bert.name)
       dispatcher.produceUtterance() must be equalTo(

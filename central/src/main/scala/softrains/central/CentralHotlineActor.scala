@@ -41,7 +41,7 @@ class CentralHotlineActor(
     central.addIntercom(intercom)
     val topicSource = new SequentialTopicSource(Seq(new EchoTopic))
     val dispatcher = new TopicDispatcher(
-      topicSource, "", "Polly wants a cracker!")
+      topicSource, "", "Hotline active!")
     central.activateConversation(
       intercom,
       dispatcher,
@@ -53,7 +53,7 @@ class CentralHotlineActor(
     central.removeIntercom(intercom)
   }
 
-  private def say(voice : String, utterance : String)
+  protected def say(utterance : String, voice : String)
   {
     val openhab = new CentralOpenhab(
       central.getActorSystem, central.getSettings)
@@ -73,11 +73,11 @@ class CentralHotlineActor(
       context.stop(self)
     }
     case PartnerUtteranceMsg(utterance, voice) => {
-      say(voice, utterance)
+      say(utterance, voice)
       sender ! SpeakerSoundFinishedMsg()
     }
     case SystemUtteranceMsg(utterance, voice) => {
-      say(voice, utterance)
+      say(utterance, voice)
       sender ! SpeakerSoundFinishedMsg()
     }
       // FIXME:  play sounds over webaudio, including DoorbellMsg
