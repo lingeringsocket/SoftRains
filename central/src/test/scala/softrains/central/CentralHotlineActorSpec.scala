@@ -26,8 +26,9 @@ class CentralHotlineActorSpec
 {
   import IntercomActor._
 
-  protected val central = new CentralService(settings, new MockCableRouterMonitor)
-  
+  protected val central =
+    new CentralService(settings, new MockCableRouterMonitor)
+
   "CentralHotlineActor" should
   {
     "repeat whatever is said" in new AkkaActorExample
