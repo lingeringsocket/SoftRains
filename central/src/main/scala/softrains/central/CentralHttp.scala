@@ -105,7 +105,7 @@ class CentralHttp(central : CentralService)
             central.accessIntercom(intercomName).getIntercomActor
           intercomActor ! IntercomActor.PersonUtteranceMsg(
             utterance,
-            "")
+            "anonymous")
           HttpEntity(
             textContent, s"<h1>Interpreted $utterance on $intercomName</h1>")
         })
