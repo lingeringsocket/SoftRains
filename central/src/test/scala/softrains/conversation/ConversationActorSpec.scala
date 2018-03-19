@@ -22,6 +22,7 @@ import akka.actor._
 import akka.testkit._
 
 import scala.collection._
+import scala.concurrent.duration._
 
 import org.joda.time._
 
@@ -87,9 +88,11 @@ class ConversationActorSpec
       expectMsg(PartnerUtteranceMsg(utterance0, voice))
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(PartnerListenMsg("", false))
-      actor ! PersonUtteranceMsg(utterance1, "")
-      expectMsg(PartnerUtteranceMsg(
-        utterance2, ConversationPartner.ALLISON.voiceName))
+      within (10.seconds) {
+        actor ! PersonUtteranceMsg(utterance1, "")
+        expectMsg(PartnerUtteranceMsg(
+          utterance2, ConversationPartner.ALLISON.voiceName))
+      }
       actor ! SpeakerSoundFinishedMsg()
       expectMsg(UnpairMsg)
 
