@@ -114,6 +114,9 @@ class CentralOpenhab(actorSystem : ActorSystem, settings : SoftRainsSettings)
 
   def readItems() : Map[String, OpenhabItem] =
   {
+    if (unavailable) {
+      return Map.empty
+    }
     val itemsUrl = settings.Openhab.url + "/rest/items"
     var result = Map[String, OpenhabItem]()
     fetchString(itemsUrl) {

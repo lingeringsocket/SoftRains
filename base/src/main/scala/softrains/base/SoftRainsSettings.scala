@@ -170,6 +170,12 @@ class SoftRainsSettings(rootConf : Config)
     val referenceMap = readMap(subConf, "references")
   }
 
+  object World
+  {
+    val subConf = conf.getConfig("world")
+    val beliefsFile = readPath(subConf, "beliefs-file")
+  }
+
   object Cameras
   {
     val subConf = conf.getConfig("cameras")

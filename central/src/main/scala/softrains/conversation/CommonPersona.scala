@@ -20,6 +20,8 @@ import softrains.central._
 import com.lingeringsocket.shlurd.parser._
 import com.lingeringsocket.shlurd.world._
 
+import scala.io._
+
 import QueryAssumption._
 
 class CommonPersona(topic : PassiveTopic)
@@ -51,7 +53,10 @@ class CommonPersona(topic : PassiveTopic)
   def shlurdRespond(sentence : ShlurdSentence) =
   {
     val world = new PersonaWorld(getContext.getOntology)
-    // FIXME need to loadBeliefs from somewhere
+    val beliefsFile = getContext.getSettings.World.beliefsFile
+    if (!beliefsFile.getName.isEmpty) {
+      world.loadBeliefs(Source.fromFile(beliefsFile))
+    }
     world.loadItems
     val shlurdInterpreter = new ShlurdInterpreter(world)
     val response = shlurdInterpreter.interpret(sentence)
