@@ -31,11 +31,13 @@ trait IntercomClient
   def intercomActorTimeout =
     duration.FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS)
 
+  private def isLocal(intercomSpec : String) = !intercomSpec.startsWith("akka:")
+
   protected def startLocalIntercoms()
   {
     getSettings.intercoms.foreach(intercom => {
       val intercomSpec = intercom.actor
-      if (!intercomSpec.startsWith("akka:") && intercomActorLocal.isEmpty) {
+      if (isLocal(intercomSpec) && intercomActorLocal.isEmpty) {
         val props = Props(classOf[IntercomActor])
         intercomActorLocal = Some(getActorSystem.actorOf(props, intercomSpec))
       }
@@ -47,14 +49,23 @@ trait IntercomClient
     val intercom =
       getSettings.intercoms.find(_.name == name).get
     val intercomSpec = intercom.actor
-    if (intercomSpec.startsWith("akka:")) {
-      val intercomActorSelection = getActorSystem.actorSelection(intercomSpec)
-      val intercomActorFuture = intercomActorSelection.resolveOne(
-        intercomActorTimeout)
-      Await.result(
-        intercomActorFuture, intercomActorTimeout)
-    } else {
-      intercomActorLocal.get
+    if (isLocal(intercomSpec) && !intercomActorLocal.isEmpty) {
+      return intercomActorLocal.get
     }
+    val intercomActorSelection = {
+      if (isLocal(intercomSpec)) {
+        getActorSystem.actorSelection(getActorSystem / intercomSpec)
+      } else {
+        getActorSystem.actorSelection(intercomSpec)
+      }
+    }
+    val intercomActorFuture = intercomActorSelection.resolveOne(
+      intercomActorTimeout)
+    val result = Await.result(
+      intercomActorFuture, intercomActorTimeout)
+    if (isLocal(intercomSpec)) {
+      intercomActorLocal = Some(result)
+    }
+    result
   }
 }

@@ -69,6 +69,7 @@ class CameraActor extends LoggingFSM[State, Data]
 
   override def postStop()
   {
+    super.postStop
     log.info("CameraActor stopped")
   }
 
@@ -124,6 +125,13 @@ class CameraActor extends LoggingFSM[State, Data]
         sentinel.disableFaceDetection
       }
       stay
+    }
+  }
+
+  onTermination {
+    case StopEvent(_, Active, SentinelData(sentinel, _)) => {
+      log.info("CameraActor stopping while active")
+      sentinel.stopAnalyzer
     }
   }
 

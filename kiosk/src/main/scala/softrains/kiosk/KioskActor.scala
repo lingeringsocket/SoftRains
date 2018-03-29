@@ -63,8 +63,14 @@ class KioskActor(
   {
     val cameraUrl = settings.Kiosk.cameraUrl
     val cameraWindowTitle = settings.Kiosk.cameraWindowTitle
-    if (!cameraUrl.isEmpty) {
-      val input = new CameraFeedInput(cameraUrl)
+    if (!cameraWindowTitle.isEmpty) {
+      val input = {
+        if (cameraUrl.isEmpty) {
+          new CameraLocalInput
+        } else {
+          new CameraFeedInput(cameraUrl)
+        }
+      }
       val view = {
         if (cameraWindowTitle.isEmpty) {
           CameraNullView
@@ -86,7 +92,6 @@ class KioskActor(
 
   override def postStop()
   {
-    cameraActor ! CameraActor.StopSentinelMsg
     log.info("KioskActor stopped")
   }
 
