@@ -23,6 +23,8 @@ object Common {
 
   def scalaVersion = "2.11.8"
 
+  def akkaVersion = "2.5.12"
+
   def resolvers = Seq(
     Resolver.mavenLocal,
     DefaultMavenRepository,
@@ -39,19 +41,19 @@ object Common {
     "-deprecation", "-Xfatal-warnings", "-Yrangepos")
 
   def scalazDeps = Seq(
-    "org.scalaz" %% "scalaz-core" % "7.2.13")
+    "org.scalaz" %% "scalaz-core" % "7.2.21")
 
   def specs2Deps = Seq(
-    "org.specs2" %% "specs2-core" % "3.8.5" % "test")
+    "org.specs2" %% "specs2-core" % "4.0.4" % "test")
 
   def akkaDeps = Seq(
-    "org.slf4j" % "slf4j-api" % "1.7.22",
-    "org.slf4j" % "slf4j-simple" % "1.7.22",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.14",
-    "com.typesafe.akka" %% "akka-slf4j" % "2.4.14",
-    "com.typesafe.akka" %% "akka-remote" % "2.4.14" exclude("io.netty", "netty"),
-    "com.typesafe.akka" %% "akka-http" % "10.0.1",
-    "com.typesafe.akka" %% "akka-testkit" % "2.4.14" % "test")
+    "org.slf4j" % "slf4j-api" % "1.7.25",
+    "org.slf4j" % "slf4j-simple" % "1.7.25",
+    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+    "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+    "com.typesafe.akka" %% "akka-remote" % akkaVersion exclude("io.netty", "netty"),
+    "com.typesafe.akka" %% "akka-http" % "10.1.1",
+    "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test")
 
   def maxErrors = 99
 

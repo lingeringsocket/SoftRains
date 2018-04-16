@@ -48,7 +48,7 @@ class CentralHotlineActorSpec
       probe.expectMsg(partnerUtteranceMsg("Hotline active!"))
       actor ! PersonUtteranceMsg("I am Groot.", "Groot")
       probe.expectMsg(partnerUtteranceMsg("i am groot."))
-      expectNoMsg
+      expectNoMessage
     }
   }
 }

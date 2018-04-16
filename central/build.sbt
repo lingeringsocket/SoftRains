@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-xml" % "10.0.1",
   "javax.mail" % "mail" % "1.4.7",
   "nu.validator" % "htmlparser" % "1.4.4",
+  "com.owlike" % "genson-scala_2.11" % "1.4",
   "org.sorm-framework" % "sorm" % "0.3.20",
   "com.h2database" % "h2" % "1.3.168",
   "org.postgresql" % "postgresql" % "9.4.1210",

@@ -22,7 +22,7 @@ import org.joda.time._
 
 import scala.collection._
 
-import scala.util.parsing.json._
+import com.owlike.genson._
 
 case class OpenhabItem(
   itemName : String,
@@ -36,26 +36,19 @@ object CentralOpenhab
 {
   def parseItems(json : String) : Map[String, OpenhabItem] =
   {
-    val tree = JSON.parseFull(json)
-    tree match {
-      case Some(list : List[Any]) => {
-        val items = list.map(obj => {
-          val map = obj.asInstanceOf[Map[String, Any]]
-          val itemName = map("name").toString
-          val itemType = map("type").toString
-          val itemLabel = map.get("label").map(_.toString)
-          val groupNames = map("groupNames") match {
-            case list : Seq[_] => list.map(_.toString)
-            case _ => Seq.empty
-          }
-          OpenhabItem(itemName, itemType, itemLabel, groupNames)
-        })
-        Map(items.map(item => (item.itemName, item)).toSeq:_*)
+    val list = defaultGenson.fromJson[List[Any]](json)
+    val items = list.map(obj => {
+      val map = obj.asInstanceOf[Map[String, Any]]
+      val itemName = map("name").toString
+      val itemType = map("type").toString
+      val itemLabel = map.get("label").map(_.toString)
+      val groupNames = map("groupNames") match {
+        case list : Seq[_] => list.map(_.toString)
+        case _ => Seq.empty
       }
-      case _ => {
-        throw new RuntimeException("Unexpected Openhab items JSON")
-      }
-    }
+      OpenhabItem(itemName, itemType, itemLabel, groupNames)
+    })
+    Map(items.map(item => (item.itemName, item)).toSeq:_*)
   }
 }
 
