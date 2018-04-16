@@ -186,8 +186,10 @@ class IntercomActor extends LoggingFSM[State, Data]
     if (isWatsonEnabled) {
       val watsonActor = context.actorOf(
         Props(classOf[WatsonActor]), "watsonActor")
-      watsonActor ! WatsonActor.SpeechSayMsg(
-        ps.ready, VOICE_DEFAULT)
+      if (settings.Intercom.announceReady) {
+        watsonActor ! WatsonActor.SpeechSayMsg(
+          ps.ready, VOICE_DEFAULT)
+      }
       watsonOpt = Some(watsonActor)
     }
     val readyUrl = settings.Intercom.readyUrl

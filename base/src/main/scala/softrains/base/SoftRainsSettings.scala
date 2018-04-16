@@ -186,6 +186,7 @@ class SoftRainsSettings(rootConf : Config)
   {
     val subConf = conf.getConfig("intercom")
     val restartCommand = subConf.getString("restart-command")
+    val announceReady = subConf.getBoolean("announce-ready")
     val readyUrl = subConf.getString("ready-url")
   }
 
