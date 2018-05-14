@@ -103,7 +103,7 @@ class ShlurdTopicMatcher(persona : CommonPersona) extends TopicMatcher
 
   override def isDefinedAt(input : String) =
   {
-    if (input.isEmpty) {
+    if (input.isEmpty || persona.getContext.getSettings.Test.active) {
       false
     } else {
       !sentenceMemo(input).hasUnknown
