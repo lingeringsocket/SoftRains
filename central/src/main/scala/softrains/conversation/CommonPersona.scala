@@ -50,7 +50,7 @@ class CommonPersona(topic : PassiveTopic)
     )
   }
 
-  def shlurdRespond(sentence : ShlurdSentence) =
+  def shlurdRespond(sentence : SilSentence) =
   {
     val world = new PersonaWorld(getContext.getOntology)
     val beliefsFile = getContext.getSettings.World.beliefsFile

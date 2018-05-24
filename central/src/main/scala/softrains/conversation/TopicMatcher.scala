@@ -96,7 +96,7 @@ class CatchAllTopicMatcher extends TopicMatcher
 
 class ShlurdTopicMatcher(persona : CommonPersona) extends TopicMatcher
 {
-  val sentenceMemo : String => ShlurdSentence = Memo.immutableHashMapMemo {
+  val sentenceMemo : String => SilSentence = Memo.immutableHashMapMemo {
     // FIXME:  deal with parseAll
     ShlurdParser(_).parseFirst
   }
