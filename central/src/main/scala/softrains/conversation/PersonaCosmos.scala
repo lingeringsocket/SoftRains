@@ -16,14 +16,14 @@ package softrains.conversation
 
 import softrains.central._
 
-import com.lingeringsocket.shlurd.world._
+import com.lingeringsocket.shlurd.cosmos._
 
 import scala.util._
 
 import spire.math._
 
-class PersonaWorld(ontology : CentralOntology)
-    extends ShlurdOpenhabWorld
+class PersonaCosmos(ontology : CentralOntology)
+    extends ShlurdOpenhabCosmos
 {
   def loadItems()
   {

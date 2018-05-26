@@ -18,7 +18,7 @@ import softrains.intercom._
 import softrains.central._
 
 import com.lingeringsocket.shlurd.parser._
-import com.lingeringsocket.shlurd.world._
+import com.lingeringsocket.shlurd.cosmos._
 
 import scala.io._
 
@@ -52,13 +52,13 @@ class CommonPersona(topic : PassiveTopic)
 
   def shlurdRespond(sentence : SilSentence) =
   {
-    val world = new PersonaWorld(getContext.getOntology)
+    val cosmos = new PersonaCosmos(getContext.getOntology)
     val beliefsFile = getContext.getSettings.World.beliefsFile
     if (!beliefsFile.getName.isEmpty) {
-      world.loadBeliefs(Source.fromFile(beliefsFile))
+      cosmos.loadBeliefs(Source.fromFile(beliefsFile))
     }
-    world.loadItems
-    val shlurdInterpreter = new ShlurdInterpreter(world)
+    cosmos.loadItems
+    val shlurdInterpreter = new ShlurdPlatonicInterpreter(cosmos)
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }

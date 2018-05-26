@@ -15,7 +15,7 @@
 package softrains.conversation
 
 import com.lingeringsocket.shlurd.parser._
-import com.lingeringsocket.shlurd.world._
+import com.lingeringsocket.shlurd.cosmos._
 
 import softrains.central._
 
@@ -23,7 +23,7 @@ import org.specs2.mutable._
 
 import scala.io._
 
-class PersonaWorldSpec extends Specification
+class PersonaCosmosSpec extends Specification
 {
   val items = CentralOpenhab.parseItems(
     ShlurdParser.readResource("/items.json")).toMap
@@ -38,14 +38,14 @@ class PersonaWorldSpec extends Specification
     override def getState(itemName : String) = itemStates.get(itemName)
   }
 
-  trait WorldContext extends NameSpace
+  trait CosmosContext extends NameSpace
   {
-    val world = new PersonaWorld(ontology)
-    world.loadBeliefs(Source.fromFile(
+    val cosmos = new PersonaCosmos(ontology)
+    cosmos.loadBeliefs(Source.fromFile(
       ShlurdParser.getResourceFile("/beliefs.txt")))
-    world.loadItems
+    cosmos.loadItems
 
-    val interpreter = new ShlurdInterpreter(world)
+    val interpreter = new ShlurdPlatonicInterpreter(cosmos)
 
     protected def interpret(input : String, expected : String) =
     {
@@ -54,16 +54,16 @@ class PersonaWorldSpec extends Specification
     }
   }
 
-  "PersonaWorld" should
+  "PersonaCosmos" should
   {
-    "understand static structure" in new WorldContext
+    "understand static structure" in new CosmosContext
     {
       interpret(
         "is there a bathroom on the first floor",
         "Yes, there is a bathroom on the first floor.")
     }
 
-    "understand dynamic state" in new WorldContext
+    "understand dynamic state" in new CosmosContext
     {
       interpret(
         "is any window open",
