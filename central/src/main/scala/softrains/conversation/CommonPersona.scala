@@ -18,7 +18,7 @@ import softrains.intercom._
 import softrains.central._
 
 import com.lingeringsocket.shlurd.parser._
-import com.lingeringsocket.shlurd.cosmos._
+import com.lingeringsocket.shlurd.platonic._
 
 import scala.io._
 
@@ -58,7 +58,7 @@ class CommonPersona(topic : PassiveTopic)
       cosmos.loadBeliefs(Source.fromFile(beliefsFile))
     }
     cosmos.loadItems
-    val shlurdInterpreter = new ShlurdPlatonicInterpreter(cosmos)
+    val shlurdInterpreter = new SpcInterpreter(cosmos)
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }

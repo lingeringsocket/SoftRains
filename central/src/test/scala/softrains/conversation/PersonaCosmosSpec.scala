@@ -15,7 +15,7 @@
 package softrains.conversation
 
 import com.lingeringsocket.shlurd.parser._
-import com.lingeringsocket.shlurd.cosmos._
+import com.lingeringsocket.shlurd.platonic._
 
 import softrains.central._
 
@@ -45,7 +45,7 @@ class PersonaCosmosSpec extends Specification
       ShlurdParser.getResourceFile("/beliefs.txt")))
     cosmos.loadItems
 
-    val interpreter = new ShlurdPlatonicInterpreter(cosmos)
+    val interpreter = new SpcInterpreter(cosmos)
 
     protected def interpret(input : String, expected : String) =
     {

@@ -16,14 +16,14 @@ package softrains.conversation
 
 import softrains.central._
 
-import com.lingeringsocket.shlurd.cosmos._
+import com.lingeringsocket.shlurd.platonic._
 
 import scala.util._
 
 import spire.math._
 
 class PersonaCosmos(ontology : CentralOntology)
-    extends ShlurdOpenhabCosmos
+    extends SpcOpenhabCosmos
 {
   def loadItems()
   {
@@ -38,7 +38,7 @@ class PersonaCosmos(ontology : CentralOntology)
   }
 
   protected def evaluateState(
-    entity : ShlurdPlatonicEntity, stateName : String) =
+    entity : SpcEntity, stateName : String) =
   {
     Try(Trilean(ontology.getState(entity.name).map(_ == stateName)))
   }
