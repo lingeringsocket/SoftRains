@@ -58,7 +58,7 @@ class CommonPersona(topic : PassiveTopic)
       cosmos.loadBeliefs(Source.fromFile(beliefsFile))
     }
     cosmos.loadItems
-    val shlurdInterpreter = new SpcInterpreter(cosmos)
+    val shlurdInterpreter = new SpcInterpreter(new SpcMind(cosmos))
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }

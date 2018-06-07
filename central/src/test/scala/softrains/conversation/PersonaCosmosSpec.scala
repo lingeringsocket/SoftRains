@@ -45,7 +45,7 @@ class PersonaCosmosSpec extends Specification
       ShlurdParser.getResourceFile("/beliefs.txt")))
     cosmos.loadItems
 
-    val interpreter = new SpcInterpreter(cosmos)
+    val interpreter = new SpcInterpreter(new SpcMind(cosmos))
 
     protected def interpret(input : String, expected : String) =
     {
