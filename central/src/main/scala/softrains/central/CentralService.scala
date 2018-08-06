@@ -55,7 +55,7 @@ class CentralService(
 
   private var centralActor : Option[ActorRef] = None
 
-  private val dummy = ShlurdParser.getEmptyDocument()
+  private val dummy = SprParser.getEmptyDocument()
 
   private lazy val ontology =
     new CentralOpenhabOntology(getActorSystem, getSettings)

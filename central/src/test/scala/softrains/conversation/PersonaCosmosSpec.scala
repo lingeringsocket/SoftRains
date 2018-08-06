@@ -26,7 +26,7 @@ import scala.io._
 class PersonaCosmosSpec extends Specification
 {
   val items = CentralOpenhab.parseItems(
-    ShlurdParser.readResource("/items.json")).toMap
+    SprParser.readResource("/items.json")).toMap
 
   val itemStates = Map(
     "Window_GF_Kitchen" -> "open"
@@ -42,15 +42,15 @@ class PersonaCosmosSpec extends Specification
   {
     val cosmos = new PersonaCosmos(ontology)
     cosmos.loadBeliefs(Source.fromFile(
-      ShlurdParser.getResourceFile("/beliefs.txt")))
+      SprParser.getResourceFile("/beliefs.txt")))
     cosmos.loadItems
 
     val interpreter = new SpcInterpreter(new SpcMind(cosmos))
 
     protected def interpret(input : String, expected : String) =
     {
-      val sentence = ShlurdParser(input).parseOne
-      interpreter.interpret(sentence) must be equalTo(expected)
+      val sentence = SprParser(input).parseOne
+      interpreter.interpret(sentence, input) must be equalTo(expected)
     }
   }
 

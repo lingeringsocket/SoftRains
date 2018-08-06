@@ -98,7 +98,7 @@ class ShlurdTopicMatcher(persona : CommonPersona) extends TopicMatcher
 {
   val sentenceMemo : String => SilSentence = Memo.immutableHashMapMemo {
     // FIXME:  deal with parseAll
-    ShlurdParser(_).parseFirst
+    SprParser(_).parseFirst
   }
 
   override def isDefinedAt(input : String) =
