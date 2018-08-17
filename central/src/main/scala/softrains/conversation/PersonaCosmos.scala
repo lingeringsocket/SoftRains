@@ -20,8 +20,6 @@ import com.lingeringsocket.shlurd.platonic._
 
 import scala.util._
 
-import spire.math._
-
 class PersonaCosmos(ontology : CentralOntology)
     extends SpcOpenhabCosmos
 {
@@ -37,9 +35,9 @@ class PersonaCosmos(ontology : CentralOntology)
     })
   }
 
-  protected def evaluateState(
-    entity : SpcEntity, stateName : String) =
+  override def evaluateEntityProperty(
+    entity : SpcEntity, property : SpcProperty) =
   {
-    Try(Trilean(ontology.getState(entity.name).map(_ == stateName)))
+    Success(ontology.getState(entity.name))
   }
 }
