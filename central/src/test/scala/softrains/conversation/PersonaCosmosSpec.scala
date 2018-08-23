@@ -20,6 +20,7 @@ import com.lingeringsocket.shlurd.platonic._
 import softrains.central._
 
 import org.specs2.mutable._
+import org.specs2.specification._
 
 import scala.io._
 
@@ -38,7 +39,7 @@ class PersonaCosmosSpec extends Specification
     override def getState(itemName : String) = itemStates.get(itemName)
   }
 
-  trait CosmosContext extends NameSpace
+  trait CosmosContext extends Scope
   {
     val cosmos = new PersonaCosmos(ontology)
     cosmos.loadBeliefs(Source.fromFile(
