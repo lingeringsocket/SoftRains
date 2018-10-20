@@ -17,7 +17,7 @@ package softrains.conversation
 import softrains.intercom._
 import softrains.central._
 
-import com.lingeringsocket.shlurd.parser._
+import com.lingeringsocket.shlurd.ilang._
 import com.lingeringsocket.shlurd.platonic._
 
 import scala.io._

@@ -17,6 +17,7 @@ package softrains.conversation
 import softrains.intercom._
 
 import com.lingeringsocket.shlurd.parser._
+import com.lingeringsocket.shlurd.ilang._
 
 import scalaz._
 
@@ -97,7 +98,7 @@ class CatchAllTopicMatcher extends TopicMatcher
 class ShlurdTopicMatcher(persona : CommonPersona) extends TopicMatcher
 {
   val sentenceMemo : String => SilSentence = Memo.immutableHashMapMemo {
-    // FIXME:  deal with parseAll
+    // FIXME:  deal with parseAll, and use newParser
     SprParser(_).parseFirst
   }
 

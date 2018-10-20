@@ -38,8 +38,6 @@ import akka.stream._
 
 import org.joda.time.DateTime
 
-import com.lingeringsocket.shlurd.parser._
-
 class CentralService(
   settings : SoftRainsSettings, deviceMonitor : DeviceMonitor)
     extends ConversationContext with IntercomClient
@@ -54,8 +52,6 @@ class CentralService(
   private val intercoms = new TrieMap[String, CentralIntercom]
 
   private var centralActor : Option[ActorRef] = None
-
-  private val dummy = SprParser.getEmptyDocument()
 
   private lazy val ontology =
     new CentralOpenhabOntology(getActorSystem, getSettings)

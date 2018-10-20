@@ -38,6 +38,7 @@ class PersonaCosmos(ontology : CentralOntology)
   override def evaluateEntityProperty(
     entity : SpcEntity, propertyName : String, specific : Boolean = false) =
   {
-    Success((findProperty(entity.form, propertyName), ontology.getState(entity.name)))
+    Success((findProperty(entity.form, propertyName),
+      ontology.getState(entity.name)))
   }
 }

@@ -50,7 +50,7 @@ class PersonaCosmosSpec extends Specification
 
     protected def interpret(input : String, expected : String) =
     {
-      val sentence = SprParser(input).parseOne
+      val sentence = interpreter.newParser(input).parseOne
       interpreter.interpret(sentence, input) must be equalTo(expected)
     }
   }
