@@ -50,10 +50,14 @@ class KioskActor(
     settings.Openhab.url + "/rest/items/face_name/state"
 
   private val cameraSpec = settings.Actors.camera
-  assert (!cameraSpec.isEmpty)
 
-  private val cameraActor =
-    context.actorOf(Props(classOf[CameraActor]), cameraSpec)
+  private val cameraActor = {
+    if (cameraSpec.isEmpty) {
+      None
+    } else {
+      Some(context.actorOf(Props(classOf[CameraActor]), cameraSpec))
+    }
+  }
 
   override def getActorSystem = context.system
 
@@ -78,7 +82,7 @@ class KioskActor(
           new CameraDesktopView(cameraWindowTitle)
         }
       }
-      cameraActor ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader)
+      cameraActor.foreach(_ ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader))
     }
     if (startLocalIntercom) {
       startLocalIntercoms
@@ -125,7 +129,7 @@ class KioskActor(
     }
     case IntercomActor.PairedMsg => {
       log.info("KioskActor paired")
-      cameraActor ! CameraActor.ControlFaceDetectionMsg(false)
+      cameraActor.foreach(_ ! CameraActor.ControlFaceDetectionMsg(false))
       maybeNotify {
         val httpConsumer = new HttpConsumer(context.system)
         httpConsumer.putString(modeUrl, "ON") {}
@@ -134,9 +138,9 @@ class KioskActor(
     }
     case IntercomActor.UnpairedMsg => {
       log.info("KioskActor unpaired")
-      context.system.scheduler.scheduleOnce(
-        10.seconds, cameraActor,
-        CameraActor.ControlFaceDetectionMsg(true))
+      cameraActor.foreach(context.system.scheduler.scheduleOnce(
+        10.seconds, _,
+        CameraActor.ControlFaceDetectionMsg(true)))
       maybeNotify {
         val httpConsumer = new HttpConsumer(context.system)
         httpConsumer.putString(modeUrl, "OFF") {}
