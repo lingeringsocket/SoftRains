@@ -82,7 +82,8 @@ class KioskActor(
           new CameraDesktopView(cameraWindowTitle)
         }
       }
-      cameraActor.foreach(_ ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader))
+      cameraActor.foreach(
+        _ ! CameraActor.StartSentinelMsg(input, view, faceExampleLoader))
     }
     if (startLocalIntercom) {
       startLocalIntercoms
