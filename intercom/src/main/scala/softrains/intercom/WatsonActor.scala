@@ -24,33 +24,14 @@ import org.apache.commons.io.output._
 import akka.actor._
 import akka.event._
 
-import com.ibm.watson.developer_cloud.text_to_speech.v1._
-import com.ibm.watson.developer_cloud.text_to_speech.v1.model._
-import com.ibm.watson.developer_cloud.text_to_speech.v1.util._
-
-import com.ibm.watson.developer_cloud.speech_to_text.v1._
-import com.ibm.watson.developer_cloud.speech_to_text.v1.model._
-import com.ibm.watson.developer_cloud.speech_to_text.v1.websocket._
-
-import com.ibm.watson.developer_cloud.http._
-
 import javax.sound.sampled._
 
 import com.bitsinharmony.recognito._
-
-import scala.collection.JavaConverters._
 
 import scala.concurrent._
 import scala.concurrent.duration._
 
 import scala.sys.process._
-
-import com.ibm.watson.developer_cloud.text_to_speech.v1.model.{
-  AudioFormat => WatsonAudioFormat
-}
-import javax.sound.sampled.{
-  AudioFormat => JavaAudioFormat
-}
 
 object WatsonActor
 {
@@ -76,9 +57,7 @@ class WatsonActor extends Actor
 
   private val settings = SoftRainsActorSettings(context)
 
-  private val tts = new TextToSpeech
-
-  private val stt = new SpeechToText
+  private val watsonApi = new WatsonApi(settings)
 
   private val audioDir = settings.Files.audioPath
 
@@ -90,10 +69,6 @@ class WatsonActor extends Actor
 
   override def preStart()
   {
-    tts.setUsernameAndPassword(
-      settings.WatsonTts.user, settings.WatsonTts.password)
-    stt.setUsernameAndPassword(
-      settings.WatsonStt.user, settings.WatsonStt.password)
     if (!audioDir.isDirectory) {
       if (!audioDir.mkdirs) {
         throw new IOException(
@@ -130,9 +105,7 @@ class WatsonActor extends Actor
     if (cache && file.isFile) {
       (settings.Speaker.command #< file).!
     } else {
-      val stream = tts.synthesize(
-        utterance, Voice.getByName(voice), WatsonAudioFormat.WAV)
-      val in = WaveUtils.reWriteWaveHeader(stream.execute)
+      val in = watsonApi.textToSpeech(utterance, voice)
       ((("tee " + file) #| settings.Speaker.command) #< in).!
     }
     file
@@ -142,12 +115,7 @@ class WatsonActor extends Actor
   {
     log.info("Listening...")
     var result : AnyRef = IntercomActor.SilenceMsg
-    val sampleRate = 44100
-    val format = new JavaAudioFormat(sampleRate, 16, 1, true, true)
-    val info = new DataLine.Info(classOf[TargetDataLine], format)
-    val line = AudioSystem.getLine(info).asInstanceOf[TargetDataLine]
-    line.open(format)
-    line.start
+    val line = watsonApi.openAudioLine
     try {
       val orig = new AudioInputStream(line)
       val pipedOutputStream = new PipedOutputStream
@@ -162,49 +130,16 @@ class WatsonActor extends Actor
         AudioSystem.write(orig, AudioFileFormat.Type.AU, teeOutputStream)
       }(ExecutionContext.Implicits.global)
       val audio = AudioSystem.getAudioInputStream(pipedInputStream)
-      val options = (new RecognizeOptions.Builder).
-        contentType(HttpMediaType.AUDIO_RAW + "; rate=" + sampleRate).
-        inactivityTimeout(2).
-        interimResults(true).
-        maxAlternatives(3).build
-      val disconnectPromise = Promise[Object]()
-      val disconnectFuture = disconnectPromise.future
-      stt.recognizeUsingWebSocket(
-        audio, options, new BaseRecognizeCallback {
-          override def onTranscription(speechResults : SpeechResults)
-          {
-            audio.close
-            try {
-              val transcript =
-                speechResults.getResults.get(speechResults.getResultIndex)
-              val alternatives = transcript.getAlternatives.asScala.
-                map(_.getTranscript.trim).toSeq
-              log.info("Heard:  " + alternatives.head)
-              result = IntercomActor.PersonUtteranceMsg(
-                alternatives, personName, Some(wavFile.getAbsolutePath))
-            } catch {
-              case ex : Throwable => {
-                // treat as silence
-              }
-            }
-          }
-
-          override def onError(e : Exception)
-          {
-            // treat as silence
-            audio.close
-            disconnectPromise.success(null)
-          }
-
-          override def onDisconnected()
-          {
-            disconnectPromise.success(null)
-          }
-        })
-      val duration = FiniteDuration(30, java.util.concurrent.TimeUnit.SECONDS)
+      val timeout = FiniteDuration(30, java.util.concurrent.TimeUnit.SECONDS)
+      watsonApi.speechToText(audio, timeout,
+        alternatives => {
+          log.info("Heard:  " + alternatives.head)
+          result = IntercomActor.PersonUtteranceMsg(
+            alternatives, personName, Some(wavFile.getAbsolutePath))
+        }
+      )
       try {
-        Await.ready(disconnectFuture, duration)
-        Await.ready(pipeFuture, duration)
+        Await.ready(pipeFuture, timeout)
       } catch {
         case ex : TimeoutException => {
           // treat as silence
@@ -237,8 +172,7 @@ class WatsonActor extends Actor
         }
       }
     } finally {
-      line.stop
-      line.close
+      watsonApi.closeAudioLine(line)
       log.info("Done listening.")
       sender ! result
     }

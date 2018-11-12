@@ -97,15 +97,13 @@ class SoftRainsSettings(rootConf : Config)
   object WatsonTts
   {
     val subConf = conf.getConfig("watson-tts")
-    val user = subConf.getString("user")
-    val password = subConf.getString("password")
+    val apiKey = subConf.getString("apikey")
   }
 
   object WatsonStt
   {
     val subConf = conf.getConfig("watson-stt")
-    val user = subConf.getString("user")
-    val password = subConf.getString("password")
+    val apiKey = subConf.getString("apikey")
   }
 
   object Alexa

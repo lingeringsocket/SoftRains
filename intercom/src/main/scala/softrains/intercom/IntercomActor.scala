@@ -175,7 +175,7 @@ class IntercomActor extends LoggingFSM[State, Data]
   private var observer = context.parent
 
   private def isWatsonEnabled =
-    !settings.WatsonTts.user.isEmpty && !settings.WatsonStt.user.isEmpty
+    !settings.WatsonTts.apiKey.isEmpty && !settings.WatsonStt.apiKey.isEmpty
 
   override def preStart()
   {
