@@ -108,6 +108,7 @@ class WatsonApi(settings : SoftRainsSettings)
     val options = (new RecognizeOptions.Builder).
       audio(filteredStream).
       contentType(HttpMediaType.AUDIO_RAW + "; rate=" + SAMPLE_RATE).
+      // model(RecognizeOptions.Model.KO_KR_NARROWBANDMODEL).
       maxAlternatives(3).build
     stt.recognizeUsingWebSocket(
       options, new BaseRecognizeCallback {
