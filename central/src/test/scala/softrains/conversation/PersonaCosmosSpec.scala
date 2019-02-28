@@ -42,11 +42,12 @@ class PersonaCosmosSpec extends Specification
   trait CosmosContext extends Scope
   {
     val cosmos = new PersonaCosmos(ontology)
-    cosmos.loadBeliefs(Source.fromFile(
+    val mind = new SpcMind(cosmos)
+    mind.loadBeliefs(Source.fromFile(
       SprParser.getResourceFile("/beliefs.txt")))
     cosmos.loadItems
 
-    val interpreter = new SpcInterpreter(new SpcMind(cosmos))
+    val interpreter = new SpcInterpreter(mind)
 
     protected def interpret(input : String, expected : String) =
     {

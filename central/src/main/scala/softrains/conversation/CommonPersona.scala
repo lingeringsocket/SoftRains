@@ -54,11 +54,12 @@ class CommonPersona(topic : PassiveTopic)
   {
     val cosmos = new PersonaCosmos(getContext.getOntology)
     val beliefsFile = getContext.getSettings.World.beliefsFile
+    val mind = new SpcMind(cosmos)
     if (!beliefsFile.getName.isEmpty) {
-      cosmos.loadBeliefs(Source.fromFile(beliefsFile))
+      mind.loadBeliefs(Source.fromFile(beliefsFile))
     }
     cosmos.loadItems
-    val shlurdInterpreter = new SpcInterpreter(new SpcMind(cosmos))
+    val shlurdInterpreter = new SpcInterpreter(mind)
     val response = shlurdInterpreter.interpret(sentence)
     (IntercomActor.PartnerUtteranceMsg(response), false)
   }
