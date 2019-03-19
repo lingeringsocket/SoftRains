@@ -14,7 +14,7 @@
 // limitations under the License.
 package softrains.conversation
 
-import com.lingeringsocket.shlurd.parser._
+import com.lingeringsocket.shlurd._
 import com.lingeringsocket.shlurd.platonic._
 
 import softrains.central._
@@ -27,7 +27,7 @@ import scala.io._
 class PersonaCosmosSpec extends Specification
 {
   val items = CentralOpenhab.parseItems(
-    SprParser.readResource("/items.json")).toMap
+    ResourceUtils.readResource("/items.json")).toMap
 
   val itemStates = Map(
     "Window_GF_Kitchen" -> "open"
@@ -44,15 +44,15 @@ class PersonaCosmosSpec extends Specification
     val cosmos = new PersonaCosmos(ontology)
     val mind = new SpcMind(cosmos)
     mind.loadBeliefs(Source.fromFile(
-      SprParser.getResourceFile("/beliefs.txt")))
+      ResourceUtils.getResourceFile("/beliefs.txt")))
     cosmos.loadItems
 
-    val interpreter = new SpcInterpreter(mind)
+    val responder = new SpcResponder(mind)
 
-    protected def interpret(input : String, expected : String) =
+    protected def process(input : String, expected : String) =
     {
-      val sentence = interpreter.newParser(input).parseOne
-      interpreter.interpret(sentence, input) must be equalTo(expected)
+      val sentence = responder.newParser(input).parseOne
+      responder.process(sentence, input) must be equalTo(expected)
     }
   }
 
@@ -61,14 +61,14 @@ class PersonaCosmosSpec extends Specification
     "understand static structure" in new CosmosContext
     {
       skipped("borked")
-      interpret(
+      process(
         "is there a bathroom on the first floor",
         "Yes, there is a bathroom on the first floor.")
     }
 
     "understand dynamic state" in new CosmosContext
     {
-      interpret(
+      process(
         "is any window open",
         "Yes, the kitchen window is open.")
     }
@@ -76,7 +76,7 @@ class PersonaCosmosSpec extends Specification
     "understand unknown state" in new CosmosContext
     {
       skipped("borked")
-      interpret(
+      process(
         "is the toilet window open",
         "I don't know.")
     }
